@@ -6,6 +6,8 @@
   --color-primary: #f86f4d;
   --color-primary-hover: #e65d3f;
   --color-primary-light: #ffe5de;
+  --color-primary-ultra-soft: #f86f4d10;
+  --color-primary-pill: #f86f4d15;
   --color-secondary: #f9fafb;
   --color-background: #f9fafb;
   --color-surface: #ffffff;
@@ -56,6 +58,8 @@
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
+  --radius-pill: 0.5rem;
+  --radius-modern: 0.5rem;
 }
 
 /* Reset et base */
@@ -230,13 +234,14 @@ a:focus {
 }
 
 .sidebar-link.active {
-  background-color: var(--color-primary);
-  color: white;
+  background-color: var(--color-primary-ultra-soft);
+  color: var(--color-primary);
   font-weight: 500;
+  border-radius: var(--radius-pill);
 }
 
 .sidebar-link.active svg {
-  color: white;
+  color: var(--color-primary);
 }
 
 /* Responsive utilities */

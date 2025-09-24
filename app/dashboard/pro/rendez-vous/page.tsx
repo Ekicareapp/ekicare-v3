@@ -1,23 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Card from '../components/Card';
-import Button from '../components/Button';
-import Tabs from '../components/Tabs';
-import Modal from '../components/Modal';
+import { useState } from 'react';
+import Card from '@/app/dashboard/pro/components/Card';
+import Button from '@/app/dashboard/pro/components/Button';
+import Tabs from '@/app/dashboard/pro/components/Tabs';
+import Modal from '@/app/dashboard/pro/components/Modal';
 import { Eye, X, CheckCircle, RotateCcw, Clock, FileText, MoreVertical } from 'lucide-react';
 
 interface RendezVous {
   id: string;
+  client: string;
   equide: string;
-  professionnel: string;
   type: string;
   date: string;
   heure: string;
   statut: 'a-venir' | 'en-attente' | 'confirme' | 'termine' | 'replanifie';
   notes?: string;
   lieu?: string;
-  specialite?: string;
   compteRendu?: string;
 }
 
@@ -29,133 +28,77 @@ export default function RendezVousPage() {
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
   const tabs = [
-    { id: 'a-venir', label: 'À venir', count: 3 },
-    { id: 'en-attente', label: 'En attente', count: 1 },
-    { id: 'confirme', label: 'Confirmés', count: 2 },
-    { id: 'replanifie', label: 'Replanifiés', count: 1 },
-    { id: 'termine', label: 'Terminés', count: 8 }
+    { id: 'a-venir', label: 'À venir', count: 8 },
+    { id: 'en-attente', label: 'En attente', count: 3 },
+    { id: 'confirme', label: 'Confirmés', count: 5 },
+    { id: 'replanifie', label: 'Replanifiés', count: 2 },
+    { id: 'termine', label: 'Terminés', count: 12 }
   ];
 
   const rendezVous: RendezVous[] = [
     {
       id: '1',
+      client: 'Marie Dubois',
       equide: 'Bella',
-      professionnel: 'Dr. Martin',
-      type: 'Vaccination',
-      date: '2024-01-25',
-      heure: '14:30',
+      type: 'Consultation générale',
+      date: '2024-01-15',
+      heure: '09:00',
       statut: 'a-venir',
-      notes: 'Rappel vaccin grippe',
-      lieu: 'Clinique vétérinaire Martin',
-      specialite: 'Médecine générale'
+      lieu: 'Écurie Dubois, 123 rue de la Paix, 75001 Paris'
     },
     {
       id: '2',
+      client: 'Pierre Martin',
       equide: 'Thunder',
-      professionnel: 'Dr. Dubois',
-      type: 'Contrôle dentaire',
-      date: '2024-01-28',
-      heure: '10:00',
-      statut: 'a-venir',
-      lieu: 'Cabinet Dubois',
-      specialite: 'Dentisterie équine'
+      type: 'Vaccination',
+      date: '2024-01-15',
+      heure: '11:30',
+      statut: 'en-attente',
+      lieu: 'Centre équestre Martin, 456 avenue des Champs, 75008 Paris'
     },
     {
       id: '3',
+      client: 'Sophie Laurent',
       equide: 'Luna',
-      professionnel: 'Dr. Martin',
-      type: 'Vermifuge',
-      date: '2024-02-02',
-      heure: '16:15',
-      statut: 'a-venir',
-      lieu: 'Clinique vétérinaire Martin',
-      specialite: 'Médecine générale'
+      type: 'Contrôle dentaire',
+      date: '2024-01-16',
+      heure: '14:00',
+      statut: 'confirme',
+      lieu: 'Haras Laurent, 789 boulevard Saint-Germain, 75007 Paris'
     },
     {
       id: '4',
-      equide: 'Bella',
-      professionnel: 'Dr. Lefebvre',
-      type: 'Ostéopathie',
-      date: '2024-01-20',
-      heure: '09:30',
-      statut: 'en-attente',
-      lieu: 'Cabinet Lefebvre',
-      specialite: 'Ostéopathie équine'
+      client: 'Jean Dupont',
+      equide: 'Storm',
+      type: 'Chirurgie',
+      date: '2024-01-18',
+      heure: '10:00',
+      statut: 'replanifie',
+      lieu: 'Clinique vétérinaire Dupont, 321 rue de Rivoli, 75001 Paris',
+      notes: 'Rendez-vous reporté à la demande du client'
     },
     {
       id: '5',
-      equide: 'Thunder',
-      professionnel: 'Dr. Martin',
-      type: 'Vaccination',
-      date: '2024-01-15',
-      heure: '11:00',
-      statut: 'confirme',
-      lieu: 'Clinique vétérinaire Martin',
-      specialite: 'Médecine générale'
-    },
-    {
-      id: '6',
-      equide: 'Luna',
-      professionnel: 'Dr. Dubois',
-      type: 'Contrôle général',
+      client: 'Claire Moreau',
+      equide: 'Spirit',
+      type: 'Consultation',
       date: '2024-01-10',
-      heure: '14:00',
-      statut: 'confirme',
-      lieu: 'Cabinet Dubois',
-      specialite: 'Médecine générale'
-    },
-    {
-      id: '7',
-      equide: 'Bella',
-      professionnel: 'Dr. Martin',
-      type: 'Vaccination',
-      date: '2024-01-30',
-      heure: '10:30',
-      statut: 'replanifie',
-      notes: 'Reprogrammé à la demande du propriétaire',
-      lieu: 'Clinique vétérinaire Martin',
-      specialite: 'Médecine générale'
-    },
-    {
-      id: '8',
-      equide: 'Bella',
-      professionnel: 'Dr. Martin',
-      type: 'Vaccination',
-      date: '2023-12-20',
-      heure: '10:30',
+      heure: '15:30',
       statut: 'termine',
-      lieu: 'Clinique vétérinaire Martin',
-      specialite: 'Médecine générale',
-      compteRendu: 'Vaccination réalisée avec succès. Bella a bien réagi au vaccin. Aucune réaction secondaire observée. Prochaine vaccination prévue dans 6 mois.'
-    },
-    {
-      id: '9',
-      equide: 'Thunder',
-      professionnel: 'Dr. Lefebvre',
-      type: 'Ostéopathie',
-      date: '2023-12-15',
-      heure: '15:45',
-      statut: 'termine',
-      lieu: 'Cabinet Lefebvre',
-      specialite: 'Ostéopathie équine'
+      lieu: 'Écurie Moreau, 654 rue de la République, 75011 Paris',
+      compteRendu: 'Examen complet effectué. L\'équidé présente une bonne santé générale. Recommandations : continuer le suivi régulier.'
     }
   ];
 
   const getStatusLabel = (statut: string) => {
-    switch (statut) {
-      case 'a-venir':
-        return 'À venir';
-      case 'en-attente':
-        return 'En attente';
-      case 'confirme':
-        return 'Confirmé';
-      case 'replanifie':
-        return 'Replanifié';
-      case 'termine':
-        return 'Terminé';
-      default:
-        return statut;
-    }
+    const labels = {
+      'a-venir': 'À venir',
+      'en-attente': 'En attente',
+      'confirme': 'Confirmé',
+      'replanifie': 'Replanifié',
+      'termine': 'Terminé'
+    };
+    return labels[statut as keyof typeof labels] || statut;
   };
 
   const handleViewDetails = (rdv: RendezVous) => {
@@ -271,7 +214,7 @@ export default function RendezVousPage() {
   const filteredRendezVous = rendezVous.filter(rdv => rdv.statut === activeTab);
 
   // Fermer le menu quand on clique en dehors
-  useEffect(() => {
+  useState(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (activeMenuId) {
         closeMenu();
@@ -288,12 +231,8 @@ export default function RendezVousPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-semibold text-gray-900 mb-2">
-          Mes rendez-vous
-        </h1>
-        <p className="text-gray-600 text-lg">
-          Gérez vos rendez-vous vétérinaires et soins
-        </p>
+        <h1 className="text-3xl font-bold text-[#111827] mb-2">Mes rendez-vous</h1>
+        <p className="text-[#6b7280] text-lg">Gérez vos rendez-vous avec vos clients</p>
       </div>
 
       {/* Tabs */}
@@ -306,12 +245,12 @@ export default function RendezVousPage() {
       />
 
       {/* Rendez-vous List */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {filteredRendezVous.length === 0 ? (
           <Card variant="elevated" className="text-center py-16 min-h-[120px] flex items-center justify-center">
             <div>
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-16 h-16 bg-[#f3f4f6] rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-8 h-8 text-[#6b7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
@@ -333,7 +272,7 @@ export default function RendezVousPage() {
                     <div className="flex-1 min-w-0">
                       <h3 className="text-lg font-semibold text-[#111827] mb-1">{rdv.type}</h3>
                       <p className="text-sm text-[#6b7280] mb-1">
-                        {rdv.equide} • {rdv.professionnel}
+                        {rdv.client} • {rdv.equide}
                       </p>
                       <p className="text-sm text-[#6b7280]">
                         {new Date(rdv.date).toLocaleDateString('fr-FR', {
@@ -343,11 +282,6 @@ export default function RendezVousPage() {
                           day: 'numeric'
                         })} à {rdv.heure}
                       </p>
-                      {rdv.notes && (
-                        <p className="text-sm text-[#6b7280] mt-2 italic">
-                          Note: {rdv.notes}
-                        </p>
-                      )}
                     </div>
                   </div>
                   
@@ -388,58 +322,55 @@ export default function RendezVousPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title="Détails du rendez-vous"
-        size="md"
+        size="lg"
       >
         {selectedRendezVous && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Équidé</h4>
-                <p className="text-lg font-semibold text-gray-900">{selectedRendezVous.equide}</p>
+                <label className="block text-sm font-medium text-[#6b7280] mb-1">Client</label>
+                <p className="text-[#111827]">{selectedRendezVous.client}</p>
               </div>
-              
               <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Professionnel</h4>
-                <p className="text-lg font-semibold text-gray-900">{selectedRendezVous.professionnel}</p>
+                <label className="block text-sm font-medium text-[#6b7280] mb-1">Équidé</label>
+                <p className="text-[#111827]">{selectedRendezVous.equide}</p>
               </div>
-              
               <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Type de soin</h4>
-                <p className="text-lg font-semibold text-gray-900">{selectedRendezVous.type}</p>
+                <label className="block text-sm font-medium text-[#6b7280] mb-1">Type</label>
+                <p className="text-[#111827]">{selectedRendezVous.type}</p>
               </div>
-              
               <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Spécialité</h4>
-                <p className="text-lg font-semibold text-gray-900">{selectedRendezVous.specialite}</p>
+                <label className="block text-sm font-medium text-[#6b7280] mb-1">Statut</label>
+                <p className="text-[#111827]">{getStatusLabel(selectedRendezVous.statut)}</p>
               </div>
-              
               <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Date et heure</h4>
-                <p className="text-lg font-semibold text-gray-900">
+                <label className="block text-sm font-medium text-[#6b7280] mb-1">Date</label>
+                <p className="text-[#111827]">
                   {new Date(selectedRendezVous.date).toLocaleDateString('fr-FR', {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
-                  })} à {selectedRendezVous.heure}
+                  })}
                 </p>
               </div>
-              
               <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Lieu</h4>
-                <p className="text-lg font-semibold text-gray-900">{selectedRendezVous.lieu}</p>
-              </div>
-              
-              <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Statut</h4>
-                <p className="text-lg font-semibold text-gray-900">{getStatusLabel(selectedRendezVous.statut)}</p>
+                <label className="block text-sm font-medium text-[#6b7280] mb-1">Heure</label>
+                <p className="text-[#111827]">{selectedRendezVous.heure}</p>
               </div>
             </div>
             
+            {selectedRendezVous.lieu && (
+              <div>
+                <label className="block text-sm font-medium text-[#6b7280] mb-1">Lieu</label>
+                <p className="text-[#111827]">{selectedRendezVous.lieu}</p>
+              </div>
+            )}
+            
             {selectedRendezVous.notes && (
               <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Notes</h4>
-                <p className="text-gray-900 bg-gray-50 p-4 rounded-lg">{selectedRendezVous.notes}</p>
+                <label className="block text-sm font-medium text-[#6b7280] mb-1">Notes</label>
+                <p className="text-[#111827]">{selectedRendezVous.notes}</p>
               </div>
             )}
           </div>
@@ -455,34 +386,21 @@ export default function RendezVousPage() {
       >
         {selectedRendezVous && (
           <div className="space-y-6">
-            {/* Header */}
-            <div className="border-b border-gray-200 pb-4">
-              <h3 className="text-lg font-semibold text-[#111827] mb-2">
-                {selectedRendezVous.type} - {selectedRendezVous.equide}
-              </h3>
+            <div className="bg-[#f9fafb] p-4 rounded-lg">
+              <h4 className="font-medium text-[#111827] mb-2">Rendez-vous</h4>
               <p className="text-sm text-[#6b7280]">
-                {selectedRendezVous.professionnel} • {new Date(selectedRendezVous.date).toLocaleDateString('fr-FR')} à {selectedRendezVous.heure}
+                {selectedRendezVous.client} • {selectedRendezVous.equide} • {selectedRendezVous.type}
+              </p>
+              <p className="text-sm text-[#6b7280]">
+                {new Date(selectedRendezVous.date).toLocaleDateString('fr-FR')} à {selectedRendezVous.heure}
               </p>
             </div>
-
-            {/* Compte-rendu */}
+            
             <div>
-              <h4 className="text-sm font-medium text-[#6b7280] mb-3">Compte-rendu du professionnel</h4>
-              <div className="bg-[#f9fafb] border border-[#e5e7eb] rounded-lg p-4">
-                <p className="text-[#111827] leading-relaxed whitespace-pre-line">
-                  {selectedRendezVous.compteRendu}
-                </p>
+              <h4 className="font-medium text-[#111827] mb-2">Compte-rendu</h4>
+              <div className="bg-white border border-[#e5e7eb] rounded-lg p-4">
+                <p className="text-[#111827] whitespace-pre-wrap">{selectedRendezVous.compteRendu}</p>
               </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-              <Button
-                variant="secondary"
-                onClick={() => setIsCompteRenduModalOpen(false)}
-              >
-                Fermer
-              </Button>
             </div>
           </div>
         )}

@@ -3,12 +3,24 @@
 import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, PawPrint, CalendarDays, Search, User } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, Search, User } from 'lucide-react'
 import './globals.css'
+
+// Icône custom de fer à cheval
+const HorseshoeIcon = ({ className }: { className?: string }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M8 20c0-6.627 2.686-12 6-12s6 5.373 6 12"/>
+    <path d="M6 20c0-7.732 3.582-14 8-14s8 6.268 8 14"/>
+    <circle cx="8" cy="18" r="1"/>
+    <circle cx="16" cy="18" r="1"/>
+    <circle cx="7" cy="16" r="1"/>
+    <circle cx="17" cy="16" r="1"/>
+  </svg>
+)
 
 const navigation = [
   { name: 'Tableau de bord', href: '/dashboard/proprietaire', icon: LayoutDashboard },
-  { name: 'Mes équidés', href: '/dashboard/proprietaire/equides', icon: PawPrint },
+  { name: 'Mes équidés', href: '/dashboard/proprietaire/equides', icon: HorseshoeIcon },
   { name: 'Mes rendez-vous', href: '/dashboard/proprietaire/rendez-vous', icon: CalendarDays },
   { name: 'Trouver un pro', href: '/dashboard/proprietaire/recherche-pro', icon: Search },
   { name: 'Mon profil', href: '/dashboard/proprietaire/profil', icon: User },

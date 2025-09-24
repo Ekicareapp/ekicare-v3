@@ -23,13 +23,13 @@ export default function Button({
 }: ButtonProps) {
   const baseClasses = 'font-medium rounded-lg transition-all duration-150 focus:outline-none inline-flex items-center justify-center gap-2';
   
-      const variantClasses = {
-        primary: 'bg-[#f86f4d] text-white disabled:bg-gray-300 disabled:cursor-not-allowed border border-[#f86f4d] hover:bg-[#e65d3f]',
-        secondary: 'bg-white text-[#111827] disabled:bg-gray-100 disabled:cursor-not-allowed border border-[#e5e7eb] hover:bg-[#f9fafb]',
-        ghost: 'bg-transparent text-[#6b7280] disabled:bg-transparent disabled:cursor-not-allowed border border-transparent hover:text-[#111827] hover:bg-[#f86f4d10]',
-        danger: 'bg-[#ef4444] text-white disabled:bg-gray-300 disabled:cursor-not-allowed border border-[#ef4444] hover:bg-red-700',
-      };
-  
+  const variantClasses = {
+    primary: 'bg-[#f86f4d] text-white disabled:bg-gray-300 disabled:cursor-not-allowed border border-[#f86f4d] hover:bg-[#e65d3f]',
+    secondary: 'bg-white text-[#111827] disabled:bg-gray-100 disabled:cursor-not-allowed border border-[#e5e7eb] hover:bg-[#f9fafb]',
+    ghost: 'bg-transparent text-[#6b7280] disabled:bg-transparent disabled:cursor-not-allowed border border-transparent hover:text-[#111827] hover:bg-[#f86f4d10]',
+    danger: 'bg-[#ef4444] text-white disabled:bg-gray-300 disabled:cursor-not-allowed border border-[#ef4444] hover:bg-red-700',
+  };
+
   const sizeClasses = {
     sm: 'px-3 py-1.5 text-sm',
     md: 'px-4 py-2 text-sm',

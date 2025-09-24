@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
+import Link from 'next/link'
 
 const professions = [
   'Vétérinaire équin',
@@ -134,49 +135,73 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
+    <div className="min-h-screen bg-[#f9fafb] flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
-        <h2>Inscription</h2>
-        <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
-          <div className="flex flex-col">
-            <label className="mb-1 text-left">Email</label>
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <div className="w-12 h-12">
+            <img
+              src="/logo-ekicare.png"
+              alt="EkiCare"
+              className="w-full h-full object-contain"
+            />
+          </div>
+        </div>
+
+        {/* Card */}
+        <div className="bg-white rounded-lg border border-[#e5e7eb] p-8">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-semibold text-[#111827] mb-2">
+              Inscription
+            </h2>
+            <p className="text-[#6b7280]">
+              Créez votre compte EkiCare
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-[#111827] mb-2">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="border border-gray-300 rounded-md p-2"
+              placeholder="votre@email.com"
+              className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
             />
-            {fieldErrors.email && <span className="text-red-500 text-sm">{fieldErrors.email}</span>}
+            {fieldErrors.email && <span className="text-[#ef4444] text-sm mt-1">{fieldErrors.email}</span>}
           </div>
-          <div className="flex flex-col">
-            <label className="mb-1 text-left">Mot de passe</label>
+          <div>
+            <label className="block text-sm font-medium text-[#111827] mb-2">Mot de passe</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="border border-gray-300 rounded-md p-2"
+              placeholder="••••••••"
+              className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
             />
             {fieldErrors.password && (
-              <span className="text-red-500 text-sm">{fieldErrors.password}</span>
+              <span className="text-[#ef4444] text-sm mt-1">{fieldErrors.password}</span>
             )}
           </div>
-          <div className="flex flex-col">
-            <label className="mb-1 text-left">Confirmer le mot de passe</label>
+          <div>
+            <label className="block text-sm font-medium text-[#111827] mb-2">Confirmer le mot de passe</label>
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              className="border border-gray-300 rounded-md p-2"
+              placeholder="••••••••"
+              className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
             />
             {fieldErrors.confirmPassword && (
-              <span className="text-red-500 text-sm">{fieldErrors.confirmPassword}</span>
+              <span className="text-[#ef4444] text-sm mt-1">{fieldErrors.confirmPassword}</span>
             )}
           </div>
-          <div className="flex flex-col">
-            <label className="mb-1 text-left">Rôle</label>
+          <div>
+            <label className="block text-sm font-medium text-[#111827] mb-2">Rôle</label>
             <select
               name="role"
               value={role}
@@ -186,113 +211,122 @@ export default function SignupPage() {
                 setRoleError('')
               }}
               required
-              className="border border-gray-300 rounded-md p-2"
+              className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] bg-white"
             >
-              <option value="" disabled selected>
+              <option value="" disabled>
                 Sélectionner un profil
               </option>
               <option value="PROPRIETAIRE">Propriétaire</option>
               <option value="PRO">Professionnel</option>
             </select>
-            {roleError && <span className="text-red-500 text-sm mt-1">{roleError}</span>}
+            {roleError && <span className="text-[#ef4444] text-sm mt-1">{roleError}</span>}
           </div>
           {role === 'PROPRIETAIRE' && (
             <>
-              <div className="flex flex-col">
-                <label className="mb-1 text-left">Prénom</label>
+              <div>
+                <label className="block text-sm font-medium text-[#111827] mb-2">Prénom</label>
                 <input
                   name="prenom"
                   onChange={handleFieldChange}
                   required
-                  className="border border-gray-300 rounded-md p-2"
+                  placeholder="Votre prénom"
+                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
                 />
               </div>
-              <div className="flex flex-col">
-                <label className="mb-1 text-left">Nom</label>
+              <div>
+                <label className="block text-sm font-medium text-[#111827] mb-2">Nom</label>
                 <input
                   name="nom"
                   onChange={handleFieldChange}
                   required
-                  className="border border-gray-300 rounded-md p-2"
+                  placeholder="Votre nom"
+                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
                 />
               </div>
-              <div className="flex flex-col">
-                <label className="mb-1 text-left">Téléphone</label>
+              <div>
+                <label className="block text-sm font-medium text-[#111827] mb-2">Téléphone</label>
                 <input
                   name="telephone"
                   onChange={handleFieldChange}
                   required
-                  className="border border-gray-300 rounded-md p-2"
+                  placeholder="06 12 34 56 78"
+                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
                 />
                 {fieldErrors.telephone && (
-                  <span className="text-red-500 text-sm">{fieldErrors.telephone}</span>
+                  <span className="text-[#ef4444] text-sm mt-1">{fieldErrors.telephone}</span>
                 )}
               </div>
-              <div className="flex flex-col">
-                <label className="mb-1 text-left">Adresse</label>
+              <div>
+                <label className="block text-sm font-medium text-[#111827] mb-2">Adresse</label>
                 <input
                   name="adresse"
                   onChange={handleFieldChange}
                   required
-                  className="border border-gray-300 rounded-md p-2"
+                  placeholder="123 rue de la Paix"
+                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
                 />
               </div>
-              <div className="flex flex-col">
-                <label className="mb-1 text-left">Ville</label>
+              <div>
+                <label className="block text-sm font-medium text-[#111827] mb-2">Ville</label>
                 <input
                   name="ville"
                   onChange={handleFieldChange}
                   required
-                  className="border border-gray-300 rounded-md p-2"
+                  placeholder="Paris"
+                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
                 />
               </div>
-              <div className="flex flex-col">
-                <label className="mb-1 text-left">Code postal</label>
+              <div>
+                <label className="block text-sm font-medium text-[#111827] mb-2">Code postal</label>
                 <input
                   name="code_postal"
                   onChange={handleFieldChange}
                   required
-                  className="border border-gray-300 rounded-md p-2"
+                  placeholder="75001"
+                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
                 />
               </div>
             </>
           )}
           {role === 'PRO' && (
             <>
-              <div className="flex flex-col">
-                <label className="mb-1 text-left">Prénom</label>
+              <div>
+                <label className="block text-sm font-medium text-[#111827] mb-2">Prénom</label>
                 <input
                   name="prenom"
                   onChange={handleFieldChange}
                   required
-                  className="border border-gray-300 rounded-md p-2"
+                  placeholder="Votre prénom"
+                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
                 />
               </div>
-              <div className="flex flex-col">
-                <label className="mb-1 text-left">Nom</label>
+              <div>
+                <label className="block text-sm font-medium text-[#111827] mb-2">Nom</label>
                 <input
                   name="nom"
                   onChange={handleFieldChange}
                   required
-                  className="border border-gray-300 rounded-md p-2"
+                  placeholder="Votre nom"
+                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
                 />
               </div>
-              <div className="flex flex-col">
-                <label className="mb-1 text-left">Téléphone</label>
+              <div>
+                <label className="block text-sm font-medium text-[#111827] mb-2">Téléphone</label>
                 <input
                   name="telephone"
                   onChange={handleFieldChange}
                   required
-                  className="border border-gray-300 rounded-md p-2"
+                  placeholder="06 12 34 56 78"
+                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
                 />
               </div>
-              <div className="flex flex-col">
-                <label className="mb-1 text-left">Profession</label>
+              <div>
+                <label className="block text-sm font-medium text-[#111827] mb-2">Profession</label>
                 <select
                   name="profession"
                   onChange={handleFieldChange}
                   required
-                  className="border border-gray-300 rounded-md p-2"
+                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] bg-white"
                 >
                   <option value="">Sélectionner</option>
                   {professions.map((p) => (
@@ -302,8 +336,8 @@ export default function SignupPage() {
                   ))}
                 </select>
               </div>
-              <div className="flex flex-col">
-                <label className="mb-1 text-left">Ville de référence</label>
+              <div>
+                <label className="block text-sm font-medium text-[#111827] mb-2">Ville de référence</label>
                 {isLoaded && (
                   <Autocomplete
                     onLoad={onVilleLoad}
@@ -316,7 +350,7 @@ export default function SignupPage() {
                       value={villeNom}
                       onChange={(e) => setVilleNom(e.target.value)}
                       required
-                      className="border border-gray-300 rounded-md p-2 w-full"
+                      className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
                     />
                   </Autocomplete>
                 )}
@@ -324,12 +358,12 @@ export default function SignupPage() {
                   <input
                     disabled
                     placeholder="Chargement..."
-                    className="border border-gray-300 rounded-md p-2"
+                    className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg bg-[#f9fafb] text-[#9ca3af]"
                   />
                 )}
               </div>
-              <div className="flex flex-col">
-                <label className="mb-1 text-left">Rayon d'intervention : {rayonKm} km</label>
+              <div>
+                <label className="block text-sm font-medium text-[#111827] mb-2">Rayon d'intervention : {rayonKm} km</label>
                 <input
                   type="range"
                   min={5}
@@ -337,50 +371,72 @@ export default function SignupPage() {
                   step={5}
                   value={rayonKm}
                   onChange={(e) => setRayonKm(Number(e.target.value))}
-                  className="border border-gray-300 rounded-md"
+                  className="w-full h-2 bg-[#e5e7eb] rounded-lg appearance-none cursor-pointer slider"
+                  style={{
+                    background: `linear-gradient(to right, #f86f4d 0%, #f86f4d ${(rayonKm - 5) / (200 - 5) * 100}%, #e5e7eb ${(rayonKm - 5) / (200 - 5) * 100}%, #e5e7eb 100%)`
+                  }}
                 />
               </div>
-              <div className="flex flex-col">
-                <label className="mb-1 text-left">Numéro SIRET</label>
+              <div>
+                <label className="block text-sm font-medium text-[#111827] mb-2">Numéro SIRET</label>
                 <input
                   name="siret"
                   onChange={handleFieldChange}
                   required
-                  className="border border-gray-300 rounded-md p-2"
+                  placeholder="12345678901234"
+                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
                 />
                 {fieldErrors.siret && (
-                  <span className="text-red-500 text-sm">{fieldErrors.siret}</span>
+                  <span className="text-[#ef4444] text-sm mt-1">{fieldErrors.siret}</span>
                 )}
               </div>
-              <div className="flex flex-col">
-                <label className="mb-1 text-left">Photo de profil</label>
+              <div>
+                <label className="block text-sm font-medium text-[#111827] mb-2">Photo de profil</label>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
-                  className="border border-gray-300 rounded-md p-2"
+                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#f86f4d] file:text-white hover:file:bg-[#fa8265]"
                 />
               </div>
-              <div className="flex flex-col">
-                <label className="mb-1 text-left">Justificatif (PDF ou image)</label>
+              <div>
+                <label className="block text-sm font-medium text-[#111827] mb-2">Justificatif (PDF ou image)</label>
                 <input
                   type="file"
                   accept=".pdf,image/*"
                   onChange={(e) => setJustifFile(e.target.files?.[0] || null)}
-                  className="border border-gray-300 rounded-md p-2"
+                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#f86f4d] file:text-white hover:file:bg-[#fa8265]"
                 />
               </div>
             </>
           )}
-          {error && <div>{error}</div>}
+          {error && (
+            <div className="text-[#ef4444] text-sm bg-[#fee2e2] border border-[#fecaca] rounded-lg p-3">
+              {error}
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
-            className="border border-gray-300 rounded-md p-2"
+            className="w-full bg-[#f86f4d] text-white py-3 px-4 rounded-lg font-medium hover:bg-[#fa8265] focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:ring-offset-2 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Inscription...' : "S'inscrire"}
           </button>
+
+          <div className="text-center">
+            <p className="text-[#6b7280] text-sm">
+              Déjà un compte ?{' '}
+              <Link
+                href="/login"
+                className="text-[#f86f4d] hover:text-[#fa8265] hover:underline font-medium transition-colors duration-150"
+              >
+                Se connecter
+              </Link>
+            </p>
+          </div>
         </form>
+        </div>
       </div>
     </div>
   )

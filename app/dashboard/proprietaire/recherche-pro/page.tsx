@@ -6,6 +6,7 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import Select from '../components/Select';
 import Modal from '../components/Modal';
+import Avatar from '../components/Avatar';
 
 interface Professionnel {
   id: string;
@@ -19,6 +20,7 @@ interface Professionnel {
   tarifs: string;
   moyensPaiement: string[];
   bio: string;
+  photo?: string;
 }
 
 export default function RechercheProPage() {
@@ -63,7 +65,8 @@ export default function RechercheProPage() {
       zoneChalandise: 'Paris et région parisienne (rayon 30km)',
       tarifs: 'Consultation: 80€ - Urgences: 120€ - Déplacement: 25€',
       moyensPaiement: ['Espèces', 'Chèque', 'Virement', 'Carte bancaire'],
-      bio: 'Docteur vétérinaire diplômé de l\'École Nationale Vétérinaire d\'Alfort, spécialisé dans les soins des équidés. Plus de 15 ans d\'expérience dans le diagnostic et le traitement des pathologies équines. Membre de l\'Ordre des Vétérinaires et certifié en médecine équine.'
+      bio: 'Docteur vétérinaire diplômé de l\'École Nationale Vétérinaire d\'Alfort, spécialisé dans les soins des équidés. Plus de 15 ans d\'expérience dans le diagnostic et le traitement des pathologies équines. Membre de l\'Ordre des Vétérinaires et certifié en médecine équine.',
+      photo: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=150&h=150&fit=crop&crop=face'
     },
     {
       id: '2',
@@ -76,7 +79,8 @@ export default function RechercheProPage() {
       zoneChalandise: 'Hauts-de-Seine et Paris (rayon 25km)',
       tarifs: 'Contrôle dentaire: 150€ - Soins dentaires: 200-400€',
       moyensPaiement: ['Espèces', 'Chèque', 'Virement'],
-      bio: 'Spécialiste en dentisterie équine certifié, formé aux techniques les plus récentes de soins dentaires. Plus de 12 ans d\'expérience dans le domaine de la dentisterie équine avec une expertise particulière dans les cas complexes.'
+      bio: 'Spécialiste en dentisterie équine certifié, formé aux techniques les plus récentes de soins dentaires. Plus de 12 ans d\'expérience dans le domaine de la dentisterie équine avec une expertise particulière dans les cas complexes.',
+      photo: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face'
     },
     {
       id: '3',
@@ -247,7 +251,7 @@ export default function RechercheProPage() {
             <select
               value={specialite}
               onChange={(e) => setSpecialite(e.target.value)}
-              className="w-full h-12 px-3 py-2.5 text-base border border-[#e5e7eb] rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] sm:text-sm transition-all duration-150 bg-white"
+              className="w-full h-12 px-3 py-2.5 text-base border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] sm:text-sm transition-all duration-150 bg-white"
             >
               {specialites.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -300,11 +304,11 @@ export default function RechercheProPage() {
               <Card key={pro.id} variant="elevated">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-4">
-                        <div className="w-12 h-12 bg-[#f86f4d] bg-opacity-10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <svg className="w-6 h-6 text-[#f86f4d]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </div>
+                        <Avatar
+                          src={pro.photo}
+                          alt={`Photo de ${pro.nom}`}
+                          size="md"
+                        />
                     
                     <div className="flex-1 min-w-0">
                       <div className="mb-2">
