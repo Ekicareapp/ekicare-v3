@@ -1,43 +1,61 @@
-/* Dashboard Propriétaire - Design System Stripe-like */
+/* Dashboard Propriétaire - Design System Linear */
 
-/* Variables CSS personnalisées */
+/* Variables CSS personnalisées - Charte graphique Ekicare */
 :root {
+  /* Couleurs principales Ekicare */
   --color-primary: #f86f4d;
-  --color-primary-hover: #e55a3a;
-  --color-secondary: #f3f4f6;
+  --color-primary-hover: #e65d3f;
+  --color-primary-light: #ffe5de;
+  --color-secondary: #f9fafb;
   --color-background: #f9fafb;
   --color-surface: #ffffff;
+  --color-surface-hover: #f8f9fa;
   --color-text-primary: #111827;
   --color-text-secondary: #6b7280;
   --color-text-muted: #9ca3af;
+  --color-text-disabled: #d1d5db;
   --color-border: #e5e7eb;
   --color-border-light: #f3f4f6;
+  --color-border-focus: #f86f4d;
   --color-success: #10b981;
-  --color-warning: #f59e0b;
+  --color-success-light: #d1fae5;
+  --color-warning: #facc15;
+  --color-warning-light: #fef3c7;
   --color-error: #ef4444;
+  --color-error-light: #fee2e2;
   --color-info: #3b82f6;
+  --color-info-light: #dbeafe;
   
-  /* Spacing */
+  /* Linear spacing system */
   --space-xs: 0.25rem;
   --space-sm: 0.5rem;
   --space-md: 1rem;
   --space-lg: 1.5rem;
   --space-xl: 2rem;
   --space-2xl: 3rem;
+  --space-3xl: 4rem;
   
-  /* Typography */
+  /* Linear typography */
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
   --font-size-lg: 1.125rem;
   --font-size-xl: 1.25rem;
   --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
   
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  /* Linear shadows */
+  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* Linear border radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
 }
 
 /* Reset et base */
@@ -47,24 +65,26 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  line-height: 1.6;
   color: var(--color-text-primary);
   background-color: var(--color-background);
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
-/* Styles globaux pour le dashboard */
+/* Linear dashboard container */
 .dashboard-container {
   background-color: var(--color-background);
   min-height: 100vh;
 }
 
-/* Typographie */
+/* Linear typography system */
 .dashboard-title {
   font-size: var(--font-size-2xl);
   font-weight: 600;
   color: var(--color-text-primary);
   margin-bottom: var(--space-lg);
   letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 
 .dashboard-subtitle {
@@ -73,6 +93,7 @@ body {
   color: var(--color-text-primary);
   margin-bottom: var(--space-md);
   letter-spacing: -0.025em;
+  line-height: 1.3;
 }
 
 .dashboard-text {
@@ -84,76 +105,137 @@ body {
 .dashboard-text-muted {
   color: var(--color-text-muted);
   font-size: var(--font-size-xs);
+  line-height: 1.5;
 }
 
-/* Transitions fluides */
+/* Linear transitions */
 .transition-smooth {
-  transition: all 0.2s ease-in-out;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Focus states cohérents */
+.transition-fast {
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Linear focus states */
 .focus-primary:focus {
   outline: none;
-  ring: 2px;
-  ring-color: var(--color-primary);
-  ring-offset: 2px;
+  box-shadow: 0 0 0 2px var(--color-primary);
+  border-color: var(--color-border-focus);
 }
 
-/* Styles pour les cartes */
+.focus-ring {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+/* Global focus styles - Ekicare */
+button:focus,
+a:focus,
+input:focus,
+select:focus,
+textarea:focus,
+[tabindex]:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+}
+
+/* Remove default focus rings */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+}
+
+/* Specific focus styles for interactive elements */
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Linear card styles */
 .card-hover {
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.card-hover:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* Styles pour les boutons */
+/* Linear button styles */
 .btn-primary {
   background-color: var(--color-primary);
   color: white;
-  transition: background-color 0.2s ease-in-out;
-}
-
-.btn-primary:hover {
-  background-color: var(--color-primary-hover);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--color-primary);
 }
 
 .btn-secondary {
-  background-color: var(--color-secondary);
+  background-color: var(--color-surface);
   color: var(--color-text-primary);
-  transition: background-color 0.2s ease-in-out;
+  border: 1px solid var(--color-border);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.btn-secondary:hover {
-  background-color: #e5e7eb;
-}
-
-/* Styles pour les inputs */
+/* Linear input styles */
 .input-focus:focus {
   outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(248, 111, 77, 0.1);
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
 }
 
-/* Styles pour les modals */
+/* Button focus styles */
+.btn-primary:focus,
+.btn-secondary:focus,
+.btn-ghost:focus,
+.btn-danger:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+}
+
+/* Input focus styles */
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="tel"]:focus,
+input[type="date"]:focus,
+select:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+}
+
+/* Link focus styles */
+a:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1px #e5e7eb;
+  border-radius: 4px;
+}
+
+/* Linear modal styles */
 .modal-backdrop {
-  backdrop-filter: blur(4px);
-  background-color: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  background-color: rgba(0, 0, 0, 0.4);
 }
 
-/* Styles pour la sidebar */
+.modal-content {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-xl);
+}
+
+/* Linear sidebar styles */
 .sidebar-link {
-  transition: all 0.2s ease-in-out;
-}
-
-.sidebar-link:hover {
-  background-color: #f9fafb;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--radius-md);
 }
 
 .sidebar-link.active {
   background-color: var(--color-primary);
+  color: white;
+  font-weight: 500;
+}
+
+.sidebar-link.active svg {
   color: white;
 }
 
@@ -179,9 +261,6 @@ body {
   border-radius: 3px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
 
 /* Animations subtiles */
 @keyframes fadeIn {
@@ -197,6 +276,19 @@ body {
 
 .fade-in {
   animation: fadeIn 0.3s ease-out;
+}
+
+/* Tailwind animate-in utilities */
+.animate-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.fade-in-0 {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.duration-300 {
+  animation-duration: 300ms;
 }
 
 /* Styles pour les états de chargement */

@@ -2,12 +2,13 @@ import { ReactNode } from 'react';
 
 interface ButtonProps {
   children: ReactNode;
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   className?: string;
   onClick?: () => void;
   disabled?: boolean;
   type?: 'button' | 'submit' | 'reset';
+  icon?: ReactNode;
 }
 
 export default function Button({
@@ -18,13 +19,16 @@ export default function Button({
   onClick,
   disabled = false,
   type = 'button',
+  icon,
 }: ButtonProps) {
-  const baseClasses = 'font-medium rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2';
+  const baseClasses = 'font-medium rounded-lg transition-all duration-150 focus:outline-none inline-flex items-center justify-center gap-2';
   
-  const variantClasses = {
-    primary: 'bg-[#f86f4d] text-white hover:bg-[#e55a3a] focus:ring-[#f86f4d] disabled:bg-gray-300 disabled:cursor-not-allowed',
-    secondary: 'bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-500 disabled:bg-gray-100 disabled:cursor-not-allowed',
-  };
+      const variantClasses = {
+        primary: 'bg-[#f86f4d] text-white disabled:bg-gray-300 disabled:cursor-not-allowed border border-[#f86f4d] hover:bg-[#e65d3f]',
+        secondary: 'bg-white text-[#111827] disabled:bg-gray-100 disabled:cursor-not-allowed border border-[#e5e7eb] hover:bg-[#f9fafb]',
+        ghost: 'bg-transparent text-[#6b7280] disabled:bg-transparent disabled:cursor-not-allowed border border-transparent hover:text-[#111827]',
+        danger: 'bg-[#ef4444] text-white disabled:bg-gray-300 disabled:cursor-not-allowed border border-[#ef4444] hover:bg-red-700',
+      };
   
   const sizeClasses = {
     sm: 'px-3 py-1.5 text-sm',
@@ -39,6 +43,7 @@ export default function Button({
       onClick={onClick}
       disabled={disabled}
     >
+      {icon && <span className="flex-shrink-0">{icon}</span>}
       {children}
     </button>
   );

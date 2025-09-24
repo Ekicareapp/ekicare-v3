@@ -6,6 +6,7 @@ interface ModalProps {
   title?: string;
   children: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  showCloseButton?: boolean;
 }
 
 export default function Modal({ 
@@ -13,7 +14,8 @@ export default function Modal({
   onClose, 
   title, 
   children, 
-  size = 'md' 
+  size = 'md',
+  showCloseButton = true
 }: ModalProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -46,7 +48,7 @@ export default function Modal({
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        className="fixed inset-0 modal-backdrop transition-opacity"
         onClick={onClose}
       />
       
@@ -59,32 +61,34 @@ export default function Modal({
             ${sizeClasses[size]} 
             transform 
             overflow-hidden 
-            rounded-lg 
-            bg-white 
-            shadow-xl 
+            rounded-xl 
+            modal-content 
             transition-all
+            duration-200
           `}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           {title && (
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-5">
               <h3 className="text-lg font-semibold text-gray-900">
                 {title}
               </h3>
-              <button
-                onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              {showCloseButton && (
+                <button
+                  onClick={onClose}
+                  className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-md hover:bg-gray-100"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
           )}
           
           {/* Content */}
-          <div className="px-6 py-4">
+          <div className="px-6 py-6">
             {children}
           </div>
         </div>
