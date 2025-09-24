@@ -116,40 +116,6 @@ export default function ProDashboardPage() {
         </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        <Card variant="elevated" className="text-center">
-          <div className="w-12 h-12 bg-[#f86f4d10] rounded-lg flex items-center justify-center mx-auto mb-4">
-            <Calendar className="w-6 h-6 text-[#f86f4d]" />
-          </div>
-          <h3 className="text-2xl font-bold text-[#111827] mb-1">12</h3>
-          <p className="text-[#6b7280]">Rendez-vous cette semaine</p>
-        </Card>
-
-        <Card variant="elevated" className="text-center">
-          <div className="w-12 h-12 bg-[#f86f4d10] rounded-lg flex items-center justify-center mx-auto mb-4">
-            <Users className="w-6 h-6 text-[#f86f4d]" />
-          </div>
-          <h3 className="text-2xl font-bold text-[#111827] mb-1">45</h3>
-          <p className="text-[#6b7280]">Clients actifs</p>
-        </Card>
-
-        <Card variant="elevated" className="text-center">
-          <div className="w-12 h-12 bg-[#f86f4d10] rounded-lg flex items-center justify-center mx-auto mb-4">
-            <Clock className="w-6 h-6 text-[#f86f4d]" />
-          </div>
-          <h3 className="text-2xl font-bold text-[#111827] mb-1">3</h3>
-          <p className="text-[#6b7280]">En attente</p>
-        </Card>
-
-        <Card variant="elevated" className="text-center">
-          <div className="w-12 h-12 bg-[#f86f4d10] rounded-lg flex items-center justify-center mx-auto mb-4">
-            <Bell className="w-6 h-6 text-[#f86f4d]" />
-          </div>
-          <h3 className="text-2xl font-bold text-[#111827] mb-1">5</h3>
-          <p className="text-[#6b7280]">Notifications</p>
-        </Card>
-      </div>
 
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
