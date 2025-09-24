@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "save": "git add . && if git diff --staged --quiet; then echo '✅ Aucun changement à sauvegarder'; else git commit -m \"savepoint: $(date '+%Y-%m-%d %H:%M:%S')\" && git push origin main && echo '✅ Sauvegarde effectuée avec succès'; fi"
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.7",
