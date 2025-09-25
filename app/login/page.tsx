@@ -36,16 +36,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#f9fafb] flex items-center justify-center px-4 overflow-x-hidden">
       <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="flex justify-center mb-8">
-          <div className="w-12 h-12">
-            <img
-              src="/logo-ekicare.png"
-              alt="EkiCare"
-              className="w-full h-full object-contain"
-            />
-          </div>
-        </div>
 
         {/* Card */}
         <div className="bg-white rounded-lg border border-[#e5e7eb] p-4 sm:p-8">

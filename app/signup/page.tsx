@@ -33,6 +33,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [roleError, setRoleError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({})
+  const [stripeLoading, setStripeLoading] = useState(false)
 
   function handleFieldChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setFields({ ...fields, [e.target.name]: e.target.value })
@@ -53,6 +54,32 @@ export default function SignupPage() {
       setVilleNom(place.formatted_address || '')
       setVilleLat(place.geometry?.location?.lat() || null)
       setVilleLng(place.geometry?.location?.lng() || null)
+    }
+  }
+
+  // Fonction pour gérer la souscription Stripe
+  async function handleStripeSubscription() {
+    setStripeLoading(true)
+    try {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      const data = await response.json()
+      
+      if (data.url) {
+        // Rediriger vers Stripe Checkout
+        window.location.href = data.url
+      } else {
+        setError('Erreur lors de la création de la session de paiement')
+      }
+    } catch (err: any) {
+      setError('Erreur lors de la connexion au service de paiement')
+    } finally {
+      setStripeLoading(false)
     }
   }
 
@@ -137,16 +164,6 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-[#f9fafb] flex items-center justify-center px-4 py-8 overflow-x-hidden">
       <div className="w-full max-w-md sm:max-w-lg">
-        {/* Logo */}
-        <div className="flex justify-center mb-6 sm:mb-8">
-          <div className="w-12 h-12 sm:w-16 sm:h-16">
-            <img
-              src="/logo-ekicare.png"
-              alt="EkiCare"
-              className="w-full h-full object-contain"
-            />
-          </div>
-        </div>
 
         {/* Card */}
         <div className="bg-white rounded-lg border border-[#e5e7eb] p-4 sm:p-8">
@@ -407,6 +424,26 @@ export default function SignupPage() {
                   onChange={(e) => setJustifFile(e.target.files?.[0] || null)}
                   className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#f86f4d] file:text-white hover:file:bg-[#fa8265]"
                 />
+              </div>
+              
+              {/* Bouton de souscription Stripe */}
+              <div className="mt-6 p-4 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg">
+                <div className="text-center mb-4">
+                  <h3 className="text-lg font-semibold text-[#111827] mb-2">
+                    Souscription Premium
+                  </h3>
+                  <p className="text-sm text-[#6b7280]">
+                    Accédez à toutes les fonctionnalités professionnelles
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleStripeSubscription}
+                  disabled={stripeLoading}
+                  className="w-full bg-[#635bff] text-white py-3 px-4 min-h-[44px] rounded-lg font-medium hover:bg-[#5a52e8] focus:outline-none focus:ring-2 focus:ring-[#635bff] focus:ring-offset-2 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-base"
+                >
+                  {stripeLoading ? 'Redirection...' : 'Souscrire'}
+                </button>
               </div>
             </>
           )}
