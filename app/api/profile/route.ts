@@ -98,6 +98,10 @@ export async function PATCH(request: Request) {
       'rayon_km',
       'siret',
       'photo_url',
+      'bio',
+      'experience_years',
+      'price_range',
+      'payment_methods',
     ]
     table = 'pro_profiles'
     if ('justificatif_url' in body) {

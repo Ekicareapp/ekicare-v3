@@ -14,29 +14,109 @@ interface RendezVous {
   type: string;
   date: string;
   heure: string;
-  statut: 'a-venir' | 'en-attente' | 'confirme' | 'termine' | 'replanifie';
+  statut: 'en-attente' | 'a-venir' | 'termine' | 'refuse';
   notes?: string;
   lieu?: string;
   specialite?: string;
   compteRendu?: string;
+  dateCreation?: string;
+  dateModification?: string;
+}
+
+interface ReplanificationFormProps {
+  rendezVous: RendezVous;
+  onSubmit: (newDate: string, newTime: string) => void;
+  onCancel: () => void;
+}
+
+function ReplanificationForm({ rendezVous, onSubmit, onCancel }: ReplanificationFormProps) {
+  const [newDate, setNewDate] = useState('');
+  const [newTime, setNewTime] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newDate && newTime) {
+      onSubmit(newDate, newTime);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Informations actuelles */}
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <h4 className="text-sm font-medium text-gray-700 mb-2">Rendez-vous actuel</h4>
+        <p className="text-sm text-gray-600">
+          {rendezVous.equide} - {rendezVous.type}
+        </p>
+        <p className="text-sm text-gray-600">
+          {rendezVous.date} à {rendezVous.heure}
+        </p>
+        <p className="text-sm text-gray-600">
+          {rendezVous.professionnel} - {rendezVous.lieu}
+        </p>
+      </div>
+
+      {/* Nouvelle date */}
+      <div>
+        <label htmlFor="newDate" className="block text-sm font-medium text-gray-700 mb-2">
+          Nouvelle date *
+        </label>
+        <input
+          type="date"
+          id="newDate"
+          value={newDate}
+          onChange={(e) => setNewDate(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#f86f4d] focus:border-transparent"
+          required
+          min={new Date().toISOString().split('T')[0]}
+        />
+      </div>
+
+      {/* Nouvelle heure */}
+      <div>
+        <label htmlFor="newTime" className="block text-sm font-medium text-gray-700 mb-2">
+          Nouvelle heure *
+        </label>
+        <input
+          type="time"
+          id="newTime"
+          value={newTime}
+          onChange={(e) => setNewTime(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#f86f4d] focus:border-transparent"
+          required
+        />
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={onCancel}
+        >
+          Annuler
+        </Button>
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={!newDate || !newTime}
+        >
+          Proposer la replanification
+        </Button>
+      </div>
+    </form>
+  );
 }
 
 export default function RendezVousPage() {
-  const [activeTab, setActiveTab] = useState('a-venir');
+  const [activeTab, setActiveTab] = useState('en-attente');
   const [selectedRendezVous, setSelectedRendezVous] = useState<RendezVous | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCompteRenduModalOpen, setIsCompteRenduModalOpen] = useState(false);
+  const [isReplanificationModalOpen, setIsReplanificationModalOpen] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
 
-  const tabs = [
-    { id: 'a-venir', label: 'À venir', count: 3 },
-    { id: 'en-attente', label: 'En attente', count: 1 },
-    { id: 'confirme', label: 'Confirmés', count: 2 },
-    { id: 'replanifie', label: 'Replanifiés', count: 1 },
-    { id: 'termine', label: 'Terminés', count: 8 }
-  ];
-
-  const rendezVous: RendezVous[] = [
+  const [rendezVous, setRendezVous] = useState<RendezVous[]>([
     {
       id: '1',
       equide: 'Bella',
@@ -79,8 +159,25 @@ export default function RendezVousPage() {
       date: '2024-01-20',
       heure: '09:30',
       statut: 'en-attente',
+      notes: 'Nouvelle demande de soin - en cours de négociation',
       lieu: 'Cabinet Lefebvre',
-      specialite: 'Ostéopathie équine'
+      specialite: 'Ostéopathie équine',
+      dateCreation: '2024-01-12',
+      dateModification: '2024-01-12'
+    },
+    {
+      id: '11',
+      equide: 'Luna',
+      professionnel: 'Dr. Martin',
+      type: 'Consultation',
+      date: '2024-02-05',
+      heure: '14:00',
+      statut: 'en-attente',
+      notes: 'Replanification proposée par le propriétaire - en attente de validation du pro',
+      lieu: 'Clinique vétérinaire Martin',
+      specialite: 'Médecine générale',
+      dateCreation: '2024-01-15',
+      dateModification: '2024-01-18'
     },
     {
       id: '5',
@@ -89,9 +186,12 @@ export default function RendezVousPage() {
       type: 'Vaccination',
       date: '2024-01-15',
       heure: '11:00',
-      statut: 'confirme',
+      statut: 'termine',
       lieu: 'Clinique vétérinaire Martin',
-      specialite: 'Médecine générale'
+      specialite: 'Médecine générale',
+      compteRendu: 'Vaccination réalisée avec succès. Thunder a bien réagi au vaccin.',
+      dateCreation: '2024-01-05',
+      dateModification: '2024-01-15'
     },
     {
       id: '6',
@@ -100,9 +200,12 @@ export default function RendezVousPage() {
       type: 'Contrôle général',
       date: '2024-01-10',
       heure: '14:00',
-      statut: 'confirme',
+      statut: 'termine',
       lieu: 'Cabinet Dubois',
-      specialite: 'Médecine générale'
+      specialite: 'Médecine générale',
+      compteRendu: 'Contrôle général effectué. Luna est en bonne santé.',
+      dateCreation: '2024-01-02',
+      dateModification: '2024-01-10'
     },
     {
       id: '7',
@@ -111,13 +214,43 @@ export default function RendezVousPage() {
       type: 'Vaccination',
       date: '2024-01-30',
       heure: '10:30',
-      statut: 'replanifie',
-      notes: 'Reprogrammé à la demande du propriétaire',
+      statut: 'en-attente',
+      notes: 'Replanification proposée par le professionnel - en attente de validation',
       lieu: 'Clinique vétérinaire Martin',
-      specialite: 'Médecine générale'
+      specialite: 'Médecine générale',
+      dateCreation: '2024-01-08',
+      dateModification: '2024-01-14'
     },
     {
       id: '8',
+      equide: 'Thunder',
+      professionnel: 'Dr. Lefebvre',
+      type: 'Ostéopathie',
+      date: '2024-01-25',
+      heure: '15:45',
+      statut: 'refuse',
+      notes: 'Rendez-vous refusé par le professionnel - créneau non disponible',
+      lieu: 'Cabinet Lefebvre',
+      specialite: 'Ostéopathie équine',
+      dateCreation: '2024-01-11',
+      dateModification: '2024-01-11'
+    },
+    {
+      id: '13',
+      equide: 'Luna',
+      professionnel: 'Dr. Dubois',
+      type: 'Contrôle dentaire',
+      date: '2024-02-10',
+      heure: '09:30',
+      statut: 'refuse',
+      notes: 'Rendez-vous refusé par le propriétaire - changement de planning',
+      lieu: 'Cabinet Dubois',
+      specialite: 'Dentisterie équine',
+      dateCreation: '2024-01-20',
+      dateModification: '2024-01-22'
+    },
+    {
+      id: '9',
       equide: 'Bella',
       professionnel: 'Dr. Martin',
       type: 'Vaccination',
@@ -126,10 +259,12 @@ export default function RendezVousPage() {
       statut: 'termine',
       lieu: 'Clinique vétérinaire Martin',
       specialite: 'Médecine générale',
-      compteRendu: 'Vaccination réalisée avec succès. Bella a bien réagi au vaccin. Aucune réaction secondaire observée. Prochaine vaccination prévue dans 6 mois.'
+      compteRendu: 'Vaccination réalisée avec succès. Bella a bien réagi au vaccin. Aucune réaction secondaire observée. Prochaine vaccination prévue dans 6 mois.',
+      dateCreation: '2023-12-10',
+      dateModification: '2023-12-20'
     },
     {
-      id: '9',
+      id: '10',
       equide: 'Thunder',
       professionnel: 'Dr. Lefebvre',
       type: 'Ostéopathie',
@@ -137,26 +272,128 @@ export default function RendezVousPage() {
       heure: '15:45',
       statut: 'termine',
       lieu: 'Cabinet Lefebvre',
-      specialite: 'Ostéopathie équine'
+      specialite: 'Ostéopathie équine',
+      compteRendu: 'Séance d\'ostéopathie réalisée. Thunder présente une bonne mobilité. Prochaine séance recommandée dans 3 mois.',
+      dateCreation: '2023-12-05',
+      dateModification: '2023-12-15'
+    },
+    {
+      id: '12',
+      equide: 'Bella',
+      professionnel: 'Dr. Martin',
+      type: 'Consultation',
+      date: '2024-01-05',
+      heure: '11:00',
+      statut: 'termine',
+      lieu: 'Clinique vétérinaire Martin',
+      specialite: 'Médecine générale',
+      compteRendu: 'Consultation de routine effectuée. Bella est en excellente santé. Aucun problème détecté. Prochaine visite recommandée dans 6 mois.',
+      dateCreation: '2023-12-20',
+      dateModification: '2024-01-05'
     }
+  ]);
+
+  // Calculer les compteurs dynamiquement
+  const getTabCounts = () => {
+    return {
+      'en-attente': rendezVous.filter(rdv => rdv.statut === 'en-attente').length,
+      'a-venir': rendezVous.filter(rdv => rdv.statut === 'a-venir').length,
+      'refuse': rendezVous.filter(rdv => rdv.statut === 'refuse').length,
+      'termine': rendezVous.filter(rdv => rdv.statut === 'termine').length
+    };
+  };
+
+  const tabCounts = getTabCounts();
+  
+  const tabs = [
+    { id: 'en-attente', label: 'En attente', count: tabCounts['en-attente'] },
+    { id: 'a-venir', label: 'À venir', count: tabCounts['a-venir'] },
+    { id: 'refuse', label: 'Refusés', count: tabCounts['refuse'] },
+    { id: 'termine', label: 'Terminés', count: tabCounts['termine'] }
   ];
 
   const getStatusLabel = (statut: string) => {
-    switch (statut) {
-      case 'a-venir':
-        return 'À venir';
-      case 'en-attente':
-        return 'En attente';
-      case 'confirme':
-        return 'Confirmé';
-      case 'replanifie':
-        return 'Replanifié';
-      case 'termine':
-        return 'Terminé';
-      default:
-        return statut;
+    const labels = {
+      'en-attente': 'En attente',
+      'a-venir': 'À venir',
+      'refuse': 'Refusé',
+      'termine': 'Terminé'
+    };
+    return labels[statut as keyof typeof labels] || statut;
+  };
+
+  // Fonction pour vérifier et mettre à jour automatiquement les rendez-vous passés
+  const checkAndUpdatePastRendezVous = () => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    setRendezVous(prev => prev.map(rdv => {
+      if (rdv.statut === 'a-venir' && rdv.date < today) {
+        return { 
+          ...rdv, 
+          statut: 'termine' as any, 
+          notes: (rdv.notes || '') + (rdv.notes ? ' | ' : '') + 'Passé automatiquement en terminé',
+          dateModification: today
+        };
+      }
+      return rdv;
+    }));
+  };
+
+  // Fonction pour mettre à jour le statut d'un rendez-vous
+  const updateRendezVousStatus = async (rdvId: string, newStatus: string, notes?: string) => {
+    try {
+      // TODO: Implémenter la mise à jour en base Supabase
+      console.log(`Mise à jour du rendez-vous ${rdvId} vers le statut ${newStatus}`);
+      
+      // Mise à jour locale pour l'instant
+      setRendezVous(prev => prev.map(rdv => 
+        rdv.id === rdvId 
+          ? { 
+              ...rdv, 
+              statut: newStatus as any, 
+              dateModification: new Date().toISOString().split('T')[0],
+              notes: notes ? `${rdv.notes || ''}${rdv.notes ? ' | ' : ''}${notes}` : rdv.notes
+            }
+          : rdv
+      ));
+      
+      // Vérifier les rendez-vous passés après chaque mise à jour
+      checkAndUpdatePastRendezVous();
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du statut:', error);
     }
   };
+
+  // Vérifier automatiquement les rendez-vous "À venir" qui sont passés
+  useEffect(() => {
+    checkAndUpdatePastRendezVous();
+  }, []);
+
+  useEffect(() => {
+    const checkPastAppointments = () => {
+      const today = new Date().toISOString().split('T')[0];
+      
+      setRendezVous(prev => prev.map(rdv => {
+        if (rdv.statut === 'a-venir' && rdv.date < today) {
+          return {
+            ...rdv,
+            statut: 'termine' as any,
+            dateModification: new Date().toISOString().split('T')[0],
+            notes: `${rdv.notes || ''}${rdv.notes ? ' | ' : ''}Rendez-vous automatiquement marqué comme terminé (date passée)`
+          };
+        }
+        return rdv;
+      }));
+    };
+
+    // Vérifier immédiatement
+    checkPastAppointments();
+
+    // Vérifier toutes les heures
+    const interval = setInterval(checkPastAppointments, 60 * 60 * 1000); // 1 heure
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleViewDetails = (rdv: RendezVous) => {
     setSelectedRendezVous(rdv);
@@ -166,6 +403,32 @@ export default function RendezVousPage() {
   const handleViewCompteRendu = (rdv: RendezVous) => {
     setSelectedRendezVous(rdv);
     setIsCompteRenduModalOpen(true);
+  };
+
+  const handleOpenReplanificationModal = (rdv: RendezVous) => {
+    setSelectedRendezVous(rdv);
+    setIsReplanificationModalOpen(true);
+  };
+
+  const handleSubmitReplanification = (newDate: string, newTime: string) => {
+    if (selectedRendezVous) {
+      // Mettre à jour le rendez-vous avec la nouvelle date/heure proposée
+      setRendezVous(prev => prev.map(rdv => 
+        rdv.id === selectedRendezVous.id 
+          ? { 
+              ...rdv, 
+              date: newDate,
+              heure: newTime,
+              notes: (rdv.notes || '') + (rdv.notes ? ' | ' : '') + `Replanification proposée par le propriétaire: ${newDate} à ${newTime}`,
+              dateModification: new Date().toISOString().split('T')[0]
+            }
+          : rdv
+      ));
+      
+      // Fermer la popup
+      setIsReplanificationModalOpen(false);
+      setSelectedRendezVous(null);
+    }
   };
 
   const toggleMenu = (rdvId: string) => {
@@ -189,54 +452,14 @@ export default function RendezVousPage() {
     ];
 
     switch (rdv.statut) {
-      case 'a-venir':
       case 'en-attente':
-        actions.push({
-          label: 'Annuler',
-          icon: <X className="w-4 h-4" />,
-          onClick: () => {
-            // TODO: Implémenter l'annulation
-            closeMenu();
-          }
-        });
-        break;
-      
-      case 'confirme':
+        // Le propriétaire peut accepter, refuser ou proposer une replanification
         actions.push(
           {
-            label: 'Demander une replanification',
-            icon: <RotateCcw className="w-4 h-4" />,
-            onClick: () => {
-              // TODO: Implémenter la replanification
-              closeMenu();
-            }
-          },
-          {
-            label: 'Annuler',
-            icon: <X className="w-4 h-4" />,
-            onClick: () => {
-              // TODO: Implémenter l'annulation
-              closeMenu();
-            }
-          }
-        );
-        break;
-      
-      case 'replanifie':
-        actions.push(
-          {
-            label: 'Accepter la nouvelle date',
+            label: 'Accepter',
             icon: <CheckCircle className="w-4 h-4" />,
             onClick: () => {
-              // TODO: Implémenter l'acceptation
-              closeMenu();
-            }
-          },
-          {
-            label: 'Proposer un autre créneau',
-            icon: <Clock className="w-4 h-4" />,
-            onClick: () => {
-              // TODO: Implémenter la contre-proposition
+              updateRendezVousStatus(rdv.id, 'a-venir', 'Demande acceptée par le propriétaire');
               closeMenu();
             }
           },
@@ -244,11 +467,28 @@ export default function RendezVousPage() {
             label: 'Refuser',
             icon: <X className="w-4 h-4" />,
             onClick: () => {
-              // TODO: Implémenter le refus
+              updateRendezVousStatus(rdv.id, 'refuse', 'Demande refusée par le propriétaire');
+              closeMenu();
+            }
+          },
+          {
+            label: 'Proposer une replanification',
+            icon: <RotateCcw className="w-4 h-4" />,
+            onClick: () => {
+              handleOpenReplanificationModal(rdv);
               closeMenu();
             }
           }
         );
+        break;
+      
+      case 'a-venir':
+        // Pas d'actions possibles - le rendez-vous passe automatiquement en Terminés quand la date est dépassée
+        break;
+      
+      
+      case 'refuse':
+        // Aucune action spécifique pour les rendez-vous refusés
         break;
       
       case 'termine':
@@ -285,7 +525,7 @@ export default function RendezVousPage() {
   }, [activeMenuId]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 overflow-x-hidden">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-semibold text-gray-900 mb-2">
@@ -392,7 +632,7 @@ export default function RendezVousPage() {
       >
         {selectedRendezVous && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <div>
                 <h4 className="text-sm font-medium text-gray-500 mb-2">Équidé</h4>
                 <p className="text-lg font-semibold text-gray-900">{selectedRendezVous.equide}</p>
@@ -485,6 +725,22 @@ export default function RendezVousPage() {
               </Button>
             </div>
           </div>
+        )}
+      </Modal>
+
+      {/* Modal Replanification */}
+      <Modal
+        isOpen={isReplanificationModalOpen}
+        onClose={() => setIsReplanificationModalOpen(false)}
+        title="Proposer une replanification"
+        size="md"
+      >
+        {selectedRendezVous && (
+          <ReplanificationForm
+            rendezVous={selectedRendezVous}
+            onSubmit={handleSubmitReplanification}
+            onCancel={() => setIsReplanificationModalOpen(false)}
+          />
         )}
       </Modal>
     </div>

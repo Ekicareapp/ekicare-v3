@@ -24,13 +24,13 @@ export default function Tabs({
 }: TabsProps) {
   if (variant === 'pills') {
     return (
-      <div className={`flex ${className}`}>
+      <div className={`flex overflow-x-auto whitespace-nowrap scrollbar-hide ${className}`}>
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={`
-              inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 focus:outline-none
+              inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 focus:outline-none flex-shrink-0
               ${activeTab === tab.id
                 ? 'bg-[#f86f4d15] text-[#f86f4d]'
                 : 'text-[#6b7280] hover:bg-[#f86f4d10]'

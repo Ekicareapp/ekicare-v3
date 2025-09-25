@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Card from '@/app/dashboard/pro/components/Card';
 import Button from '@/app/dashboard/pro/components/Button';
 import NouvelleTourneeModal from '@/app/dashboard/pro/components/NouvelleTourneeModal';
+import ClientDetailModal from '@/app/dashboard/pro/components/ClientDetailModal';
 import { Calendar, MapPin, Clock, Users, Phone, Navigation, Plus, ChevronDown } from 'lucide-react';
 
 interface RendezVous {
@@ -16,6 +17,10 @@ interface RendezVous {
   equide: string;
   telephone: string;
   statut: 'planifie' | 'en-cours' | 'termine' | 'annule';
+  email?: string;
+  equides?: string[];
+  derniereVisite?: string;
+  totalRendezVous?: number;
 }
 
 interface Tournee {
@@ -30,6 +35,8 @@ interface Tournee {
 export default function TourneesPage() {
   const [selectedTournee, setSelectedTournee] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
 
   const tournees: Tournee[] = [
     {
@@ -48,7 +55,11 @@ export default function TourneesPage() {
           type: 'Consultation générale',
           equide: 'Bella',
           telephone: '06 12 34 56 78',
-          statut: 'planifie'
+          statut: 'planifie',
+          email: 'marie.dubois@email.com',
+          equides: ['Bella', 'Thunder'],
+          derniereVisite: '2024-01-10',
+          totalRendezVous: 8
         },
         {
           id: '1-2',
@@ -59,7 +70,11 @@ export default function TourneesPage() {
           type: 'Vaccination',
           equide: 'Thunder',
           telephone: '06 23 45 67 89',
-          statut: 'planifie'
+          statut: 'planifie',
+          email: 'pierre.martin@email.com',
+          equides: ['Luna'],
+          derniereVisite: '2024-01-08',
+          totalRendezVous: 5
         },
         {
           id: '1-3',
@@ -70,7 +85,11 @@ export default function TourneesPage() {
           type: 'Contrôle dentaire',
           equide: 'Luna',
           telephone: '06 34 56 78 90',
-          statut: 'planifie'
+          statut: 'planifie',
+          email: 'sophie.laurent@email.com',
+          equides: ['Spirit', 'Storm', 'Luna'],
+          derniereVisite: '2024-01-12',
+          totalRendezVous: 12
         }
       ]
     },
@@ -189,6 +208,25 @@ export default function TourneesPage() {
     window.open(`https://www.google.com/maps/search/?api=1&query=${address}`, '_blank');
   };
 
+  const handleViewClient = (rdv: RendezVous) => {
+    // Extraire le prénom et nom du client
+    const [prenom, ...nomParts] = rdv.client.split(' ');
+    const nom = nomParts.join(' ');
+    
+    setSelectedClient({
+      prenom,
+      nom,
+      email: rdv.email,
+      telephone: rdv.telephone,
+      adresse: rdv.adresse,
+      ville: rdv.ville,
+      equides: rdv.equides,
+      derniereVisite: rdv.derniereVisite,
+      totalRendezVous: rdv.totalRendezVous
+    });
+    setIsClientModalOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -285,7 +323,7 @@ export default function TourneesPage() {
                         variant="ghost"
                         size="sm"
                         icon={<Users className="w-4 h-4" />}
-                        onClick={() => {/* Voir fiche client */}}
+                        onClick={() => handleViewClient(rdv)}
                         className="text-gray-500 hover:text-[#f86f4d]"
                       >
                         Fiche
@@ -341,6 +379,13 @@ export default function TourneesPage() {
       <NouvelleTourneeModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+      />
+
+      {/* Modal Détail client */}
+      <ClientDetailModal
+        isOpen={isClientModalOpen}
+        onClose={() => setIsClientModalOpen(false)}
+        client={selectedClient}
       />
     </div>
   );

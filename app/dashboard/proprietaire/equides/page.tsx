@@ -6,7 +6,7 @@ import Button from '../components/Button';
 import Modal from '../components/Modal';
 import Input from '../components/Input';
 import Select from '../components/Select';
-import { Plus } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 
 interface Equide {
   id: string;
@@ -15,12 +15,12 @@ interface Equide {
   sexe: string;
   race: string;
   robe: string;
+  description?: string;
   dateAjout: string;
 }
 
 export default function EquidesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedEquide, setSelectedEquide] = useState<Equide | null>(null);
   const [equides, setEquides] = useState<Equide[]>([
@@ -31,6 +31,7 @@ export default function EquidesPage() {
       sexe: 'Jument',
       race: 'Pur-sang arabe',
       robe: 'Bai',
+      description: 'Jument très douce et calme, parfaite pour les débutants. Excellente en dressage.',
       dateAjout: '2024-01-10'
     },
     {
@@ -40,6 +41,7 @@ export default function EquidesPage() {
       sexe: 'Étalon',
       race: 'Quarter Horse',
       robe: 'Noir',
+      description: 'Étalon puissant et énergique, idéal pour le travail du bétail et les compétitions.',
       dateAjout: '2024-01-05'
     },
     {
@@ -49,6 +51,7 @@ export default function EquidesPage() {
       sexe: 'Jument',
       race: 'Friesian',
       robe: 'Noir',
+      description: 'Jument élégante et gracieuse, très appréciée pour les spectacles et le dressage.',
       dateAjout: '2024-01-15'
     }
   ]);
@@ -58,7 +61,8 @@ export default function EquidesPage() {
     age: '',
     sexe: '',
     race: '',
-    robe: ''
+    robe: '',
+    description: ''
   });
 
   const sexeOptions = [
@@ -108,6 +112,7 @@ export default function EquidesPage() {
       sexe: formData.sexe,
       race: formData.race,
       robe: formData.robe,
+      description: formData.description,
       dateAjout: new Date().toISOString().split('T')[0]
     };
 
@@ -117,15 +122,12 @@ export default function EquidesPage() {
       age: '',
       sexe: '',
       race: '',
-      robe: ''
+      robe: '',
+      description: ''
     });
     setIsModalOpen(false);
   };
 
-  const handleViewEquide = (equide: Equide) => {
-    setSelectedEquide(equide);
-    setIsViewModalOpen(true);
-  };
 
   const handleEditEquide = (equide: Equide) => {
     setSelectedEquide(equide);
@@ -134,7 +136,8 @@ export default function EquidesPage() {
       age: equide.age.toString(),
       sexe: equide.sexe,
       race: equide.race,
-      robe: equide.robe
+      robe: equide.robe,
+      description: equide.description || ''
     });
     setIsEditModalOpen(true);
   };
@@ -152,7 +155,8 @@ export default function EquidesPage() {
       age: parseInt(formData.age),
       sexe: formData.sexe,
       race: formData.race,
-      robe: formData.robe
+      robe: formData.robe,
+      description: formData.description
     };
 
     setEquides(prev => prev.map(equide => 
@@ -164,21 +168,28 @@ export default function EquidesPage() {
       age: '',
       sexe: '',
       race: '',
-      robe: ''
+      robe: '',
+      description: ''
     });
     setSelectedEquide(null);
     setIsEditModalOpen(false);
   };
 
+  const handleDeleteEquide = (equideId: string) => {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cet équidé ?')) {
+      setEquides(prev => prev.filter(equide => equide.id !== equideId));
+    }
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-semibold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-[#111827] mb-2">
             Mes équidés
           </h1>
-          <p className="text-gray-600 text-lg">
+          <p className="text-[#6b7280] text-lg">
             Gérez vos équidés et leurs informations
           </p>
         </div>
@@ -193,42 +204,44 @@ export default function EquidesPage() {
       </div>
 
       {/* Equides List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {equides.map((equide) => (
-          <Card key={equide.id} variant="elevated">
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">{equide.nom}</h3>
-              <p className="text-sm text-gray-600 mb-4">{equide.age} ans • {equide.sexe}</p>
+          <Card key={equide.id} variant="elevated" className="relative">
+            {/* Icônes d'action en haut à droite */}
+            <div className="absolute top-4 right-4 flex space-x-1">
+              {/* Icône crayon (modifier) */}
+              <button
+                onClick={() => handleEditEquide(equide)}
+                className="p-2 text-gray-400 hover:text-[#f86f4d] hover:bg-[#fef2f2] rounded-lg transition-all duration-200"
+                title="Modifier l'équidé"
+              >
+                <Edit className="w-4 h-4" />
+              </button>
               
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500">Race</span>
-                  <span className="text-sm font-semibold text-gray-900">{equide.race}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500">Robe</span>
-                  <span className="text-sm font-semibold text-gray-900">{equide.robe}</span>
-                </div>
-              </div>
+              {/* Icône poubelle (supprimer) */}
+              <button
+                onClick={() => handleDeleteEquide(equide.id)}
+                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                title="Supprimer l'équidé"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
             
-            <div className="flex space-x-3">
-              <Button 
-                variant="secondary" 
-                size="sm" 
-                className="flex-1 cursor-pointer"
-                onClick={() => handleViewEquide(equide)}
-              >
-                Voir l'équidé
-              </Button>
-              <Button 
-                variant="secondary" 
-                size="sm" 
-                className="flex-1 cursor-pointer"
-                onClick={() => handleEditEquide(equide)}
-              >
-                Modifier
-              </Button>
+            <div className="pr-20">
+              {/* Nom en titre (gras, plus visible) */}
+              <h3 className="text-xl font-bold text-gray-900 mb-2">{equide.nom}</h3>
+              
+              {/* Race + âge + sexe dans une ligne compacte */}
+              <p className="text-sm text-gray-600 mb-2">{equide.race} • {equide.age} ans • {equide.sexe}</p>
+              
+              {/* Couleur (robe) */}
+              <p className="text-sm text-gray-500 mb-3">Robe: {equide.robe}</p>
+              
+              {/* Description en bas (texte plus petit, italique) */}
+              {equide.description && (
+                <p className="text-xs text-gray-500 italic leading-relaxed">{equide.description}</p>
+              )}
             </div>
           </Card>
         ))}
@@ -297,6 +310,16 @@ export default function EquidesPage() {
             />
           </div>
           
+          <div>
+            <Input
+              label="Description (optionnel)"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              placeholder="Décrivez l'équidé, son caractère, ses particularités..."
+            />
+          </div>
+          
           <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
             <Button
               type="button"
@@ -315,41 +338,6 @@ export default function EquidesPage() {
         </form>
       </Modal>
 
-      {/* View Equide Modal */}
-      <Modal
-        isOpen={isViewModalOpen}
-        onClose={() => setIsViewModalOpen(false)}
-        title="Informations de l'équidé"
-        size="md"
-      >
-        {selectedEquide && (
-          <div className="space-y-6">
-            <div className="text-center">
-              <h3 className="text-2xl font-semibold text-gray-900 mb-2">{selectedEquide.nom}</h3>
-              <p className="text-lg text-gray-600">{selectedEquide.age} ans • {selectedEquide.sexe}</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Race</h4>
-                <p className="text-lg font-semibold text-gray-900">{selectedEquide.race}</p>
-              </div>
-              
-              <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Robe</h4>
-                <p className="text-lg font-semibold text-gray-900">{selectedEquide.robe}</p>
-              </div>
-              
-              <div>
-                <h4 className="text-sm font-medium text-gray-500 mb-2">Ajouté le</h4>
-                <p className="text-lg font-semibold text-gray-900">
-                  {new Date(selectedEquide.dateAjout).toLocaleDateString('fr-FR')}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
 
       {/* Edit Equide Modal */}
       <Modal
@@ -411,6 +399,16 @@ export default function EquidesPage() {
               options={robeOptions}
               placeholder="Sélectionner la robe"
               required
+            />
+          </div>
+          
+          <div>
+            <Input
+              label="Description (optionnel)"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              placeholder="Décrivez l'équidé, son caractère, ses particularités..."
             />
           </div>
           

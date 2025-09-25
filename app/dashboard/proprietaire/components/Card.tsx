@@ -18,9 +18,9 @@ export default function Card({
   variant = 'default'
 }: CardProps) {
   const paddingClasses = {
-    sm: 'p-4',
-    md: 'p-6',
-    lg: 'p-8'
+    sm: 'p-3',
+    md: 'p-4',
+    lg: 'p-5'
   };
 
   const variantClasses = {

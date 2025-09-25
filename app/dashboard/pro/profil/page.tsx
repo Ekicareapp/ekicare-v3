@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Card from '@/app/dashboard/pro/components/Card';
 import Button from '@/app/dashboard/pro/components/Button';
 import Input from '@/app/dashboard/pro/components/Input';
@@ -8,22 +8,25 @@ import { User, Mail, Phone, MapPin, Briefcase, Calendar, CreditCard, Save, Alert
 import { supabase } from '@/lib/supabaseClient';
 
 const professions = [
-  'Vétérinaire équin',
-  'Ostéopathe équin',
-  'Dentiste équin',
+  'Ostéopathe',
+  'Vétérinaire',
   'Maréchal-ferrant',
-  'Shiatsu équin',
-  'Naturopathe équin',
-  'Masseur équin',
-  'Comportementaliste équin',
-  'Kinésithérapeute équin',
+  'Dentiste',
+  'Physiothérapeute',
+  'Autre'
 ];
 
 const moyensPaiementOptions = [
+  'CB',
   'Espèces',
   'Chèque',
-  'Virement',
-  'Carte bancaire'
+  'Virement'
+];
+
+const priceRangeOptions = [
+  { value: '€', label: '€ - Économique' },
+  { value: '€€', label: '€€ - Moyen' },
+  { value: '€€€', label: '€€€ - Premium' }
 ];
 
 export default function ProfilPage() {
@@ -31,22 +34,74 @@ export default function ProfilPage() {
     prenom: 'Dr. Jean',
     nom: 'Martin',
     telephone: '06 12 34 56 78',
-    profession: 'Vétérinaire équin',
+    profession: 'Vétérinaire',
     villeReference: 'Paris',
     rayonIntervention: 30,
     siret: '12345678901234',
     photo: null as File | null,
     photoPreview: null as string | null,
     bio: 'Vétérinaire spécialisé dans les soins des équidés avec plus de 15 ans d\'expérience. Diplômé de l\'École Nationale Vétérinaire d\'Alfort.',
-    moyensPaiement: ['Espèces', 'Chèque', 'Virement', 'Carte bancaire'],
-    tarifMinimum: 50,
-    tarifMaximum: 120,
-    experience: 15
+    moyensPaiement: ['CB', 'Espèces', 'Chèque', 'Virement'],
+    priceRange: '€€',
+    experienceYears: 15
   });
 
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Charger les données du profil au montage du composant
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+          console.error('Utilisateur non authentifié');
+          setIsLoading(false);
+          return;
+        }
+
+        const { data: profile, error: profileError } = await supabase
+          .from('pro_profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Erreur lors du chargement du profil:', profileError);
+          setIsLoading(false);
+          return;
+        }
+
+        if (profile) {
+          setFormData({
+            prenom: profile.prenom || '',
+            nom: profile.nom || '',
+            telephone: profile.telephone || '',
+            profession: profile.profession || 'Vétérinaire',
+            villeReference: profile.ville_nom || '',
+            rayonIntervention: profile.rayon_km || 30,
+            siret: profile.siret || '',
+            photo: null,
+            photoPreview: profile.photo_url || null,
+            bio: profile.bio || '',
+            moyensPaiement: profile.payment_methods || ['CB', 'Espèces', 'Chèque', 'Virement'],
+            priceRange: profile.price_range || '€€',
+            experienceYears: profile.experience_years || 0
+          });
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -56,22 +111,26 @@ export default function ProfilPage() {
     }));
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoButtonClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     
     // Reset error state
     setPhotoError(null);
     
+    // Si aucun fichier choisi → rien ne se passe
     if (!file) {
       return;
     }
     
-    // Validation du format (plus stricte)
+    // Validation du format
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    const allowedExtensions = ['jpg', 'jpeg', 'png'];
-    
-    if (!allowedTypes.includes(file.type) || !allowedExtensions.includes(fileExtension || '')) {
+    if (!allowedTypes.includes(file.type)) {
       setPhotoError('Format non supporté. Veuillez sélectionner un fichier JPG ou PNG.');
       return;
     }
@@ -84,18 +143,88 @@ export default function ProfilPage() {
       return;
     }
     
-    // Validation de la taille minimale (éviter les fichiers corrompus)
+    // Validation de la taille minimale
     if (file.size < 1024) { // 1 Ko minimum
       setPhotoError('Fichier trop petit. Veuillez sélectionner une image valide.');
       return;
     }
     
-    // Si tout est valide, mettre à jour le state
+    // Preview immédiate avant l'upload pour améliorer l'UX
+    const previewUrl = URL.createObjectURL(file);
     setFormData(prev => ({
       ...prev,
       photo: file,
-      photoPreview: URL.createObjectURL(file)
+      photoPreview: previewUrl
     }));
+    
+    try {
+      setIsUploadingPhoto(true);
+      
+      // Récupérer l'utilisateur actuel
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('Utilisateur non authentifié');
+      }
+      
+      // Créer le chemin de fichier: avatars/${userId}/profile.jpg
+      const filePath = `${user.id}/profile.jpg`;
+      
+      // Upload vers Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true // Permet de remplacer l'image existante
+        });
+      
+      if (uploadError) {
+        throw new Error(`Erreur lors de l'upload: ${uploadError.message}`);
+      }
+      
+      // Récupérer l'URL publique de l'image
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+      
+      // Mettre à jour la base de données avec l'URL de la photo
+      const { error: updateError } = await supabase
+        .from('pro_profiles')
+        .update({ photo_url: urlData.publicUrl })
+        .eq('user_id', user.id);
+      
+      if (updateError) {
+        throw new Error(`Erreur lors de la mise à jour: ${updateError.message}`);
+      }
+      
+      // Mettre à jour le state React avec l'URL publique (remplace la preview locale)
+      setFormData(prev => ({
+        ...prev,
+        photo: file,
+        photoPreview: urlData.publicUrl
+      }));
+      
+      // Nettoyer la preview locale
+      URL.revokeObjectURL(previewUrl);
+      
+      console.log('Photo uploadée avec succès !');
+      
+    } catch (error) {
+      console.error('Erreur lors de l\'upload:', error);
+      setPhotoError(error instanceof Error ? error.message : 'Erreur lors de l\'upload');
+      
+      // En cas d'erreur, restaurer l'état précédent
+      setFormData(prev => ({
+        ...prev,
+        photo: null,
+        photoPreview: prev.photoPreview // Garder l'ancienne image si elle existait
+      }));
+      
+      // Nettoyer la preview locale en cas d'erreur
+      URL.revokeObjectURL(previewUrl);
+      
+    } finally {
+      setIsUploadingPhoto(false);
+    }
   };
 
   const handleMoyensPaiementChange = (moyen: string, checked: boolean) => {
@@ -107,69 +236,88 @@ export default function ProfilPage() {
     }));
   };
 
-  const handleRemovePhoto = () => {
-    setFormData(prev => ({
-      ...prev,
-      photo: null,
-      photoPreview: null
-    }));
-    setPhotoError(null);
+  const handleRemovePhoto = async () => {
+    try {
+      // Récupérer l'utilisateur actuel
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('Utilisateur non authentifié');
+      }
+      
+      // Supprimer l'image du Storage
+      const filePath = `${user.id}/profile.jpg`;
+      const { error: deleteError } = await supabase.storage
+        .from('avatars')
+        .remove([filePath]);
+      
+      if (deleteError) {
+        console.warn('Erreur lors de la suppression du fichier:', deleteError.message);
+        // On continue même si la suppression du fichier échoue
+      }
+      
+      // Mettre à jour la base de données pour supprimer l'URL
+      const { error: updateError } = await supabase
+        .from('pro_profiles')
+        .update({ photo_url: null })
+        .eq('user_id', user.id);
+      
+      if (updateError) {
+        throw new Error(`Erreur lors de la mise à jour: ${updateError.message}`);
+      }
+      
+      // Mettre à jour le state local
+      setFormData(prev => ({
+        ...prev,
+        photo: null,
+        photoPreview: null
+      }));
+      
+      setPhotoError(null);
+      console.log('Photo supprimée avec succès !');
+      
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      setPhotoError(error instanceof Error ? error.message : 'Erreur lors de la suppression');
+    }
   };
 
   const handleSave = async () => {
     try {
-      let photoUrl = null;
-      
-      // Upload de la photo vers Supabase Storage si une photo est sélectionnée
-      if (formData.photo) {
-        const fileExt = formData.photo.name.split('.').pop();
-        const fileName = `professional-${Date.now()}.${fileExt}`;
-        const filePath = `avatars/${fileName}`;
-        
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(filePath, formData.photo, {
-            cacheControl: '3600',
-            upsert: false
-          });
-        
-        if (uploadError) {
-          throw new Error(`Erreur lors de l'upload: ${uploadError.message}`);
-        }
-        
-        // Récupérer l'URL publique de la photo
-        const { data: urlData } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(filePath);
-        
-        photoUrl = urlData.publicUrl;
-      }
-      
-      // TODO: Sauvegarder les données du profil dans la base de données
-      // Exemple de structure pour la table professionals
+      // Préparer les données pour la sauvegarde (sans photo_url car géré séparément)
       const profileData = {
         prenom: formData.prenom,
         nom: formData.nom,
         telephone: formData.telephone,
         profession: formData.profession,
-        ville_reference: formData.villeReference,
-        rayon_intervention: formData.rayonIntervention,
+        ville_nom: formData.villeReference,
+        rayon_km: formData.rayonIntervention,
         siret: formData.siret,
-        photo_url: photoUrl,
         bio: formData.bio,
-        moyens_paiement: formData.moyensPaiement,
-        tarif_minimum: formData.tarifMinimum,
-        tarif_maximum: formData.tarifMaximum,
-        experience: formData.experience,
+        payment_methods: formData.moyensPaiement,
+        price_range: formData.priceRange,
+        experience_years: formData.experienceYears,
         updated_at: new Date().toISOString()
       };
       
-      console.log('Profil à sauvegarder:', profileData);
+      // Récupérer l'utilisateur actuel
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('Utilisateur non authentifié');
+      }
       
-      // TODO: Appel API pour sauvegarder en base
-      // const { data, error } = await supabase
-      //   .from('professionals')
-      //   .upsert(profileData);
+      // Sauvegarder en base de données
+      const { data, error } = await supabase
+        .from('pro_profiles')
+        .upsert({
+          user_id: user.id,
+          ...profileData
+        }, {
+          onConflict: 'user_id'
+        });
+      
+      if (error) {
+        throw new Error(`Erreur lors de la sauvegarde: ${error.message}`);
+      }
       
       setIsEditing(false);
       setPhotoError(null);
@@ -187,6 +335,19 @@ export default function ProfilPage() {
     // TODO: Supprimer le compte
     setShowDeleteConfirm(false);
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <div className="flex justify-center items-center py-16">
+          <div className="text-center">
+            <div className="w-8 h-8 border-4 border-[#f86f4d] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-[#6b7280]">Chargement de votre profil...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
@@ -225,16 +386,22 @@ export default function ProfilPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
           <div className="relative flex-shrink-0">
             {formData.photoPreview ? (
-              <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-[#e5e7eb] bg-white">
+              <div 
+                className="rounded-full overflow-hidden border-2 border-[#e5e7eb] bg-white"
+                style={{ width: '120px', height: '120px' }}
+              >
                 <img
                   src={formData.photoPreview}
                   alt="Photo de profil"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover object-center"
                 />
               </div>
             ) : (
-              <div className="w-20 h-20 rounded-full bg-[#f3f4f6] flex items-center justify-center border-2 border-[#e5e7eb]">
-                <User className="w-6 h-6 text-[#6b7280]" />
+              <div 
+                className="rounded-full bg-[#f3f4f6] flex items-center justify-center border-2 border-[#e5e7eb]"
+                style={{ width: '120px', height: '120px' }}
+              >
+                <User className="w-8 h-8 text-[#6b7280]" />
               </div>
             )}
           </div>
@@ -244,29 +411,30 @@ export default function ProfilPage() {
               Ajoutez une photo professionnelle pour améliorer votre visibilité auprès des propriétaires.
             </p>
             <div className="flex flex-col sm:flex-row gap-2">
-              <label className="inline-block">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png"
-                  onChange={handlePhotoChange}
-                  disabled={!isEditing}
-                  className="hidden"
-                />
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={!isEditing}
-                  icon={<Upload className="w-4 h-4" />}
-                >
-                  {formData.photoPreview ? 'Remplacer la photo' : 'Changer la photo'}
-                </Button>
-              </label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                disabled={!isEditing}
+                className="hidden"
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={!isEditing || isUploadingPhoto}
+                onClick={handlePhotoButtonClick}
+                icon={isUploadingPhoto ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Upload className="w-4 h-4" />}
+              >
+                {isUploadingPhoto ? 'Upload en cours...' : (formData.photoPreview ? 'Remplacer la photo' : 'Changer la photo')}
+              </Button>
               
               {formData.photoPreview && isEditing && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handleRemovePhoto}
+                  disabled={isUploadingPhoto}
                   icon={<AlertTriangle className="w-4 h-4" />}
                 >
                   Supprimer
@@ -348,13 +516,15 @@ export default function ProfilPage() {
           
           <Input
             label="Années d'expérience"
-            name="experience"
+            name="experienceYears"
             type="number"
-            value={formData.experience}
+            value={formData.experienceYears}
             onChange={handleInputChange}
             disabled={!isEditing}
             required
             placeholder="15"
+            min="0"
+            max="60"
           />
         </div>
         
@@ -437,39 +607,22 @@ export default function ProfilPage() {
       <Card variant="elevated">
         <h2 className="text-xl font-semibold text-[#111827] mb-6">Tarifs et paiement</h2>
         
-        <div className="space-y-3">
+        <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-[#111827] mb-2">Fourchette tarifaire</label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm text-[#6b7280] mb-1">Tarif minimum (€)</label>
-                <input
-                  type="number"
-                  name="tarifMinimum"
-                  value={formData.tarifMinimum}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                  placeholder="50"
-                  min="0"
-                  step="5"
-                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] disabled:bg-[#f9fafb] disabled:text-[#9ca3af]"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-[#6b7280] mb-1">Tarif maximum (€)</label>
-                <input
-                  type="number"
-                  name="tarifMaximum"
-                  value={formData.tarifMaximum}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                  placeholder="120"
-                  min="0"
-                  step="5"
-                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] disabled:bg-[#f9fafb] disabled:text-[#9ca3af]"
-                />
-              </div>
-            </div>
+            <select
+              name="priceRange"
+              value={formData.priceRange}
+              onChange={handleInputChange}
+              disabled={!isEditing}
+              className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] bg-white disabled:bg-[#f9fafb] disabled:text-[#9ca3af]"
+            >
+              {priceRangeOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
             <p className="text-sm text-[#6b7280] mt-2">
               Cette fourchette tarifaire sera affichée aux propriétaires lors de la consultation de votre profil.
             </p>

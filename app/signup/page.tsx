@@ -135,11 +135,11 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f9fafb] flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-[#f9fafb] flex items-center justify-center px-4 py-8 overflow-x-hidden">
+      <div className="w-full max-w-md sm:max-w-lg">
         {/* Logo */}
-        <div className="flex justify-center mb-8">
-          <div className="w-12 h-12">
+        <div className="flex justify-center mb-6 sm:mb-8">
+          <div className="w-12 h-12 sm:w-16 sm:h-16">
             <img
               src="/logo-ekicare.png"
               alt="EkiCare"
@@ -149,59 +149,59 @@ export default function SignupPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-lg border border-[#e5e7eb] p-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-semibold text-[#111827] mb-2">
+        <div className="bg-white rounded-lg border border-[#e5e7eb] p-4 sm:p-8">
+          <div className="text-center mb-6 sm:mb-8">
+            <h2 className="text-xl sm:text-2xl font-semibold text-[#111827] mb-2">
               Inscription
             </h2>
-            <p className="text-[#6b7280]">
+            <p className="text-sm sm:text-base text-[#6b7280]">
               Créez votre compte EkiCare
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           <div>
-            <label className="block text-sm font-medium text-[#111827] mb-2">Email</label>
+            <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="votre@email.com"
-              className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
+              className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
             />
             {fieldErrors.email && <span className="text-[#ef4444] text-sm mt-1">{fieldErrors.email}</span>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#111827] mb-2">Mot de passe</label>
+            <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Mot de passe</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
-              className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
+              className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
             />
             {fieldErrors.password && (
               <span className="text-[#ef4444] text-sm mt-1">{fieldErrors.password}</span>
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#111827] mb-2">Confirmer le mot de passe</label>
+            <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Confirmer le mot de passe</label>
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               placeholder="••••••••"
-              className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
+              className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
             />
             {fieldErrors.confirmPassword && (
               <span className="text-[#ef4444] text-sm mt-1">{fieldErrors.confirmPassword}</span>
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-[#111827] mb-2">Rôle</label>
+            <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Rôle</label>
             <select
               name="role"
               value={role}
@@ -211,7 +211,7 @@ export default function SignupPage() {
                 setRoleError('')
               }}
               required
-              className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] bg-white"
+              className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] bg-white text-base"
             >
               <option value="" disabled>
                 Sélectionner un profil
@@ -224,66 +224,66 @@ export default function SignupPage() {
           {role === 'PROPRIETAIRE' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-[#111827] mb-2">Prénom</label>
+                <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Prénom</label>
                 <input
                   name="prenom"
                   onChange={handleFieldChange}
                   required
                   placeholder="Votre prénom"
-                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#111827] mb-2">Nom</label>
+                <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Nom</label>
                 <input
                   name="nom"
                   onChange={handleFieldChange}
                   required
                   placeholder="Votre nom"
-                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#111827] mb-2">Téléphone</label>
+                <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Téléphone</label>
                 <input
                   name="telephone"
                   onChange={handleFieldChange}
                   required
                   placeholder="06 12 34 56 78"
-                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
                 {fieldErrors.telephone && (
                   <span className="text-[#ef4444] text-sm mt-1">{fieldErrors.telephone}</span>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#111827] mb-2">Adresse</label>
+                <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Adresse</label>
                 <input
                   name="adresse"
                   onChange={handleFieldChange}
                   required
                   placeholder="123 rue de la Paix"
-                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#111827] mb-2">Ville</label>
+                <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Ville</label>
                 <input
                   name="ville"
                   onChange={handleFieldChange}
                   required
                   placeholder="Paris"
-                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#111827] mb-2">Code postal</label>
+                <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Code postal</label>
                 <input
                   name="code_postal"
                   onChange={handleFieldChange}
                   required
                   placeholder="75001"
-                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
               </div>
             </>
@@ -291,42 +291,42 @@ export default function SignupPage() {
           {role === 'PRO' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-[#111827] mb-2">Prénom</label>
+                <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Prénom</label>
                 <input
                   name="prenom"
                   onChange={handleFieldChange}
                   required
                   placeholder="Votre prénom"
-                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#111827] mb-2">Nom</label>
+                <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Nom</label>
                 <input
                   name="nom"
                   onChange={handleFieldChange}
                   required
                   placeholder="Votre nom"
-                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#111827] mb-2">Téléphone</label>
+                <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Téléphone</label>
                 <input
                   name="telephone"
                   onChange={handleFieldChange}
                   required
                   placeholder="06 12 34 56 78"
-                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#111827] mb-2">Profession</label>
+                <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Profession</label>
                 <select
                   name="profession"
                   onChange={handleFieldChange}
                   required
-                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] bg-white"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] bg-white text-base"
                 >
                   <option value="">Sélectionner</option>
                   {professions.map((p) => (
@@ -337,7 +337,7 @@ export default function SignupPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#111827] mb-2">Ville de référence</label>
+                <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Ville de référence</label>
                 {isLoaded && (
                   <Autocomplete
                     onLoad={onVilleLoad}
@@ -350,7 +350,7 @@ export default function SignupPage() {
                       value={villeNom}
                       onChange={(e) => setVilleNom(e.target.value)}
                       required
-                      className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
+                      className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                     />
                   </Autocomplete>
                 )}
@@ -358,12 +358,12 @@ export default function SignupPage() {
                   <input
                     disabled
                     placeholder="Chargement..."
-                    className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg bg-[#f9fafb] text-[#9ca3af]"
+                    className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg bg-[#f9fafb] text-[#9ca3af] text-base"
                   />
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#111827] mb-2">Rayon d'intervention : {rayonKm} km</label>
+                <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Rayon d'intervention : {rayonKm} km</label>
                 <input
                   type="range"
                   min={5}
@@ -378,20 +378,20 @@ export default function SignupPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#111827] mb-2">Numéro SIRET</label>
+                <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Numéro SIRET</label>
                 <input
                   name="siret"
                   onChange={handleFieldChange}
                   required
                   placeholder="12345678901234"
-                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af]"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
                 {fieldErrors.siret && (
                   <span className="text-[#ef4444] text-sm mt-1">{fieldErrors.siret}</span>
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#111827] mb-2">Photo de profil</label>
+                <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Photo de profil</label>
                 <input
                   type="file"
                   accept="image/*"
@@ -400,7 +400,7 @@ export default function SignupPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#111827] mb-2">Justificatif (PDF ou image)</label>
+                <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Justificatif (PDF ou image)</label>
                 <input
                   type="file"
                   accept=".pdf,image/*"
@@ -419,13 +419,13 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#f86f4d] text-white py-3 px-4 rounded-lg font-medium hover:bg-[#fa8265] focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:ring-offset-2 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#f86f4d] text-white py-3 px-4 min-h-[44px] rounded-lg font-medium hover:bg-[#fa8265] focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:ring-offset-2 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-base"
           >
             {loading ? 'Inscription...' : "S'inscrire"}
           </button>
 
-          <div className="text-center">
-            <p className="text-[#6b7280] text-sm">
+          <div className="text-center mt-6">
+            <p className="text-[#6b7280] text-sm sm:text-base">
               Déjà un compte ?{' '}
               <Link
                 href="/login"

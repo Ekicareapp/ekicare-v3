@@ -6,27 +6,27 @@ import Button from './components/Button';
 import { Calendar, Clock, Users, Bell, Plus, Eye } from 'lucide-react';
 
 export default function ProDashboardPage() {
-  const [notifications] = useState([
+  const [prochainesTournees] = useState([
     {
       id: '1',
-      title: 'Nouveau rendez-vous confirmé',
-      message: 'Rendez-vous avec Marie Dubois le 15 janvier à 14h',
-      time: 'Il y a 2h',
-      type: 'success'
+      titre: 'Tournée secteur Nord',
+      date: '20 janvier 2024',
+      nombreClients: 8,
+      statut: 'planifiée'
     },
     {
       id: '2',
-      title: 'Rendez-vous annulé',
-      message: 'Le rendez-vous du 12 janvier a été annulé par le client',
-      time: 'Il y a 4h',
-      type: 'warning'
+      titre: 'Tournée secteur Sud',
+      date: '25 janvier 2024',
+      nombreClients: 5,
+      statut: 'planifiée'
     },
     {
       id: '3',
-      title: 'Nouveau client',
-      message: 'Jean Martin s\'est inscrit sur la plateforme',
-      time: 'Il y a 1 jour',
-      type: 'info'
+      titre: 'Tournée secteur Est',
+      date: '30 janvier 2024',
+      nombreClients: 12,
+      statut: 'planifiée'
     }
   ]);
 
@@ -91,16 +91,16 @@ export default function ProDashboardPage() {
     }
   };
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'success':
-        return 'text-[#10b981]';
-      case 'warning':
-        return 'text-[#facc15]';
-      case 'error':
-        return 'text-[#ef4444]';
-      default:
+  const getTourneeIcon = (statut: string) => {
+    switch (statut) {
+      case 'planifiée':
         return 'text-[#3b82f6]';
+      case 'en-cours':
+        return 'text-[#facc15]';
+      case 'terminée':
+        return 'text-[#10b981]';
+      default:
+        return 'text-[#6b7280]';
     }
   };
 
@@ -121,14 +121,10 @@ export default function ProDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* Rendez-vous d'aujourd'hui */}
         <Card variant="elevated">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6">
             <h2 className="text-xl font-semibold text-[#111827]">
               Rendez-vous d'aujourd'hui
             </h2>
-            <Button variant="ghost" size="sm">
-              <Eye className="w-4 h-4" />
-              Voir tout
-            </Button>
           </div>
           
           <div className="space-y-3">
@@ -145,9 +141,6 @@ export default function ProDashboardPage() {
                 </div>
                 <div className="text-right">
                   <p className="font-medium text-[#111827]">{rdv.heure}</p>
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(rdv.statut)}`}>
-                    {rdv.statut}
-                  </span>
                 </div>
               </div>
             ))}
@@ -156,14 +149,10 @@ export default function ProDashboardPage() {
 
         {/* Prochains rendez-vous */}
         <Card variant="elevated">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6">
             <h2 className="text-xl font-semibold text-[#111827]">
               Prochains rendez-vous
             </h2>
-            <Button variant="ghost" size="sm">
-              <Eye className="w-4 h-4" />
-              Voir tout
-            </Button>
           </div>
           
           <div className="space-y-3">
@@ -188,33 +177,37 @@ export default function ProDashboardPage() {
         </Card>
       </div>
 
-      {/* Notifications importantes */}
+      {/* Prochaines tournées */}
       <Card variant="elevated">
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6">
           <h2 className="text-xl font-semibold text-[#111827]">
-            Notifications importantes
+            Prochaines tournées
           </h2>
-          <Button variant="ghost" size="sm">
-            <Bell className="w-4 h-4" />
-            Marquer comme lu
-          </Button>
         </div>
         
         <div className="space-y-3">
-          {notifications.map((notif) => (
-            <div key={notif.id} className="flex items-start space-x-3 p-4 bg-[#f9fafb] rounded-lg">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${getNotificationIcon(notif.type)}`}>
-                <Bell className="w-4 h-4" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium text-[#111827]">{notif.title}</h3>
-                  <span className="text-xs text-[#6b7280]">{notif.time}</span>
+          {prochainesTournees.length > 0 ? (
+            prochainesTournees.map((tournee) => (
+              <div key={tournee.id} className="flex items-center justify-between p-4 bg-[#f9fafb] rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-[#f86f4d10] rounded-lg flex items-center justify-center">
+                    <Calendar className="w-5 h-5 text-[#f86f4d]" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-[#111827]">{tournee.titre}</p>
+                    <p className="text-sm text-[#6b7280]">{tournee.nombreClients} clients</p>
+                  </div>
                 </div>
-                <p className="text-sm text-[#6b7280] mt-1">{notif.message}</p>
+                <div className="text-right">
+                  <p className="font-medium text-[#111827]">{tournee.date}</p>
+                </div>
               </div>
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-[#6b7280]">Aucune tournée prévue</p>
             </div>
-          ))}
+          )}
         </div>
       </Card>
     </div>

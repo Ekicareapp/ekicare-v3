@@ -76,14 +76,14 @@ export default function ProfilPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-semibold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-[#111827] mb-2">
             Mon profil
           </h1>
-          <p className="text-gray-600 text-lg">
+          <p className="text-[#6b7280] text-lg">
             Gérez vos informations personnelles
           </p>
         </div>
@@ -109,13 +109,13 @@ export default function ProfilPage() {
         </div>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-3">
           <Card variant="elevated">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Informations personnelles</h3>
+            <h3 className="text-xl font-semibold text-[#111827] mb-6">Informations personnelles</h3>
             
             <div className="space-y-6">
               {/* Première ligne : Prénom et Nom */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <Input
                   label="Prénom"
                   name="prenom"
@@ -146,7 +146,7 @@ export default function ProfilPage() {
               </div>
               
               {/* Troisième ligne : Téléphone et Adresse complète */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <Input
                   label="Téléphone"
                   name="telephone"
@@ -181,10 +181,10 @@ export default function ProfilPage() {
 
           {/* Password Change */}
           <Card variant="elevated">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Changer le mot de passe</h3>
+            <h3 className="text-xl font-semibold text-[#111827] mb-6">Changer le mot de passe</h3>
             
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <Input
                   label="Nouveau mot de passe"
                   name="newPassword"
@@ -214,7 +214,7 @@ export default function ProfilPage() {
 
           {/* Account Deletion */}
           <Card variant="elevated">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Supprimer mon compte</h3>
+            <h3 className="text-xl font-semibold text-[#111827] mb-6">Supprimer mon compte</h3>
             
             <div className="space-y-4">
               <div className="bg-[#fef2f2] border border-red-200 rounded-lg p-4">

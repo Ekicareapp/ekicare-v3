@@ -266,6 +266,16 @@ a:focus {
   border-radius: 3px;
 }
 
+/* Hide scrollbar for tabs */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
 
 /* Animations subtiles */
 @keyframes fadeIn {
