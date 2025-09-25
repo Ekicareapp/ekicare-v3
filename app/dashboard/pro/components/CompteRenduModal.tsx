@@ -80,7 +80,7 @@ export default function CompteRenduModal({
             value={reportText}
             onChange={(e) => setReportText(e.target.value)}
             placeholder="Décrivez les soins effectués, les observations, les recommandations..."
-            className="w-full px-3 py-2 border border-[#e5e7eb] rounded-lg focus:ring-2 focus:ring-[#f86f4d] focus:border-transparent resize-none"
+            className="w-full px-3 py-2 border border-[#e5e7eb] rounded-lg focus:border-[#ff6b35] resize-none"
             rows={8}
             disabled={isLoading}
           />

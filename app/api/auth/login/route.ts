@@ -34,7 +34,33 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Profil non trouvé dans users' }, { status: 400 })
   }
 
-  // 3. Retourner l'utilisateur + rôle
+  // 3. Vérifier is_verified pour les professionnels
+  if (userRow.role === 'PRO') {
+    const { data: proProfile, error: proError } = await supabase
+      .from('pro_profiles')
+      .select('is_verified')
+      .eq('user_id', authData.user.id)
+      .single()
+
+    if (proError || !proProfile) {
+      return NextResponse.json({ error: 'Profil professionnel non trouvé' }, { status: 400 })
+    }
+
+    // Si le professionnel n'est pas vérifié, retourner un indicateur spécial
+    if (!proProfile.is_verified) {
+      return NextResponse.json({
+        user: {
+          id: authData.user.id,
+          email: authData.user.email,
+          role: userRow.role,
+        },
+        session: authData.session,
+        requiresPayment: true, // Indicateur pour redirection vers paiement
+      })
+    }
+  }
+
+  // 4. Retourner l'utilisateur + rôle (vérifié ou non-PRO)
   return NextResponse.json({
     user: {
       id: authData.user.id,

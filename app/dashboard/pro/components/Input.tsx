@@ -27,7 +27,7 @@ export default function Input({
   helperText,
   icon,
 }: InputProps) {
-  const baseClasses = 'w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] disabled:bg-[#f9fafb] disabled:text-[#9ca3af]';
+  const baseClasses = 'w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:border-[#ff6b35] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] disabled:bg-[#f9fafb] disabled:text-[#9ca3af]';
   
   const errorClasses = error ? 'border-[#ef4444] focus:ring-[#ef4444] focus:border-[#ef4444]' : '';
 

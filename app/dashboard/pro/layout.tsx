@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { LayoutDashboard, CalendarDays, Users, MapPin, User } from 'lucide-react'
 import './globals.css'
 
@@ -16,12 +16,54 @@ const navigation = [
 
 export default function ProDashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isVerified, setIsVerified] = useState<boolean | null>(null)
   const pathname = usePathname()
+  const router = useRouter()
+
+  // Vérifier si le professionnel est vérifié
+  useEffect(() => {
+    const checkVerification = async () => {
+      try {
+        const response = await fetch('/api/profile')
+        const data = await response.json()
+        
+        if (data.profile && data.profile.is_verified === true) {
+          setIsVerified(true)
+        } else {
+          setIsVerified(false)
+          router.push('/paiement-requis')
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification:', error)
+        setIsVerified(false)
+        router.push('/paiement-requis')
+      }
+    }
+    
+    checkVerification()
+  }, [router])
 
   // Fermer la sidebar mobile quand on change de page
   useEffect(() => {
     setSidebarOpen(false)
   }, [pathname])
+
+  // Afficher un loader pendant la vérification
+  if (isVerified === null) {
+    return (
+      <div className="min-h-screen bg-[#f9fafb] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-[#f86f4d] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#6b7280]">Vérification en cours...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Si non vérifié, ne pas afficher le dashboard
+  if (isVerified === false) {
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-[#f9fafb] flex overflow-x-hidden">

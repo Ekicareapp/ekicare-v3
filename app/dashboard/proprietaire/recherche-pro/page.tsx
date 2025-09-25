@@ -382,7 +382,7 @@ export default function RechercheProPage() {
                 placeholder="Rechercher une ville..."
                 value={localisation}
                 onChange={(e) => setLocalisation(e.target.value)}
-                className="w-full h-12 px-3 py-2.5 pl-10 border border-[#e5e7eb] rounded-lg text-sm placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 bg-white"
+                className="w-full h-12 px-3 py-2.5 pl-10 border border-[#e5e7eb] rounded-lg text-sm placeholder-[#9ca3af] focus:outline-none focus:border-[#ff6b35] transition-all duration-150 bg-white"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -400,7 +400,7 @@ export default function RechercheProPage() {
             <select
               value={specialite}
               onChange={(e) => setSpecialite(e.target.value)}
-              className="w-full h-12 px-3 py-2.5 text-base border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] sm:text-sm transition-all duration-150 bg-white"
+              className="w-full h-12 px-3 py-2.5 text-base border border-[#e5e7eb] rounded-lg focus:outline-none focus:border-[#ff6b35] sm:text-sm transition-all duration-150 bg-white"
             >
               {specialites.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -682,7 +682,7 @@ export default function RechercheProPage() {
                       setSelectedTime('');
                     }}
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-3 py-2 border border-[#e5e7eb] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150"
+                    className="w-full px-3 py-2 border border-[#e5e7eb] rounded-lg text-sm focus:outline-none focus:border-[#ff6b35] transition-all duration-150"
                     required
                   />
                 </div>
@@ -779,7 +779,7 @@ export default function RechercheProPage() {
                       type="checkbox"
                       checked={rdvFormData.equides.includes(equide.id)}
                       onChange={(e) => handleEquideChange(equide.id, e.target.checked)}
-                      className="w-4 h-4 text-[#f86f4d] border-[#e5e7eb] rounded focus:ring-[#f86f4d]"
+                      className="w-4 h-4 text-[#f86f4d] border-[#e5e7eb] rounded focus:border-[#ff6b35]"
                     />
                     <span className="text-sm text-gray-700">{equide.nom}</span>
                   </label>
@@ -825,7 +825,7 @@ export default function RechercheProPage() {
                       value={creneau.date}
                       onChange={(e) => updateCreneauAlternatif(index, 'date', e.target.value)}
                       min={new Date().toISOString().split('T')[0]}
-                      className="w-full px-3 py-2 border border-[#e5e7eb] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150"
+                      className="w-full px-3 py-2 border border-[#e5e7eb] rounded-lg text-sm focus:outline-none focus:border-[#ff6b35] transition-all duration-150"
                     />
                   </div>
                   
@@ -834,7 +834,7 @@ export default function RechercheProPage() {
                     <select
                       value={creneau.heure}
                       onChange={(e) => updateCreneauAlternatif(index, 'heure', e.target.value)}
-                      className="w-full px-3 py-2 border border-[#e5e7eb] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150"
+                      className="w-full px-3 py-2 border border-[#e5e7eb] rounded-lg text-sm focus:outline-none focus:border-[#ff6b35] transition-all duration-150"
                     >
                       <option value="">Sélectionner</option>
                       {getAvailableTimes(creneau.date).map(time => (

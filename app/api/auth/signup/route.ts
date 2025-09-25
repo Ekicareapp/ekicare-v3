@@ -172,6 +172,8 @@ export async function POST(request: Request) {
       if (proError) {
         return NextResponse.json({ error: proError.message }, { status: 500 })
       }
+      
+      // Pour les professionnels, rediriger vers Stripe après l'inscription
       return NextResponse.json({
         user: {
           id: user.id,
@@ -184,6 +186,7 @@ export async function POST(request: Request) {
             justificatif_url,
           },
         },
+        redirectToStripe: true // Indicateur pour rediriger vers Stripe
       })
     }
     // Insertion profil PROPRIETAIRE (inchangé)

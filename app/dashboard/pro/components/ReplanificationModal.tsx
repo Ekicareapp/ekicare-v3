@@ -125,7 +125,7 @@ export default function ReplanificationModal({
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
-                className="w-full px-3 py-2 border border-[#e5e7eb] rounded-lg focus:ring-2 focus:ring-[#f86f4d] focus:border-transparent"
+                className="w-full px-3 py-2 border border-[#e5e7eb] rounded-lg focus:border-[#ff6b35]"
               />
             </div>
             
@@ -137,7 +137,7 @@ export default function ReplanificationModal({
                 type="time"
                 value={selectedTime}
                 onChange={(e) => setSelectedTime(e.target.value)}
-                className="w-full px-3 py-2 border border-[#e5e7eb] rounded-lg focus:ring-2 focus:ring-[#f86f4d] focus:border-transparent"
+                className="w-full px-3 py-2 border border-[#e5e7eb] rounded-lg focus:border-[#ff6b35]"
               />
             </div>
           </div>

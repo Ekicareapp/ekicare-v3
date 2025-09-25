@@ -189,7 +189,7 @@ export default function NouvelleTourneeModal({ isOpen, onClose }: NouvelleTourne
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827]"
+            className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:border-[#ff6b35] transition-all duration-150 text-[#111827]"
           />
         </div>
 
@@ -223,7 +223,7 @@ export default function NouvelleTourneeModal({ isOpen, onClose }: NouvelleTourne
                           type="checkbox"
                           checked={selectedAppointments.includes(appointment.id)}
                           onChange={() => handleAppointmentToggle(appointment.id)}
-                          className="w-4 h-4 text-[#f86f4d] border-[#e5e7eb] rounded focus:ring-[#f86f4d]"
+                          className="w-4 h-4 text-[#f86f4d] border-[#e5e7eb] rounded focus:border-[#ff6b35]"
                         />
                         <div className="flex-1">
                           <div className="flex items-center space-x-2">

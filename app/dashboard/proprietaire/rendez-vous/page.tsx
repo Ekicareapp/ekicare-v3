@@ -66,7 +66,7 @@ function ReplanificationForm({ rendezVous, onSubmit, onCancel }: Replanification
           id="newDate"
           value={newDate}
           onChange={(e) => setNewDate(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#f86f4d] focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-[#ff6b35]"
           required
           min={new Date().toISOString().split('T')[0]}
         />
@@ -82,7 +82,7 @@ function ReplanificationForm({ rendezVous, onSubmit, onCancel }: Replanification
           id="newTime"
           value={newTime}
           onChange={(e) => setNewTime(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#f86f4d] focus:border-transparent"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-[#ff6b35]"
           required
         />
       </div>

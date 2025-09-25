@@ -33,7 +33,6 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [roleError, setRoleError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({})
-  const [stripeLoading, setStripeLoading] = useState(false)
 
   function handleFieldChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setFields({ ...fields, [e.target.name]: e.target.value })
@@ -57,31 +56,6 @@ export default function SignupPage() {
     }
   }
 
-  // Fonction pour gérer la souscription Stripe
-  async function handleStripeSubscription() {
-    setStripeLoading(true)
-    try {
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-      
-      const data = await response.json()
-      
-      if (data.url) {
-        // Rediriger vers Stripe Checkout
-        window.location.href = data.url
-      } else {
-        setError('Erreur lors de la création de la session de paiement')
-      }
-    } catch (err: any) {
-      setError('Erreur lors de la connexion au service de paiement')
-    } finally {
-      setStripeLoading(false)
-    }
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -153,7 +127,31 @@ export default function SignupPage() {
           return
         }
       }
-      // Redirection ou message de succès ici
+      
+      // Gestion de la redirection selon le rôle
+      if (data.redirectToStripe && role === 'PRO') {
+        // Rediriger vers Stripe pour les professionnels
+        try {
+          const stripeResponse = await fetch('/api/checkout', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          })
+          const stripeData = await stripeResponse.json()
+          
+          if (stripeData.url) {
+            window.location.href = stripeData.url
+          } else {
+            setError('Erreur lors de la création de la session de paiement')
+          }
+        } catch (stripeErr: any) {
+          setError('Erreur lors de la connexion au service de paiement')
+        }
+      } else {
+        // Redirection normale pour les propriétaires
+        window.location.href = '/login'
+      }
     } catch (err: any) {
       setError(err.message || 'Erreur inconnue')
     } finally {
@@ -185,7 +183,7 @@ export default function SignupPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="votre@email.com"
-              className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
+              className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
             />
             {fieldErrors.email && <span className="text-[#ef4444] text-sm mt-1">{fieldErrors.email}</span>}
           </div>
@@ -197,7 +195,7 @@ export default function SignupPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
-              className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
+              className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
             />
             {fieldErrors.password && (
               <span className="text-[#ef4444] text-sm mt-1">{fieldErrors.password}</span>
@@ -211,7 +209,7 @@ export default function SignupPage() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               placeholder="••••••••"
-              className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
+              className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
             />
             {fieldErrors.confirmPassword && (
               <span className="text-[#ef4444] text-sm mt-1">{fieldErrors.confirmPassword}</span>
@@ -228,7 +226,7 @@ export default function SignupPage() {
                 setRoleError('')
               }}
               required
-              className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] bg-white text-base"
+              className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] bg-white text-base"
             >
               <option value="" disabled>
                 Sélectionner un profil
@@ -247,7 +245,7 @@ export default function SignupPage() {
                   onChange={handleFieldChange}
                   required
                   placeholder="Votre prénom"
-                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
               </div>
               <div>
@@ -257,7 +255,7 @@ export default function SignupPage() {
                   onChange={handleFieldChange}
                   required
                   placeholder="Votre nom"
-                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
               </div>
               <div>
@@ -267,7 +265,7 @@ export default function SignupPage() {
                   onChange={handleFieldChange}
                   required
                   placeholder="06 12 34 56 78"
-                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
                 {fieldErrors.telephone && (
                   <span className="text-[#ef4444] text-sm mt-1">{fieldErrors.telephone}</span>
@@ -280,7 +278,7 @@ export default function SignupPage() {
                   onChange={handleFieldChange}
                   required
                   placeholder="123 rue de la Paix"
-                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
               </div>
               <div>
@@ -290,7 +288,7 @@ export default function SignupPage() {
                   onChange={handleFieldChange}
                   required
                   placeholder="Paris"
-                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
               </div>
               <div>
@@ -300,7 +298,7 @@ export default function SignupPage() {
                   onChange={handleFieldChange}
                   required
                   placeholder="75001"
-                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
               </div>
             </>
@@ -314,7 +312,7 @@ export default function SignupPage() {
                   onChange={handleFieldChange}
                   required
                   placeholder="Votre prénom"
-                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
               </div>
               <div>
@@ -324,7 +322,7 @@ export default function SignupPage() {
                   onChange={handleFieldChange}
                   required
                   placeholder="Votre nom"
-                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
               </div>
               <div>
@@ -334,7 +332,7 @@ export default function SignupPage() {
                   onChange={handleFieldChange}
                   required
                   placeholder="06 12 34 56 78"
-                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
               </div>
               <div>
@@ -343,7 +341,7 @@ export default function SignupPage() {
                   name="profession"
                   onChange={handleFieldChange}
                   required
-                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] bg-white text-base"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] bg-white text-base"
                 >
                   <option value="">Sélectionner</option>
                   {professions.map((p) => (
@@ -367,7 +365,7 @@ export default function SignupPage() {
                       value={villeNom}
                       onChange={(e) => setVilleNom(e.target.value)}
                       required
-                      className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
+                      className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                     />
                   </Autocomplete>
                 )}
@@ -401,7 +399,7 @@ export default function SignupPage() {
                   onChange={handleFieldChange}
                   required
                   placeholder="12345678901234"
-                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
+                  className="w-full px-4 py-3 min-h-[44px] border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] text-base"
                 />
                 {fieldErrors.siret && (
                   <span className="text-[#ef4444] text-sm mt-1">{fieldErrors.siret}</span>
@@ -413,7 +411,7 @@ export default function SignupPage() {
                   type="file"
                   accept="image/*"
                   onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
-                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#f86f4d] file:text-white hover:file:bg-[#fa8265]"
+                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#f86f4d] file:text-white hover:file:bg-[#fa8265]"
                 />
               </div>
               <div>
@@ -422,28 +420,8 @@ export default function SignupPage() {
                   type="file"
                   accept=".pdf,image/*"
                   onChange={(e) => setJustifFile(e.target.files?.[0] || null)}
-                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#f86f4d] file:text-white hover:file:bg-[#fa8265]"
+                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#f86f4d] file:text-white hover:file:bg-[#fa8265]"
                 />
-              </div>
-              
-              {/* Bouton de souscription Stripe */}
-              <div className="mt-6 p-4 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg">
-                <div className="text-center mb-4">
-                  <h3 className="text-lg font-semibold text-[#111827] mb-2">
-                    Souscription Premium
-                  </h3>
-                  <p className="text-sm text-[#6b7280]">
-                    Accédez à toutes les fonctionnalités professionnelles
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleStripeSubscription}
-                  disabled={stripeLoading}
-                  className="w-full bg-[#635bff] text-white py-3 px-4 min-h-[44px] rounded-lg font-medium hover:bg-[#5a52e8] focus:outline-none focus:ring-2 focus:ring-[#635bff] focus:ring-offset-2 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-base"
-                >
-                  {stripeLoading ? 'Redirection...' : 'Souscrire'}
-                </button>
               </div>
             </>
           )}
@@ -456,7 +434,7 @@ export default function SignupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#f86f4d] text-white py-3 px-4 min-h-[44px] rounded-lg font-medium hover:bg-[#fa8265] focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:ring-offset-2 transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-base"
+            className="w-full bg-[#f86f4d] text-white py-3 px-4 min-h-[44px] rounded-lg font-medium hover:bg-[#fa8265]  transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-base"
           >
             {loading ? 'Inscription...' : "S'inscrire"}
           </button>

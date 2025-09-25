@@ -504,7 +504,7 @@ export default function ProfilPage() {
               value={formData.profession}
               onChange={handleInputChange}
               disabled={!isEditing}
-              className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] bg-white disabled:bg-[#f9fafb] disabled:text-[#9ca3af]"
+              className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:border-[#ff6b35] transition-all duration-150 text-[#111827] bg-white disabled:bg-[#f9fafb] disabled:text-[#9ca3af]"
             >
               {professions.map((prof) => (
                 <option key={prof} value={prof}>
@@ -536,7 +536,7 @@ export default function ProfilPage() {
             onChange={handleInputChange}
             disabled={!isEditing}
             rows={4}
-            className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] disabled:bg-[#f9fafb] disabled:text-[#9ca3af]"
+            className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:border-[#ff6b35] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] disabled:bg-[#f9fafb] disabled:text-[#9ca3af]"
             placeholder="Décrivez votre expérience et votre expertise..."
           />
         </div>
@@ -556,7 +556,7 @@ export default function ProfilPage() {
               onChange={handleInputChange}
               disabled={!isEditing}
               placeholder="Commencez à taper une ville..."
-              className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] disabled:bg-[#f9fafb] disabled:text-[#9ca3af]"
+              className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:border-[#ff6b35] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] disabled:bg-[#f9fafb] disabled:text-[#9ca3af]"
             />
           </div>
           
@@ -615,7 +615,7 @@ export default function ProfilPage() {
               value={formData.priceRange}
               onChange={handleInputChange}
               disabled={!isEditing}
-              className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:border-[#f86f4d] transition-all duration-150 text-[#111827] bg-white disabled:bg-[#f9fafb] disabled:text-[#9ca3af]"
+              className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:border-[#ff6b35] transition-all duration-150 text-[#111827] bg-white disabled:bg-[#f9fafb] disabled:text-[#9ca3af]"
             >
               {priceRangeOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -638,7 +638,7 @@ export default function ProfilPage() {
                     checked={formData.moyensPaiement.includes(moyen)}
                     onChange={(e) => handleMoyensPaiementChange(moyen, e.target.checked)}
                     disabled={!isEditing}
-                    className="w-4 h-4 text-[#f86f4d] border-[#e5e7eb] rounded focus:ring-[#f86f4d] disabled:cursor-not-allowed"
+                    className="w-4 h-4 text-[#f86f4d] border-[#e5e7eb] rounded focus:border-[#ff6b35] disabled:cursor-not-allowed"
                   />
                   <span className="text-sm text-[#111827]">{moyen}</span>
                 </label>
