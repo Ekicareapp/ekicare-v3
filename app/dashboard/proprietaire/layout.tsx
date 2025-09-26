@@ -2,8 +2,11 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { LayoutDashboard, CalendarDays, Search, User } from 'lucide-react'
+import { supabase } from '@/lib/supabaseClient'
+import LogoutButton from '@/components/LogoutButton'
+import AuthGuard from '@/components/AuthGuard'
 import './globals.css'
 
 // Icône custom de fer à cheval
@@ -29,9 +32,12 @@ const navigation = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
+
 
   return (
-    <div className="min-h-screen bg-[#f9fafb] flex overflow-x-hidden">
+    <AuthGuard>
+      <div className="min-h-screen bg-[#f9fafb] flex overflow-x-hidden">
       {/* Mobile Top Navbar */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-[#e5e7eb] shadow-sm">
         <div className="flex items-center justify-between px-4 py-3">
@@ -82,18 +88,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               })}
               
               {/* Logout button */}
-              <button
-                onClick={() => {
-                  setSidebarOpen(false);
-                  // TODO: Implement logout logic
-                }}
-                className="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-all duration-150 min-h-[44px]"
-              >
-                <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                <span className="break-words">Déconnexion</span>
-              </button>
+              <LogoutButton />
             </nav>
           </div>
         )}
@@ -136,12 +131,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Logout button */}
         <div className="px-4 py-6 border-t border-[#e5e7eb]">
-          <button className="w-full flex items-center px-3 py-2.5 text-sm font-medium text-[#6b7280] hover:text-[#111827] hover:bg-[#f9fafb] rounded-lg transition-colors duration-150">
-            <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Déconnexion
-          </button>
+          <LogoutButton />
         </div>
       </div>
 
@@ -152,6 +142,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </div>
       </main>
-    </div>
+      </div>
+    </AuthGuard>
   )
 }

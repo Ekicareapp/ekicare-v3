@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 import Link from 'next/link'
@@ -34,9 +34,145 @@ export default function SignupPage() {
   const [roleError, setRoleError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({})
 
+  // Fonction de validation des champs
+  const isFormValid = () => {
+    // Champs obligatoires de base
+    if (!email || !password || !confirmPassword || !role) {
+      return false
+    }
+
+    // Validation du mot de passe
+    if (password !== confirmPassword) {
+      return false
+    }
+
+    // Validation selon le rôle
+    if (role === 'PRO') {
+      const requiredFields = ['prenom', 'nom', 'telephone', 'profession', 'siret']
+      return requiredFields.every(field => fields[field] && fields[field].trim() !== '') && 
+             villeNom && villeLat && villeLng && photoFile && justifFile
+    }
+
+    if (role === 'PROPRIETAIRE') {
+      const requiredFields = ['prenom', 'nom']
+      return requiredFields.every(field => fields[field] && fields[field].trim() !== '')
+    }
+
+    return false
+  }
+
+  // Fonction principale d'inscription
+  const handleSignup = async () => {
+    if (!isFormValid()) {
+      setError('Veuillez remplir tous les champs obligatoires')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    setFieldErrors({})
+    
+    try {
+      // Créer l'utilisateur via l'API signup
+      const formData = new FormData()
+      formData.append('email', email)
+      formData.append('password', password)
+      formData.append('role', role)
+      
+      // Ajouter les champs spécifiques au rôle
+      Object.entries(fields).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, value as string)
+        }
+      })
+
+      if (role === 'PRO') {
+        formData.append('ville_nom', villeNom)
+        formData.append('ville_lat', villeLat?.toString() || '')
+        formData.append('ville_lng', villeLng?.toString() || '')
+        formData.append('rayon_km', rayonKm.toString())
+      }
+
+      if (photoFile) formData.append('photo', photoFile)
+      if (justifFile) formData.append('justificatif', justifFile)
+
+      console.log('🚀 Création du compte utilisateur...')
+      const signupResponse = await fetch('/api/auth/signup', {
+        method: 'POST',
+        body: formData,
+      })
+      
+      const signupData = await signupResponse.json()
+      
+      if (signupData.error) {
+        // Gestion des erreurs spécifiques
+        let apiFieldErrors: { [key: string]: string } = {}
+        if (signupData.error.includes('User already registered')) {
+          apiFieldErrors.email = 'Cet email est déjà utilisé'
+        } else if (signupData.error.includes('Password should be at least 6 characters')) {
+          apiFieldErrors.password = 'Mot de passe trop court'
+        }
+        
+        if (Object.keys(apiFieldErrors).length > 0) {
+          setFieldErrors(apiFieldErrors)
+          setLoading(false)
+          return
+        } else {
+          setError(signupData.error)
+          setLoading(false)
+          return
+        }
+      }
+
+      console.log('✅ Compte créé avec succès:', signupData.user?.id)
+
+      // Redirection conditionnelle selon le rôle
+      if (role === 'PROPRIETAIRE') {
+        // Redirection vers la page de succès propriétaire
+        console.log('🏠 Redirection vers page de succès propriétaire')
+        window.location.href = '/success-proprio'
+      } else if (role === 'PRO') {
+        // Redirection vers Stripe Checkout
+        console.log('💳 Redirection vers Stripe Checkout')
+        const stripeResponse = await fetch('/api/checkout-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: signupData.user.id
+          })
+        })
+        
+        const stripeData = await stripeResponse.json()
+        
+        if (stripeData.url) {
+          console.log('🔗 Redirection vers Stripe:', stripeData.url)
+          window.location.href = stripeData.url
+        } else {
+          console.error('❌ Erreur Stripe:', stripeData.error)
+          setError('Erreur lors de la redirection vers Stripe: ' + (stripeData.error || 'Erreur inconnue'))
+        }
+      }
+      
+    } catch (err: any) {
+      console.error('❌ Erreur lors de l\'inscription:', err)
+      setError('Erreur lors de la création du compte')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   function handleFieldChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setFields({ ...fields, [e.target.name]: e.target.value })
   }
+
+  // Forcer la re-validation du formulaire quand les champs changent
+  const [formValid, setFormValid] = useState(false)
+  
+  useEffect(() => {
+    setFormValid(isFormValid())
+  }, [email, password, confirmPassword, role, fields, villeNom, villeLat, villeLng, photoFile, justifFile])
 
   // Google Maps API
   const { isLoaded } = useLoadScript({
@@ -57,107 +193,6 @@ export default function SignupPage() {
   }
 
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError('')
-    setFieldErrors({})
-    setLoading(true)
-    let newFieldErrors: { [key: string]: string } = {}
-    // Validation frontend
-    if (password.length < 6) {
-      newFieldErrors.password = 'Le mot de passe doit contenir au moins 6 caractères'
-    }
-    if (password !== confirmPassword) {
-      newFieldErrors.confirmPassword = 'Les mots de passe ne correspondent pas'
-    }
-    if (fields.telephone && !/^(0\d{9}|(\+33)[1-9]\d{8})$/.test(fields.telephone)) {
-      newFieldErrors.telephone = 'Numéro de téléphone invalide'
-    }
-    if (fields.siret && !/^\d{14}$/.test(fields.siret)) {
-      newFieldErrors.siret = 'Le numéro SIRET doit contenir 14 chiffres'
-    }
-    if (!role) {
-      setRoleError('Veuillez sélectionner un profil')
-      setLoading(false)
-      return
-    } else {
-      setRoleError('')
-    }
-    if (Object.keys(newFieldErrors).length > 0) {
-      setFieldErrors(newFieldErrors)
-      setLoading(false)
-      return
-    }
-    try {
-      const formData = new FormData()
-      formData.append('email', email)
-      formData.append('password', password)
-      formData.append('role', role)
-      Object.entries(fields).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) formData.append(key, value as string)
-      })
-      if (role === 'PRO') {
-        formData.append('ville_nom', villeNom)
-        formData.append('ville_lat', villeLat?.toString() || '')
-        formData.append('ville_lng', villeLng?.toString() || '')
-        formData.append('rayon_km', rayonKm.toString())
-      }
-      if (photoFile) formData.append('photo', photoFile)
-      if (justifFile) formData.append('justificatif', justifFile)
-
-      const res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        body: formData,
-      })
-      const data = await res.json()
-      if (data.error) {
-        let apiFieldErrors: { [key: string]: string } = {}
-        if (data.error.includes('User already registered')) {
-          apiFieldErrors.email = 'Cet email est déjà utilisé'
-        } else if (data.error.includes('Password should be at least 6 characters')) {
-          apiFieldErrors.password = 'Mot de passe trop court'
-        }
-        if (Object.keys(apiFieldErrors).length > 0) {
-          setFieldErrors(apiFieldErrors)
-          setLoading(false)
-          return
-        } else {
-          setError(data.error)
-          setLoading(false)
-          return
-        }
-      }
-      
-      // Gestion de la redirection selon le rôle
-      if (data.redirectToStripe && role === 'PRO') {
-        // Rediriger vers Stripe pour les professionnels
-        try {
-          const stripeResponse = await fetch('/api/checkout', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          })
-          const stripeData = await stripeResponse.json()
-          
-          if (stripeData.url) {
-            window.location.href = stripeData.url
-          } else {
-            setError('Erreur lors de la création de la session de paiement')
-          }
-        } catch (stripeErr: any) {
-          setError('Erreur lors de la connexion au service de paiement')
-        }
-      } else {
-        // Redirection normale pour les propriétaires
-        window.location.href = '/login'
-      }
-    } catch (err: any) {
-      setError(err.message || 'Erreur inconnue')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   return (
     <div className="min-h-screen bg-[#f9fafb] flex items-center justify-center px-4 py-8 overflow-x-hidden">
@@ -174,7 +209,7 @@ export default function SignupPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          <form className="space-y-4 sm:space-y-6">
           <div>
             <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Email</label>
             <input
@@ -432,11 +467,16 @@ export default function SignupPage() {
           )}
 
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-[#f86f4d] text-white py-3 px-4 min-h-[44px] rounded-lg font-medium hover:bg-[#fa8265]  transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-base"
+            type="button"
+            onClick={handleSignup}
+            disabled={loading || !formValid}
+            className={`w-full py-3 px-4 min-h-[44px] rounded-lg font-medium transition-all duration-150 text-base ${
+              loading || !formValid
+                ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                : 'bg-[#f86f4d] text-white hover:bg-[#fa8265]'
+            }`}
           >
-            {loading ? 'Inscription...' : "S'inscrire"}
+            {loading ? 'Chargement...' : "S'inscrire"}
           </button>
 
           <div className="text-center mt-6">

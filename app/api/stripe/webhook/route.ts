@@ -10,10 +10,10 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔔 Webhook Stripe reçu')
+    
     const body = await request.text()
     const signature = request.headers.get('stripe-signature')
-
-    console.log('🔔 Webhook Stripe reçu')
 
     if (!signature) {
       console.error('❌ Missing stripe-signature header')
@@ -32,21 +32,20 @@ export async function POST(request: NextRequest) {
 
     // Traiter l'événement checkout.session.completed
     if (event.type === 'checkout.session.completed') {
+      console.log('💳 Événement checkout.session.completed reçu')
+      
       const session = event.data.object as Stripe.Checkout.Session
-      
-      console.log('💳 Traitement du paiement:', session.id)
-      console.log('📧 Email client:', session.customer_email)
-      console.log('🆔 Client reference ID:', session.client_reference_id)
-      
-      // Récupérer l'user_id depuis client_reference_id
-      const userId = session.client_reference_id
-      
+      console.log('📋 Session ID:', session.id)
+      console.log('📋 Session metadata:', session.metadata)
+
+      // Récupérer le userId depuis les metadata
+      const userId = session.metadata?.userId
       if (!userId) {
-        console.error('❌ No client_reference_id found in session:', session.id)
-        return NextResponse.json({ error: 'No client_reference_id found' }, { status: 400 })
+        console.error('❌ No userId found in session metadata')
+        return NextResponse.json({ error: 'No userId in metadata' }, { status: 400 })
       }
 
-      console.log('👤 User ID à vérifier:', userId)
+      console.log('👤 User ID trouvé:', userId)
 
       // Vérifier que Supabase est initialisé
       if (!supabase) {
@@ -54,25 +53,16 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Database connection error' }, { status: 500 })
       }
 
-      // Vérifier que l'utilisateur existe et est un professionnel
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id, role')
-        .eq('id', userId)
-        .eq('role', 'PRO')
-        .limit(1)
-
-      if (userError || !userData || userData.length === 0) {
-        console.error('❌ User not found or not a professional:', userId, userError)
-        return NextResponse.json({ error: 'User not found or not a professional' }, { status: 404 })
-      }
-
-      console.log('✅ Utilisateur professionnel trouvé:', userData[0])
-
-      // Mettre à jour pro_profiles avec is_verified = true
+      // Mettre à jour le profil professionnel
+      console.log('🔄 Mise à jour de pro_profiles pour user_id:', userId)
+      
       const { error: updateError } = await supabase
         .from('pro_profiles')
-        .update({ is_verified: true })
+        .update({
+          is_verified: true,
+          is_subscribed: true,
+          subscription_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // +30 jours
+        })
         .eq('user_id', userId)
 
       if (updateError) {
@@ -80,7 +70,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Database update failed' }, { status: 500 })
       }
 
-      console.log('✅ Paiement vérifié avec succès pour l\'utilisateur:', userId)
+      console.log('✅ Subscription activated for user:', userId)
     }
 
     return NextResponse.json({ received: true })

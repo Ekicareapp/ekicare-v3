@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Mise à jour Profil Propriétaire</title>
+</head>
+<body>
+    <h1>Test Mise à jour Profil Propriétaire</h1>
+    <p>Ce test simule la mise à jour du profil via l'API PATCH</p>
+    
+    <form id="updateForm">
+        <div>
+            <label>Prénom:</label>
+            <input type="text" name="prenom" value="Marie" required>
+        </div>
+        <div>
+            <label>Nom:</label>
+            <input type="text" name="nom" value="Durand-Updated" required>
+        </div>
+        <div>
+            <label>Téléphone:</label>
+            <input type="text" name="telephone" value="0987654321">
+        </div>
+        <div>
+            <label>Adresse:</label>
+            <input type="text" name="adresse" value="456 Avenue des Champs, 75008 Paris - Modifiée" required>
+        </div>
+        <button type="submit">Mettre à jour le profil</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('updateForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                resultDiv.innerHTML = 'Mise à jour en cours...';
+                
+                // Simuler les données à envoyer
+                const updateData = {
+                    prenom: formData.get('prenom'),
+                    nom: formData.get('nom'),
+                    telephone: formData.get('telephone'),
+                    adresse: formData.get('adresse')
+                };
+                
+                resultDiv.innerHTML = `<p style="color: blue;">Données à envoyer à l'API PATCH /api/profile:</p>
+                    <pre>${JSON.stringify(updateData, null, 2)}</pre>
+                    <p><strong>Note:</strong> Cette requête nécessite une authentification. En mode développement, l'API devrait accepter la requête.</p>`;
+                
+                // Tenter la requête (elle échouera probablement sans auth, mais on peut voir la structure)
+                const response = await fetch('/api/profile', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(updateData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML += `<p style="color: green;">✅ Succès! Profil mis à jour</p>`;
+                } else {
+                    resultDiv.innerHTML += `<p style="color: orange;">⚠️ Réponse API: ${data.error || 'Erreur inconnue'}</p>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML += `<p style="color: red;">Erreur: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>

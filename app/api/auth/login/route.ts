@@ -34,8 +34,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Profil non trouvé dans users' }, { status: 400 })
   }
 
+  // 🚧 MODE DÉVELOPPEMENT - DÉSACTIVATION TEMPORAIRE DES VÉRIFICATIONS DE PAIEMENT
+  const DEV_MODE = process.env.NODE_ENV === 'development'
+
   // 3. Vérifier is_verified pour les professionnels
-  if (userRow.role === 'PRO') {
+  if (userRow.role === 'PRO' && !DEV_MODE) {
     const { data: proProfile, error: proError } = await supabase
       .from('pro_profiles')
       .select('is_verified')
@@ -58,6 +61,11 @@ export async function POST(req: Request) {
         requiresPayment: true, // Indicateur pour redirection vers paiement
       })
     }
+  }
+
+  // 🚧 MODE DÉVELOPPEMENT - BYPASS DES VÉRIFICATIONS
+  if (DEV_MODE && userRow.role === 'PRO') {
+    console.log('🚧 MODE DÉVELOPPEMENT: Vérifications de paiement désactivées pour les professionnels')
   }
 
   // 4. Retourner l'utilisateur + rôle (vérifié ou non-PRO)

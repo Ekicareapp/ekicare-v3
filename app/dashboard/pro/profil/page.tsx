@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Card from '@/app/dashboard/pro/components/Card';
 import Button from '@/app/dashboard/pro/components/Button';
 import Input from '@/app/dashboard/pro/components/Input';
-import { User, Mail, Phone, MapPin, Briefcase, Calendar, CreditCard, Save, AlertTriangle, Upload, Camera } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Briefcase, Calendar, CreditCard, Save, AlertTriangle, Upload, Camera, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
 const professions = [
@@ -31,71 +31,107 @@ const priceRangeOptions = [
 
 export default function ProfilPage() {
   const [formData, setFormData] = useState({
-    prenom: 'Dr. Jean',
-    nom: 'Martin',
-    telephone: '06 12 34 56 78',
-    profession: 'Vétérinaire',
-    villeReference: 'Paris',
+    prenom: '',
+    nom: '',
+    telephone: '',
+    profession: '',
+    villeReference: '',
     rayonIntervention: 30,
-    siret: '12345678901234',
+    siret: '',
     photo: null as File | null,
     photoPreview: null as string | null,
-    bio: 'Vétérinaire spécialisé dans les soins des équidés avec plus de 15 ans d\'expérience. Diplômé de l\'École Nationale Vétérinaire d\'Alfort.',
+    bio: '',
     moyensPaiement: ['CB', 'Espèces', 'Chèque', 'Virement'],
     priceRange: '€€',
-    experienceYears: 15
+    experienceYears: 0
   });
 
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [passwordData, setPasswordData] = useState({
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordStatus, setPasswordStatus] = useState<{
+    type: 'success' | 'error' | null;
+    message: string;
+  }>({ type: null, message: '' });
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   // Charger les données du profil au montage du composant
   useEffect(() => {
     const loadProfile = async () => {
       try {
+        setLoading(true);
+        
+        // 1. Récupérer l'utilisateur connecté
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError || !user) {
-          console.error('Utilisateur non authentifié');
+          console.error('Utilisateur non authentifié:', userError);
+          setLoading(false);
           setIsLoading(false);
           return;
         }
 
-        const { data: profile, error: profileError } = await supabase
-          .from('pro_profiles')
-          .select('*')
-          .eq('user_id', user.id)
+        // 2. Vérifier le rôle dans la table users
+        const { data: userRow, error: userRowError } = await supabase
+          .from('users')
+          .select('role, email')
+          .eq('id', user.id)
           .single();
 
-        if (profileError) {
-          console.error('Erreur lors du chargement du profil:', profileError);
+        if (userRowError || !userRow) {
+          console.error('Erreur lors de la récupération du rôle:', userRowError);
+          setLoading(false);
           setIsLoading(false);
           return;
         }
 
-        if (profile) {
-          setFormData({
-            prenom: profile.prenom || '',
-            nom: profile.nom || '',
-            telephone: profile.telephone || '',
-            profession: profile.profession || 'Vétérinaire',
-            villeReference: profile.ville_nom || '',
-            rayonIntervention: profile.rayon_km || 30,
-            siret: profile.siret || '',
-            photo: null,
-            photoPreview: profile.photo_url || null,
-            bio: profile.bio || '',
-            moyensPaiement: profile.payment_methods || ['CB', 'Espèces', 'Chèque', 'Virement'],
-            priceRange: profile.price_range || '€€',
-            experienceYears: profile.experience_years || 0
-          });
+        // 3. Charger les infos depuis pro_profiles si PROFESSIONNEL
+        if (userRow.role === 'PRO') {
+          const { data: proProfile, error: proError } = await supabase
+            .from('pro_profiles')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+
+          if (proError) {
+            console.error('Erreur lors du chargement du profil professionnel:', proError);
+            setLoading(false);
+            setIsLoading(false);
+            return;
+          }
+
+          if (proProfile) {
+            setFormData({
+              prenom: proProfile.prenom || '',
+              nom: proProfile.nom || '',
+              telephone: proProfile.telephone || '',
+              profession: proProfile.profession || 'Vétérinaire',
+              villeReference: proProfile.ville_nom || '',
+              rayonIntervention: proProfile.rayon_km || 30,
+              siret: proProfile.siret || '',
+              photo: null,
+              photoPreview: proProfile.photo_url || null,
+              bio: proProfile.bio || '',
+              moyensPaiement: proProfile.payment_methods || ['CB', 'Espèces', 'Chèque', 'Virement'],
+              priceRange: proProfile.price_range || '€€',
+              experienceYears: proProfile.experience_years || 0
+            });
+            console.log('✅ Profil professionnel chargé:', proProfile);
+          }
+        } else {
+          console.error('Rôle non reconnu:', userRow.role);
         }
       } catch (error) {
         console.error('Erreur lors du chargement:', error);
       } finally {
+        setLoading(false);
         setIsLoading(false);
       }
     };
@@ -266,13 +302,13 @@ export default function ProfilPage() {
       }
       
       // Mettre à jour le state local
-      setFormData(prev => ({
-        ...prev,
-        photo: null,
-        photoPreview: null
-      }));
+    setFormData(prev => ({
+      ...prev,
+      photo: null,
+      photoPreview: null
+    }));
       
-      setPhotoError(null);
+    setPhotoError(null);
       console.log('Photo supprimée avec succès !');
       
     } catch (error) {
@@ -334,6 +370,85 @@ export default function ProfilPage() {
   const handleDeleteAccount = () => {
     // TODO: Supprimer le compte
     setShowDeleteConfirm(false);
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handlePasswordSave = async () => {
+    try {
+      setPasswordLoading(true);
+      setPasswordStatus({ type: null, message: '' });
+
+      // Validation des champs
+      if (!passwordData.newPassword || !passwordData.confirmPassword) {
+        setPasswordStatus({ 
+          type: 'error', 
+          message: 'Veuillez remplir tous les champs' 
+        });
+        return;
+      }
+
+      // Vérification que les mots de passe correspondent
+      if (passwordData.newPassword !== passwordData.confirmPassword) {
+        setPasswordStatus({ 
+          type: 'error', 
+          message: 'Les mots de passe ne correspondent pas' 
+        });
+        return;
+      }
+
+      // Vérification de la longueur du mot de passe
+      if (passwordData.newPassword.length < 6) {
+        setPasswordStatus({ 
+          type: 'error', 
+          message: 'Le mot de passe doit contenir au moins 6 caractères' 
+        });
+        return;
+      }
+
+      // Mise à jour du mot de passe via Supabase Auth
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
+
+      if (error) {
+        console.error('Erreur lors du changement de mot de passe:', error);
+        setPasswordStatus({ 
+          type: 'error', 
+          message: error.message || 'Erreur lors du changement de mot de passe' 
+        });
+      } else {
+        setPasswordStatus({ 
+          type: 'success', 
+          message: 'Mot de passe mis à jour avec succès ✅' 
+        });
+        
+        // Vider les champs
+        setPasswordData({
+          newPassword: '',
+          confirmPassword: ''
+        });
+
+        // Masquer le message de succès après 3 secondes
+        setTimeout(() => {
+          setPasswordStatus({ type: null, message: '' });
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Erreur lors du changement de mot de passe:', error);
+      setPasswordStatus({ 
+        type: 'error', 
+        message: 'Erreur de connexion lors du changement de mot de passe' 
+      });
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -411,23 +526,23 @@ export default function ProfilPage() {
               Ajoutez une photo professionnelle pour améliorer votre visibilité auprès des propriétaires.
             </p>
             <div className="flex flex-col sm:flex-row gap-2">
-              <input
+                <input
                 ref={fileInputRef}
-                type="file"
+                  type="file"
                 accept="image/*"
-                onChange={handlePhotoChange}
-                disabled={!isEditing}
-                className="hidden"
-              />
-              <Button
-                variant="secondary"
-                size="sm"
+                  onChange={handlePhotoChange}
+                  disabled={!isEditing}
+                  className="hidden"
+                />
+                <Button
+                  variant="secondary"
+                  size="sm"
                 disabled={!isEditing || isUploadingPhoto}
                 onClick={handlePhotoButtonClick}
                 icon={isUploadingPhoto ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Upload className="w-4 h-4" />}
-              >
+                >
                 {isUploadingPhoto ? 'Upload en cours...' : (formData.photoPreview ? 'Remplacer la photo' : 'Changer la photo')}
-              </Button>
+                </Button>
               
               {formData.photoPreview && isEditing && (
                 <Button
@@ -613,8 +728,8 @@ export default function ProfilPage() {
             <select
               name="priceRange"
               value={formData.priceRange}
-              onChange={handleInputChange}
-              disabled={!isEditing}
+                  onChange={handleInputChange}
+                  disabled={!isEditing}
               className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:border-[#ff6b35] transition-all duration-150 text-[#111827] bg-white disabled:bg-[#f9fafb] disabled:text-[#9ca3af]"
             >
               {priceRangeOptions.map((option) => (
@@ -644,6 +759,59 @@ export default function ProfilPage() {
                 </label>
               ))}
             </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Password Change */}
+      <Card variant="elevated">
+        <h2 className="text-xl font-semibold text-[#111827] mb-6">Changer le mot de passe</h2>
+        
+        {/* Messages de feedback pour le mot de passe */}
+        {passwordStatus.type && (
+          <div className={`p-4 rounded-lg border flex items-center space-x-3 mb-6 ${
+            passwordStatus.type === 'success' 
+              ? 'bg-green-50 border-green-200 text-green-800' 
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}>
+            {passwordStatus.type === 'success' ? (
+              <CheckCircle className="w-5 h-5 flex-shrink-0" />
+            ) : (
+              <XCircle className="w-5 h-5 flex-shrink-0" />
+            )}
+            <p className="text-sm font-medium">{passwordStatus.message}</p>
+          </div>
+        )}
+        
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <Input
+              label="Nouveau mot de passe"
+              name="newPassword"
+              type="password"
+              value={passwordData.newPassword}
+              onChange={handlePasswordChange}
+              placeholder="Entrez votre nouveau mot de passe"
+            />
+            
+            <Input
+              label="Confirmer le nouveau mot de passe"
+              name="confirmPassword"
+              type="password"
+              value={passwordData.confirmPassword}
+              onChange={handlePasswordChange}
+              placeholder="Confirmez votre nouveau mot de passe"
+            />
+          </div>
+          
+          <div className="flex justify-start">
+            <Button 
+              variant="primary" 
+              onClick={handlePasswordSave}
+              disabled={passwordLoading}
+            >
+              {passwordLoading ? 'Mise à jour...' : 'Enregistrer le nouveau mot de passe'}
+            </Button>
           </div>
         </div>
       </Card>

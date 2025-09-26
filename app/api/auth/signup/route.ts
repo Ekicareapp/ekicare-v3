@@ -14,6 +14,7 @@ export async function POST(request: Request) {
     let prenom = form.get('prenom')?.toString() || ''
     let nom = form.get('nom')?.toString() || ''
     let telephone = form.get('telephone')?.toString() || ''
+    let adresse = form.get('adresse')?.toString() || ''
     let profession = form.get('profession')?.toString() || ''
     let ville_nom = form.get('ville_nom')?.toString() || ''
     let ville_lat = form.get('ville_lat')?.toString() || ''
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-    // Champs obligatoires pour PRO
+    // Champs obligatoires selon le rôle
     if (role === 'PRO') {
       const required = [
         prenom,
@@ -86,6 +87,29 @@ export async function POST(request: Request) {
       }
       if (!photo || !justificatif) {
         return NextResponse.json({ error: 'Photo et justificatif obligatoires.' }, { status: 400 })
+      }
+    }
+
+    if (role === 'PROPRIETAIRE') {
+      // Validation spécifique pour les propriétaires
+      if (!prenom || prenom.trim() === '') {
+        return NextResponse.json(
+          { error: 'Le prénom est obligatoire pour un propriétaire.' },
+          { status: 400 }
+        )
+      }
+      if (!nom || nom.trim() === '') {
+        return NextResponse.json(
+          { error: 'Le nom est obligatoire pour un propriétaire.' },
+          { status: 400 }
+        )
+      }
+      // Validation des champs optionnels
+      if (telephone && telephone.trim() !== '' && !/^[0-9+\-\s()]{10,}$/.test(telephone)) {
+        return NextResponse.json(
+          { error: 'Le format du téléphone n\'est pas valide.' },
+          { status: 400 }
+        )
       }
     }
     // Création utilisateur Auth
@@ -146,53 +170,123 @@ export async function POST(request: Request) {
       justificatif_url = justifData?.path || null
     }
     // Insertion dans users
+    console.log('👤 Création de la ligne users pour:', user.id, 'avec rôle:', role)
     const { error: userInsertError } = await supabase
       .from('users')
       .insert([{ id: user.id, email, role }])
     if (userInsertError) {
-      return NextResponse.json({ error: userInsertError.message }, { status: 500 })
+      console.error('❌ Erreur lors de la création du profil utilisateur:', userInsertError)
+      // Rollback: supprimer l'utilisateur auth créé
+      console.log('🔄 Rollback: suppression de l\'utilisateur auth...')
+      await supabase.auth.admin.deleteUser(user.id)
+      console.log('✅ Rollback terminé')
+      return NextResponse.json({ 
+        error: `Erreur lors de la création du profil utilisateur: ${userInsertError.message}` 
+      }, { status: 500 })
     }
-    // Insertion profil PRO
-    if (role === 'PRO') {
-      const proData: any = {
-        user_id: user.id,
-        prenom,
-        nom,
-        telephone,
-        profession,
-        ville_nom,
-        ville_lat,
-        ville_lng,
-        rayon_km,
-        siret,
-        photo_url,
-        justificatif_url,
-      }
-      const { error: proError } = await supabase.from('pro_profiles').insert([proData])
-      if (proError) {
-        return NextResponse.json({ error: proError.message }, { status: 500 })
-      }
-      
-      // Pour les professionnels, rediriger vers Stripe après l'inscription
-      return NextResponse.json({
-        user: {
-          id: user.id,
-          email,
-          role,
-          profile: {
-            prenom,
-            nom,
-            photo_url,
-            justificatif_url,
+    console.log('✅ Ligne users créée avec succès')
+
+    // Insertion profil selon le rôle avec gestion d'erreur et rollback
+    try {
+      if (role === 'PRO') {
+        const proData: any = {
+          user_id: user.id,
+          prenom,
+          nom,
+          telephone,
+          profession,
+          ville_nom,
+          ville_lat: ville_lat ? parseFloat(ville_lat) : null,
+          ville_lng: ville_lng ? parseFloat(ville_lng) : null,
+          rayon_km: rayon_km ? parseInt(rayon_km) : null,
+          siret,
+          photo_url,
+          justificatif_url,
+          is_verified: false,
+          is_subscribed: false,
+        }
+        
+        const { error: proError } = await supabase.from('pro_profiles').insert([proData])
+        if (proError) {
+          // Rollback: supprimer l'utilisateur et les données associées
+          await supabase.from('users').delete().eq('id', user.id)
+          await supabase.auth.admin.deleteUser(user.id)
+          return NextResponse.json({ 
+            error: `Erreur lors de la création du profil professionnel: ${proError.message}` 
+          }, { status: 500 })
+        }
+        
+        return NextResponse.json({
+          user: {
+            id: user.id,
+            email,
+            role,
+            profile: {
+              prenom,
+              nom,
+              telephone,
+              profession,
+              ville_nom,
+              rayon_km,
+              siret,
+              photo_url,
+              justificatif_url,
+            },
           },
-        },
-        redirectToStripe: true // Indicateur pour rediriger vers Stripe
-      })
-    }
-    // Insertion profil PROPRIETAIRE (inchangé)
-    if (role === 'PROPRIETAIRE') {
-      // ... à adapter si besoin pour gérer les fichiers pour ce rôle
-      return NextResponse.json({ user: { id: user.id, email, role } })
+          redirectToStripe: true // Indicateur pour rediriger vers Stripe
+        })
+      }
+
+      if (role === 'PROPRIETAIRE') {
+        console.log('🏠 Création du profil propriétaire pour user:', user.id)
+        const proprioData: any = {
+          user_id: user.id,
+          prenom,
+          nom,
+          telephone: telephone || null,
+          adresse: adresse || null,
+        }
+        
+        console.log('📝 Données propriétaire à insérer:', proprioData)
+        
+        const { error: proprioError } = await supabase.from('proprio_profiles').insert([proprioData])
+        if (proprioError) {
+          console.error('❌ Erreur lors de la création du profil propriétaire:', proprioError)
+          // Rollback: supprimer l'utilisateur et les données associées
+          console.log('🔄 Rollback: suppression des données utilisateur...')
+          await supabase.from('users').delete().eq('id', user.id)
+          await supabase.auth.admin.deleteUser(user.id)
+          console.log('✅ Rollback terminé')
+          return NextResponse.json({ 
+            error: `Erreur lors de la création du profil propriétaire: ${proprioError.message}` 
+          }, { status: 500 })
+        }
+        
+        console.log('✅ Profil propriétaire créé avec succès')
+        console.log('🎯 Redirection vers /success-proprio')
+        
+        return NextResponse.json({ 
+          user: { 
+            id: user.id, 
+            email, 
+            role,
+            profile: {
+              prenom,
+              nom,
+              telephone,
+              adresse,
+            }
+          },
+          redirectToSuccess: true // Indicateur pour redirection vers success-proprio
+        })
+      }
+    } catch (profileError: any) {
+      // Rollback en cas d'erreur inattendue
+      await supabase.from('users').delete().eq('id', user.id)
+      await supabase.auth.admin.deleteUser(user.id)
+      return NextResponse.json({ 
+        error: `Erreur inattendue lors de la création du profil: ${profileError.message}` 
+      }, { status: 500 })
     }
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Erreur inconnue.' }, { status: 500 })

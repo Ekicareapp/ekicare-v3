@@ -84,7 +84,7 @@ export async function PATCH(request: Request) {
   let allowedFields: string[] = []
   let table = ''
   if (role === 'PROPRIETAIRE') {
-    allowedFields = ['prenom', 'nom', 'telephone', 'adresse', 'ville', 'code_postal']
+    allowedFields = ['prenom', 'nom', 'telephone', 'adresse']
     table = 'proprio_profiles'
   } else if (role === 'PRO') {
     allowedFields = [

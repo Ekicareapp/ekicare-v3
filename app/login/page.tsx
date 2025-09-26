@@ -9,6 +9,11 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // Fonction de validation des champs
+  const isFormValid = () => {
+    return email.trim() !== '' && password.trim() !== ''
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -25,13 +30,26 @@ export default function LoginPage() {
 
       const data = await response.json()
 
+      // 🚧 MODE DÉVELOPPEMENT - DÉSACTIVATION TEMPORAIRE DES VÉRIFICATIONS DE PAIEMENT
+      const DEV_MODE = process.env.NODE_ENV === 'development'
+
       if (data.error) {
         setError(data.error)
-      } else if (data.requiresPayment) {
-        // Professionnel non vérifié → redirection vers paiement
+      } else if (data.requiresPayment && !DEV_MODE) {
+        // Professionnel non vérifié → redirection vers paiement (désactivé en dev)
         window.location.href = '/paiement-requis'
       } else {
         // Redirection selon le rôle
+        if (data.user.role === 'PRO') {
+          window.location.href = '/dashboard/pro'
+        } else {
+          window.location.href = '/dashboard/proprietaire'
+        }
+      }
+
+      // 🚧 MODE DÉVELOPPEMENT - BYPASS DES VÉRIFICATIONS
+      if (DEV_MODE && data.requiresPayment) {
+        console.log('🚧 MODE DÉVELOPPEMENT: Redirection vers paiement désactivée - Accès direct au dashboard')
         if (data.user.role === 'PRO') {
           window.location.href = '/dashboard/pro'
         } else {
@@ -106,8 +124,12 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-[#f86f4d] text-white py-3 px-4 min-h-[44px] rounded-lg font-medium hover:bg-[#fa8265] focus:outline-none transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-base"
+              disabled={loading || !isFormValid()}
+              className={`w-full py-3 px-4 min-h-[44px] rounded-lg font-medium transition-all duration-150 text-base ${
+                loading || !isFormValid()
+                  ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                  : 'bg-[#f86f4d] text-white hover:bg-[#fa8265]'
+              }`}
             >
               {loading ? 'Connexion...' : 'Se connecter'}
             </button>

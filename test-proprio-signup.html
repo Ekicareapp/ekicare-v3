@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Inscription Propriétaire</title>
+</head>
+<body>
+    <h1>Test Inscription Propriétaire</h1>
+    <form id="signupForm" enctype="multipart/form-data">
+        <div>
+            <label>Email:</label>
+            <input type="email" name="email" value="test.proprio.final2@example.com" required>
+        </div>
+        <div>
+            <label>Mot de passe:</label>
+            <input type="password" name="password" value="testpassword123" required>
+        </div>
+        <div>
+            <label>Confirmer mot de passe:</label>
+            <input type="password" name="confirmPassword" value="testpassword123" required>
+        </div>
+        <div>
+            <label>Rôle:</label>
+            <select name="role" required>
+                <option value="PROPRIETAIRE">Propriétaire</option>
+            </select>
+        </div>
+        <div>
+            <label>Prénom:</label>
+            <input type="text" name="prenom" value="Marie" required>
+        </div>
+        <div>
+            <label>Nom:</label>
+            <input type="text" name="nom" value="Durand" required>
+        </div>
+        <div>
+            <label>Téléphone:</label>
+            <input type="text" name="telephone" value="0987654321">
+        </div>
+        <div>
+            <label>Adresse:</label>
+            <input type="text" name="adresse" value="456 Avenue des Champs, 75008 Paris">
+        </div>
+        <button type="submit">S'inscrire</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                resultDiv.innerHTML = 'Inscription en cours...';
+                
+                const response = await fetch('/api/auth/signup', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultDiv.innerHTML = `<p style="color: red;">Erreur: ${data.error}</p>`;
+                } else {
+                    resultDiv.innerHTML = `<p style="color: green;">Succès! Compte créé avec les données:</p>
+                        <ul>
+                            <li>ID: ${data.user.id}</li>
+                            <li>Email: ${data.user.email}</li>
+                            <li>Rôle: ${data.user.role}</li>
+                            <li>Prénom: ${data.user.profile.prenom}</li>
+                            <li>Nom: ${data.user.profile.nom}</li>
+                            <li>Téléphone: ${data.user.profile.telephone}</li>
+                            <li>Adresse: ${data.user.profile.adresse}</li>
+                        </ul>
+                        <p><a href="/dashboard/proprietaire/profil" target="_blank">Aller à Mon Profil</a></p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Erreur: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>

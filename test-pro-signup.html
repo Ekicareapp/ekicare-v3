@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Inscription Pro</title>
+</head>
+<body>
+    <h1>Test Inscription Pro</h1>
+    <form id="signupForm" enctype="multipart/form-data">
+        <div>
+            <label>Email:</label>
+            <input type="email" name="email" value="test.pro.final@example.com" required>
+        </div>
+        <div>
+            <label>Mot de passe:</label>
+            <input type="password" name="password" value="testpassword123" required>
+        </div>
+        <div>
+            <label>Confirmer mot de passe:</label>
+            <input type="password" name="confirmPassword" value="testpassword123" required>
+        </div>
+        <div>
+            <label>Rôle:</label>
+            <select name="role" required>
+                <option value="PRO">Professionnel</option>
+            </select>
+        </div>
+        <div>
+            <label>Prénom:</label>
+            <input type="text" name="prenom" value="Marie" required>
+        </div>
+        <div>
+            <label>Nom:</label>
+            <input type="text" name="nom" value="Martin" required>
+        </div>
+        <div>
+            <label>Téléphone:</label>
+            <input type="text" name="telephone" value="0987654321" required>
+        </div>
+        <div>
+            <label>Profession:</label>
+            <select name="profession" required>
+                <option value="Vétérinaire équin">Vétérinaire équin</option>
+            </select>
+        </div>
+        <div>
+            <label>Ville:</label>
+            <input type="text" name="ville_nom" value="Paris, France" required>
+        </div>
+        <div>
+            <label>Latitude:</label>
+            <input type="text" name="ville_lat" value="48.8566" required>
+        </div>
+        <div>
+            <label>Longitude:</label>
+            <input type="text" name="ville_lng" value="2.3522" required>
+        </div>
+        <div>
+            <label>Rayon (km):</label>
+            <input type="number" name="rayon_km" value="50" required>
+        </div>
+        <div>
+            <label>SIRET:</label>
+            <input type="text" name="siret" value="12345678901234" required>
+        </div>
+        <div>
+            <label>Photo:</label>
+            <input type="file" name="photo" accept="image/*" required>
+        </div>
+        <div>
+            <label>Justificatif:</label>
+            <input type="file" name="justificatif" accept=".pdf,image/*" required>
+        </div>
+        <button type="submit">S'inscrire</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                resultDiv.innerHTML = 'Inscription en cours...';
+                
+                const response = await fetch('/api/auth/signup', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultDiv.innerHTML = `<p style="color: red;">Erreur: ${data.error}</p>`;
+                } else if (data.redirectToStripe) {
+                    resultDiv.innerHTML = '<p style="color: green;">Compte créé ! Redirection vers Stripe...</p>';
+                    // Simuler la redirection vers Stripe
+                    const stripeResponse = await fetch('/api/checkout-session', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            user_id: data.user.id
+                        })
+                    });
+                    
+                    const stripeData = await stripeResponse.json();
+                    
+                    if (stripeData.url) {
+                        resultDiv.innerHTML += `<p><a href="${stripeData.url}" target="_blank">Cliquer ici pour aller vers Stripe Checkout</a></p>`;
+                    } else {
+                        resultDiv.innerHTML += `<p style="color: red;">Erreur Stripe: ${stripeData.error}</p>`;
+                    }
+                } else {
+                    resultDiv.innerHTML = `<p style="color: green;">Succès: ${JSON.stringify(data)}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Erreur: ${error.message}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>
