@@ -121,16 +121,16 @@ body {
   transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Linear focus states */
+/* Linear focus states: single border, no outline */
 .focus-primary:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-primary);
   border-color: var(--color-border-focus);
+  box-shadow: none;
 }
 
 .focus-ring {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-primary);
+  box-shadow: none;
 }
 
 /* Global focus styles - Ekicare */
@@ -141,7 +141,7 @@ select:focus,
 textarea:focus,
 [tabindex]:focus {
   outline: none;
-  box-shadow: inset 0 0 0 1px #e5e7eb;
+  box-shadow: none;
 }
 
 /* Remove default focus rings */
@@ -150,13 +150,6 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: none;
-  box-shadow: inset 0 0 0 1px #e5e7eb;
-}
-
-/* Specific focus styles for interactive elements */
-button:focus:not(:focus-visible),
-a:focus:not(:focus-visible) {
   outline: none;
   box-shadow: none;
 }
@@ -185,7 +178,7 @@ a:focus:not(:focus-visible) {
 .input-focus:focus {
   outline: none;
   border-color: var(--color-border-focus);
-  box-shadow: 0 0 0 2px var(--color-primary-light);
+  box-shadow: none;
 }
 
 /* Button focus styles */
@@ -203,9 +196,11 @@ input[type="email"]:focus,
 input[type="password"]:focus,
 input[type="tel"]:focus,
 input[type="date"]:focus,
-select:focus {
+select:focus,
+textarea:focus {
   outline: none;
-  box-shadow: inset 0 0 0 1px #e5e7eb;
+  border-color: var(--color-border-focus);
+  box-shadow: none;
 }
 
 /* Link focus styles */

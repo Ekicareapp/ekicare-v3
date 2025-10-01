@@ -1,47 +1,19 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabaseClient'
+import { createClient } from '@supabase/supabase-js'
 
-export async function POST(req: Request) {
-  const { email, password } = await req.json()
+// Créer un client Supabase avec le service role pour les opérations admin
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
-  // Vérifier que supabase est bien configuré
-  if (!supabase) {
-    return NextResponse.json({ error: 'Erreur de configuration Supabase' }, { status: 500 })
-  }
-
-  // 1. Authentification via Supabase
-  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-
-  if (authError) {
-    return NextResponse.json({ error: authError.message }, { status: 400 })
-  }
-
-  if (!authData.user) {
-    return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 })
-  }
-
-  // 2. Récupérer le rôle depuis la table public.users
-  const { data: userRow, error: userError } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', authData.user.id)
-    .single()
-
-  if (userError || !userRow) {
-    return NextResponse.json({ error: 'Profil non trouvé dans users' }, { status: 400 })
-  }
-
-  // 🚧 MODE DÉVELOPPEMENT - DÉSACTIVATION TEMPORAIRE DES VÉRIFICATIONS DE PAIEMENT
-  const DEV_MODE = process.env.NODE_ENV === 'development'
-
-  // 3. Vérifier is_verified pour les professionnels
-  if (userRow.role === 'PRO' && !DEV_MODE) {
+// Fonction pour traiter la réponse de login
+async function processLoginResponse(authData: any, userRow: any) {
+  // 1. Vérifier is_verified pour les professionnels
+  if (userRow.role === 'PRO') {
     const { data: proProfile, error: proError } = await supabase
       .from('pro_profiles')
-      .select('is_verified')
+      .select('is_verified, is_subscribed')
       .eq('user_id', authData.user.id)
       .single()
 
@@ -50,7 +22,7 @@ export async function POST(req: Request) {
     }
 
     // Si le professionnel n'est pas vérifié, retourner un indicateur spécial
-    if (!proProfile.is_verified) {
+    if (!proProfile.is_verified || !proProfile.is_subscribed) {
       return NextResponse.json({
         user: {
           id: authData.user.id,
@@ -63,12 +35,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // 🚧 MODE DÉVELOPPEMENT - BYPASS DES VÉRIFICATIONS
-  if (DEV_MODE && userRow.role === 'PRO') {
-    console.log('🚧 MODE DÉVELOPPEMENT: Vérifications de paiement désactivées pour les professionnels')
-  }
-
-  // 4. Retourner l'utilisateur + rôle (vérifié ou non-PRO)
+  // 2. Retourner l'utilisateur + rôle (vérifié ou non-PRO)
   return NextResponse.json({
     user: {
       id: authData.user.id,
@@ -77,4 +44,43 @@ export async function POST(req: Request) {
     },
     session: authData.session, // pour accéder au token si besoin
   })
+}
+
+export async function POST(req: Request) {
+  const { email, password } = await req.json()
+
+  // Vérifier que supabase est bien configuré
+  if (!supabase) {
+    return NextResponse.json({ error: 'Erreur de configuration Supabase' }, { status: 500 })
+  }
+
+  // 1. Vérifier d'abord si l'utilisateur existe dans la table users
+  const { data: userRow, error: userError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('email', email)
+    .single()
+
+  if (userError || !userRow) {
+    return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 })
+  }
+
+  // 2. Essayer l'authentification via Supabase
+  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+
+  // 3. Si l'authentification échoue, retourner l'erreur
+  if (authError) {
+    console.log('❌ Erreur d\'authentification:', authError.message)
+    return NextResponse.json({ error: authError.message }, { status: 400 })
+  }
+
+  if (!authData.user) {
+    return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 })
+  }
+
+  // 4. Traiter la réponse de login
+  return await processLoginResponse(authData, userRow)
 }

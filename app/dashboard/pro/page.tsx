@@ -1,11 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Card from './components/Card';
 import Button from './components/Button';
+import OnboardingModal from './components/OnboardingModal';
 import { Calendar, Clock, Users, Bell, Plus, Eye } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function ProDashboardPage() {
+  // États pour l'onboarding
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
+
   const [prochainesTournees] = useState([
     {
       id: '1',
@@ -56,6 +62,74 @@ export default function ProDashboardPage() {
       statut: 'en-attente'
     }
   ]);
+
+  // Vérifier l'état d'onboarding au chargement
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      try {
+        setIsCheckingOnboarding(true);
+        
+        // Récupérer l'utilisateur connecté
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) {
+          console.error('Utilisateur non authentifié:', userError);
+          setIsCheckingOnboarding(false);
+          return;
+        }
+
+        // Vérifier le statut d'onboarding dans pro_profiles
+        const { data: proProfile, error: profileError } = await supabase
+          .from('pro_profiles')
+          .select('first_login_completed')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Erreur lors de la récupération du profil:', profileError);
+          setIsCheckingOnboarding(false);
+          return;
+        }
+
+        // Afficher l'onboarding si first_login_completed est false ou null
+        if (!proProfile?.first_login_completed) {
+          setShowOnboarding(true);
+        }
+
+      } catch (error) {
+        console.error('Erreur lors de la vérification de l\'onboarding:', error);
+      } finally {
+        setIsCheckingOnboarding(false);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, []);
+
+  // Marquer l'onboarding comme terminé
+  const handleOnboardingComplete = async () => {
+    try {
+      // Récupérer l'utilisateur connecté
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        console.error('Utilisateur non authentifié:', userError);
+        return;
+      }
+
+      // Mettre à jour first_login_completed à true
+      const { error: updateError } = await supabase
+        .from('pro_profiles')
+        .update({ first_login_completed: true })
+        .eq('user_id', user.id);
+
+      if (updateError) {
+        console.error('Erreur lors de la mise à jour de l\'onboarding:', updateError);
+      } else {
+        console.log('✅ Onboarding marqué comme terminé');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la finalisation de l\'onboarding:', error);
+    }
+  };
 
   const [prochainsRendezVous] = useState([
     {
@@ -210,6 +284,13 @@ export default function ProDashboardPage() {
           )}
         </div>
       </Card>
+
+      {/* Modal d'onboarding */}
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        onComplete={handleOnboardingComplete}
+      />
     </div>
   );
 }

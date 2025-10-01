@@ -43,7 +43,8 @@ export default function ProfilPage() {
     bio: '',
     moyensPaiement: ['CB', 'Espèces', 'Chèque', 'Virement'],
     priceRange: '€€',
-    experienceYears: 0
+    experienceYears: '',
+    averageConsultationDuration: ''
   });
 
   const [isEditing, setIsEditing] = useState(false);
@@ -117,13 +118,19 @@ export default function ProfilPage() {
               rayonIntervention: proProfile.rayon_km || 30,
               siret: proProfile.siret || '',
               photo: null,
-              photoPreview: proProfile.photo_url || null,
+              photoPreview: proProfile.photo_url ? `${proProfile.photo_url}?t=${Date.now()}` : null,
               bio: proProfile.bio || '',
               moyensPaiement: proProfile.payment_methods || ['CB', 'Espèces', 'Chèque', 'Virement'],
               priceRange: proProfile.price_range || '€€',
-              experienceYears: proProfile.experience_years || 0
+              experienceYears: (proProfile.experience_years !== null && proProfile.experience_years !== undefined)
+                ? String(proProfile.experience_years)
+                : '',
+              averageConsultationDuration: (proProfile.average_consultation_duration !== null && proProfile.average_consultation_duration !== undefined)
+                ? String(proProfile.average_consultation_duration)
+                : ''
             });
             console.log('✅ Profil professionnel chargé:', proProfile);
+            console.log('✅ Années d\'expérience chargées:', proProfile.experience_years);
           }
         } else {
           console.error('Rôle non reconnu:', userRow.role);
@@ -140,10 +147,23 @@ export default function ProfilPage() {
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
+    
+    let finalValue: any = value;
+    
+    // Spécifique aux champs numériques saisis librement: autoriser la valeur vide pour permettre la saisie
+    if (name === 'experienceYears' || name === 'averageConsultationDuration') {
+      finalValue = value; // conserver la chaîne telle quelle (y compris '')
+    } else if (type === 'number' || type === 'range') {
+      // Conversion stricte en nombre pour les autres champs numériques
+      finalValue = value === '' ? 0 : Number(value);
+    }
+    
+    console.log(`Modification du champ ${name}:`, value, '→', finalValue);
+    
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: finalValue
     }));
   };
 
@@ -202,12 +222,12 @@ export default function ProfilPage() {
         throw new Error('Utilisateur non authentifié');
       }
       
-      // Créer le chemin de fichier: avatars/${userId}/profile.jpg
+      // Créer le chemin de fichier: pro_photo/${userId}/profile.jpg
       const filePath = `${user.id}/profile.jpg`;
       
       // Upload vers Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('avatars')
+        .from('pro_photo')
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: true // Permet de remplacer l'image existante
@@ -217,15 +237,18 @@ export default function ProfilPage() {
         throw new Error(`Erreur lors de l'upload: ${uploadError.message}`);
       }
       
-      // Récupérer l'URL publique de l'image
+      // Récupérer l'URL publique de l'image avec cache buster
       const { data: urlData } = supabase.storage
-        .from('avatars')
+        .from('pro_photo')
         .getPublicUrl(filePath);
+      
+      // Ajouter un timestamp pour forcer le rechargement de l'image
+      const urlWithCacheBuster = `${urlData.publicUrl}?t=${Date.now()}`;
       
       // Mettre à jour la base de données avec l'URL de la photo
       const { error: updateError } = await supabase
         .from('pro_profiles')
-        .update({ photo_url: urlData.publicUrl })
+        .update({ photo_url: urlWithCacheBuster })
         .eq('user_id', user.id);
       
       if (updateError) {
@@ -236,7 +259,7 @@ export default function ProfilPage() {
       setFormData(prev => ({
         ...prev,
         photo: file,
-        photoPreview: urlData.publicUrl
+        photoPreview: urlWithCacheBuster
       }));
       
       // Nettoyer la preview locale
@@ -283,7 +306,7 @@ export default function ProfilPage() {
       // Supprimer l'image du Storage
       const filePath = `${user.id}/profile.jpg`;
       const { error: deleteError } = await supabase.storage
-        .from('avatars')
+        .from('pro_photo')
         .remove([filePath]);
       
       if (deleteError) {
@@ -326,14 +349,16 @@ export default function ProfilPage() {
         telephone: formData.telephone,
         profession: formData.profession,
         ville_nom: formData.villeReference,
-        rayon_km: formData.rayonIntervention,
+        rayon_km: Number(formData.rayonIntervention),
         siret: formData.siret,
         bio: formData.bio,
         payment_methods: formData.moyensPaiement,
         price_range: formData.priceRange,
-        experience_years: formData.experienceYears,
-        updated_at: new Date().toISOString()
+        experience_years: Number(formData.experienceYears || 0),
+        average_consultation_duration: formData.averageConsultationDuration === '' ? null : Number(formData.averageConsultationDuration)
       };
+      
+      console.log('💾 Sauvegarde du profil:', profileData);
       
       // Récupérer l'utilisateur actuel
       const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -359,11 +384,13 @@ export default function ProfilPage() {
       setPhotoError(null);
       
       // Feedback de succès
-      console.log('Profil sauvegardé avec succès !');
+      console.log('✅ Profil sauvegardé avec succès !');
+      alert('Profil sauvegardé avec succès !');
       
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
       setPhotoError(error instanceof Error ? error.message : 'Erreur lors de la sauvegarde');
+      alert('Erreur lors de la sauvegarde du profil');
     }
   };
 
@@ -644,6 +671,19 @@ export default function ProfilPage() {
         </div>
         
         <div className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+            <Input
+              label="Durée moyenne des consultations (minutes)"
+              name="averageConsultationDuration"
+              type="number"
+              value={formData.averageConsultationDuration}
+              onChange={handleInputChange}
+              disabled={!isEditing}
+              placeholder="30"
+              min="5"
+              max="240"
+            />
+          </div>
           <label className="block text-sm font-medium text-[#111827] mb-2">Bio / Description</label>
           <textarea
             name="bio"

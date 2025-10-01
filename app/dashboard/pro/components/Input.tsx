@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 
 interface InputProps {
   type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url';
+  name?: string;
   placeholder?: string;
   value?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -12,10 +13,13 @@ interface InputProps {
   error?: string;
   helperText?: string;
   icon?: ReactNode;
+  min?: string;
+  max?: string;
 }
 
 export default function Input({
   type = 'text',
+  name,
   placeholder,
   value,
   onChange,
@@ -26,10 +30,12 @@ export default function Input({
   error,
   helperText,
   icon,
+  min,
+  max,
 }: InputProps) {
   const baseClasses = 'w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:outline-none focus:border-[#ff6b35] transition-all duration-150 text-[#111827] placeholder-[#9ca3af] disabled:bg-[#f9fafb] disabled:text-[#9ca3af]';
   
-  const errorClasses = error ? 'border-[#ef4444] focus:ring-[#ef4444] focus:border-[#ef4444]' : '';
+  const errorClasses = error ? 'border-[#ef4444] focus:border-[#ef4444]' : '';
 
   return (
     <div className="space-y-2">
@@ -49,11 +55,14 @@ export default function Input({
         
         <input
           type={type}
+          name={name}
           placeholder={placeholder}
           value={value}
           onChange={onChange}
           disabled={disabled}
           required={required}
+          min={min}
+          max={max}
           className={`${baseClasses} ${errorClasses} ${icon ? 'pl-10' : ''} ${className}`}
         />
       </div>

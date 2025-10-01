@@ -102,6 +102,7 @@ export async function PATCH(request: Request) {
       'experience_years',
       'price_range',
       'payment_methods',
+      'average_consultation_duration',
     ]
     table = 'pro_profiles'
     if ('justificatif_url' in body) {

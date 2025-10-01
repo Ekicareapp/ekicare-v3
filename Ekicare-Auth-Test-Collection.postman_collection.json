@@ -1,0 +1,489 @@
+{
+  "info": {
+    "name": "Ekicare Auth Test Collection",
+    "description": "Collection de test complète pour la logique d'authentification Ekicare",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "proprioEmail",
+      "value": "test-proprio-{{$timestamp}}@ekicare.com",
+      "type": "string"
+    },
+    {
+      "key": "proEmail",
+      "value": "test-pro-{{$timestamp}}@ekicare.com",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "TestPassword123!",
+      "type": "string"
+    },
+    {
+      "key": "proprioUserId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "proUserId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Test Signup Propriétaire",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "email",
+              "value": "{{proprioEmail}}",
+              "type": "text"
+            },
+            {
+              "key": "password",
+              "value": "{{password}}",
+              "type": "text"
+            },
+            {
+              "key": "role",
+              "value": "PROPRIETAIRE",
+              "type": "text"
+            },
+            {
+              "key": "prenom",
+              "value": "Jean",
+              "type": "text"
+            },
+            {
+              "key": "nom",
+              "value": "Dupont",
+              "type": "text"
+            },
+            {
+              "key": "telephone",
+              "value": "0612345678",
+              "type": "text"
+            },
+            {
+              "key": "adresse",
+              "value": "123 Rue de la Paix",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/signup",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "signup"]
+        },
+        "description": "Test de l'inscription d'un propriétaire. Doit retourner redirectToDashboard: true"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has redirectToDashboard', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('redirectToDashboard');",
+              "    pm.expect(jsonData.redirectToDashboard).to.be.true;",
+              "});",
+              "",
+              "pm.test('Response has user data', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('user');",
+              "    pm.expect(jsonData.user.role).to.eql('PROPRIETAIRE');",
+              "    pm.collectionVariables.set('proprioUserId', jsonData.user.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Test Signup Professionnel",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "email",
+              "value": "{{proEmail}}",
+              "type": "text"
+            },
+            {
+              "key": "password",
+              "value": "{{password}}",
+              "type": "text"
+            },
+            {
+              "key": "role",
+              "value": "PRO",
+              "type": "text"
+            },
+            {
+              "key": "prenom",
+              "value": "Marie",
+              "type": "text"
+            },
+            {
+              "key": "nom",
+              "value": "Martin",
+              "type": "text"
+            },
+            {
+              "key": "telephone",
+              "value": "0698765432",
+              "type": "text"
+            },
+            {
+              "key": "profession",
+              "value": "Vétérinaire équin",
+              "type": "text"
+            },
+            {
+              "key": "ville_nom",
+              "value": "Paris, France",
+              "type": "text"
+            },
+            {
+              "key": "ville_lat",
+              "value": "48.8566",
+              "type": "text"
+            },
+            {
+              "key": "ville_lng",
+              "value": "2.3522",
+              "type": "text"
+            },
+            {
+              "key": "rayon_km",
+              "value": "50",
+              "type": "text"
+            },
+            {
+              "key": "siret",
+              "value": "12345678901234",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/signup",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "signup"]
+        },
+        "description": "Test de l'inscription d'un professionnel. Doit retourner redirectToStripe: true"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has redirectToStripe', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('redirectToStripe');",
+              "    pm.expect(jsonData.redirectToStripe).to.be.true;",
+              "});",
+              "",
+              "pm.test('Response has user data', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('user');",
+              "    pm.expect(jsonData.user.role).to.eql('PRO');",
+              "    pm.collectionVariables.set('proUserId', jsonData.user.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Test Login Propriétaire",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{proprioEmail}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Test de la connexion d'un propriétaire. Ne doit pas avoir requiresPayment"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response does not require payment', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.not.have.property('requiresPayment');",
+              "});",
+              "",
+              "pm.test('Response has correct role', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.user.role).to.eql('PROPRIETAIRE');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Test Login Professionnel (non vérifié)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{proEmail}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Test de la connexion d'un professionnel non vérifié. Doit avoir requiresPayment: true"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response requires payment', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('requiresPayment');",
+              "    pm.expect(jsonData.requiresPayment).to.be.true;",
+              "});",
+              "",
+              "pm.test('Response has correct role', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData.user.role).to.eql('PRO');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Test Checkout Session",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_id\": \"{{proUserId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/checkout-session",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "checkout-session"]
+        },
+        "description": "Test de la création d'une session Stripe Checkout"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has Stripe URL', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('url');",
+              "    pm.expect(jsonData.url).to.include('checkout.stripe.com');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Test Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/logout",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "logout"]
+        },
+        "description": "Test de la déconnexion"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response indicates success', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('success');",
+              "    pm.expect(jsonData.success).to.be.true;",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Test Page Paiement Requis",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/paiement-requis",
+          "host": ["{{baseUrl}}"],
+          "path": ["paiement-requis"]
+        },
+        "description": "Test de l'accessibilité de la page de paiement requis"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Page contains expected content', function () {",
+              "    pm.expect(pm.response.text()).to.include('Paiement requis');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Test Page Success Pro",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/success-pro",
+          "host": ["{{baseUrl}}"],
+          "path": ["success-pro"]
+        },
+        "description": "Test de l'accessibilité de la page de succès pro"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Page contains expected content', function () {",
+              "    pm.expect(pm.response.text()).to.include('Bienvenue sur Ekicare');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Test API Test",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/test",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "test"]
+        },
+        "description": "Test de l'endpoint de test pour vérifier que l'API fonctionne"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response has data', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('data');",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Générer des emails uniques pour chaque test",
+          "const timestamp = Date.now();",
+          "pm.collectionVariables.set('proprioEmail', `test-proprio-${timestamp}@ekicare.com`);",
+          "pm.collectionVariables.set('proEmail', `test-pro-${timestamp}@ekicare.com`);"
+        ]
+      }
+    }
+  ]
+}

@@ -61,7 +61,9 @@ export async function POST(request: NextRequest) {
         .update({
           is_verified: true,
           is_subscribed: true,
-          subscription_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // +30 jours
+          subscription_start: new Date().toISOString(),
+          stripe_customer_id: session.customer,
+          stripe_subscription_id: session.subscription
         })
         .eq('user_id', userId)
 

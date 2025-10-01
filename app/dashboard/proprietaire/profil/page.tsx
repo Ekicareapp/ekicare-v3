@@ -27,6 +27,7 @@ export default function ProfilPage() {
     confirmPassword: ''
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  
   const [saveStatus, setSaveStatus] = useState<{
     type: 'success' | 'error' | null;
     message: string;
@@ -88,6 +89,8 @@ export default function ProfilPage() {
             };
             setProfileData(profile);
             setFormData(profile);
+            
+            
             console.log('✅ Profil propriétaire chargé:', profile);
           }
         } else {
@@ -110,6 +113,7 @@ export default function ProfilPage() {
       [name]: value
     }));
   };
+
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

@@ -25,6 +25,22 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Global focus styles for form controls (Linear style) */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #f86f4d !important; /* main brand color */
+  box-shadow: none; /* avoid double ring effects */
+}
+
+/* Ensure focus-visible also has no native outline */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
 /* Animations pour les transitions de pages */
 @keyframes fadeInUp {
   from {

@@ -77,18 +77,17 @@ body {
   line-height: 1.6;
 }
 
-/* Focus styles modernes */
+/* Focus styles modernes — single clean border, no native outline */
 *:focus {
   outline: none;
 }
 
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
-a:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: none;
 }
 
 /* Sidebar styles */

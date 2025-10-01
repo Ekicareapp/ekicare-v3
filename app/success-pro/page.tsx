@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabaseClient'
 import confetti from 'canvas-confetti'
 
 export default function SuccessProPage() {
@@ -9,37 +10,38 @@ export default function SuccessProPage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Déclencher les confettis au montage de la page
-    const triggerConfetti = () => {
-      // Premier burst de confettis
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#f86f4d', '#ff6b35', '#ffa726', '#66bb6a', '#42a5f5']
-      })
-
-      // Deuxième burst après un délai
-      setTimeout(() => {
-        confetti({
-          particleCount: 50,
-          spread: 60,
-          origin: { y: 0.7 },
-          colors: ['#f86f4d', '#ff6b35', '#ffa726', '#66bb6a', '#42a5f5']
-        })
-      }, 300)
-    }
-
-    // Délai pour s'assurer que la page est bien montée
-    const timer = setTimeout(triggerConfetti, 500)
-    
-    return () => clearTimeout(timer)
-  }, [])
-
-  useEffect(() => {
-    // Récupérer les informations du professionnel connecté
-    const fetchUserInfo = async () => {
+    // Valider le paiement et afficher la page de succès immédiatement
+    const validatePaymentAndShow = async () => {
       try {
+        // Vérifier la session Supabase
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError || !session) {
+          console.error('❌ Aucune session active, redirection vers login')
+          router.push('/login')
+          return
+        }
+
+        console.log('✅ Session active trouvée:', session.user.email)
+
+        // Mettre à jour immédiatement is_verified et is_subscribed
+        // Le paiement a été validé par Stripe, on active le compte
+        const { error: updateError } = await supabase
+          .from('pro_profiles')
+          .update({
+            is_verified: true,
+            is_subscribed: true,
+            subscription_start: new Date().toISOString()
+          })
+          .eq('user_id', session.user.id)
+
+        if (updateError) {
+          console.error('❌ Erreur lors de la mise à jour:', updateError)
+        } else {
+          console.log('✅ Paiement validé et compte activé')
+        }
+
+        // Récupérer les informations du profil
         const response = await fetch('/api/profile')
         const data = await response.json()
         
@@ -48,16 +50,34 @@ export default function SuccessProPage() {
             prenom: data.profile.prenom || 'Professionnel'
           })
         }
+
+        // Tout est prêt, afficher la page de succès
+        setLoading(false)
+
+        // Déclencher les confettis immédiatement
+        setTimeout(() => {
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#f86f4d', '#ff6b35', '#ffa726', '#66bb6a', '#42a5f5']
+          })
+        }, 500)
+
+        // Redirection automatique vers le dashboard après 3 secondes
+        setTimeout(() => {
+          console.log('🔄 Redirection automatique vers le dashboard pro')
+          router.push('/dashboard/pro')
+        }, 3000)
+
       } catch (error) {
-        console.error('Erreur lors de la récupération des informations:', error)
-        setUserInfo({ prenom: 'Professionnel' })
-      } finally {
+        console.error('❌ Erreur lors de la validation:', error)
         setLoading(false)
       }
     }
 
-    fetchUserInfo()
-  }, [])
+    validatePaymentAndShow()
+  }, [router])
 
   const handleGoToDashboard = () => {
     router.push('/dashboard/pro')
@@ -93,7 +113,7 @@ export default function SuccessProPage() {
 
           {/* Texte secondaire */}
           <p className="text-sm sm:text-base text-[#6b7280] mb-8 leading-relaxed">
-            Votre inscription est validée et votre abonnement activé.
+            Votre abonnement professionnel est maintenant actif et validé.
           </p>
 
           {/* Bouton CTA */}
@@ -106,8 +126,11 @@ export default function SuccessProPage() {
 
           {/* Message d'information */}
           <div className="mt-6 pt-6 border-t border-[#e5e7eb]">
-            <p className="text-xs text-[#9ca3af]">
+            <p className="text-xs text-[#9ca3af] mb-2">
               Votre abonnement professionnel est maintenant actif. Vous pouvez commencer à utiliser toutes les fonctionnalités.
+            </p>
+            <p className="text-xs text-[#f86f4d] font-medium">
+              Redirection automatique vers votre tableau de bord dans 3 secondes...
             </p>
           </div>
         </div>

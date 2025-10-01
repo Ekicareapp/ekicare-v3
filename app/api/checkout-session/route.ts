@@ -31,6 +31,13 @@ export async function POST(request: NextRequest) {
     
     console.log('👤 User ID pour Stripe:', user_id)
     
+    // Déterminer l'URL de base dynamiquement
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+                   (request.headers.get('origin') || 
+                    `http://${request.headers.get('host') || 'localhost:3000'}`)
+    
+    console.log('🌐 Base URL détectée:', baseUrl)
+    
     // Créer une session de paiement en mode subscription
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -41,8 +48,8 @@ export async function POST(request: NextRequest) {
           quantity: 1,
         },
       ],
-      success_url: 'http://localhost:3000/success-pro',
-      cancel_url: 'http://localhost:3000/signup',
+      success_url: `${baseUrl}/success-pro?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/paiement-requis`,
       client_reference_id: user_id,
       metadata: {
         source: 'signup_pro',
