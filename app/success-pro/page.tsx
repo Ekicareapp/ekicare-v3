@@ -10,8 +10,8 @@ export default function SuccessProPage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Valider le paiement et afficher la page de succès immédiatement
-    const validatePaymentAndShow = async () => {
+    // Afficher la page de succès immédiatement après paiement
+    const showSuccessPage = async () => {
       try {
         // Vérifier la session Supabase
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
@@ -23,25 +23,9 @@ export default function SuccessProPage() {
         }
 
         console.log('✅ Session active trouvée:', session.user.email)
+        console.log('🎉 Paiement validé par Stripe - Redirection immédiate vers succès')
 
-        // Mettre à jour immédiatement is_verified et is_subscribed
-        // Le paiement a été validé par Stripe, on active le compte
-        const { error: updateError } = await supabase
-          .from('pro_profiles')
-          .update({
-            is_verified: true,
-            is_subscribed: true,
-            subscription_start: new Date().toISOString()
-          })
-          .eq('user_id', session.user.id)
-
-        if (updateError) {
-          console.error('❌ Erreur lors de la mise à jour:', updateError)
-        } else {
-          console.log('✅ Paiement validé et compte activé')
-        }
-
-        // Récupérer les informations du profil
+        // Récupérer les informations du profil (sans attendre la mise à jour DB)
         const response = await fetch('/api/profile')
         const data = await response.json()
         
@@ -51,7 +35,7 @@ export default function SuccessProPage() {
           })
         }
 
-        // Tout est prêt, afficher la page de succès
+        // Afficher immédiatement la page de succès
         setLoading(false)
 
         // Déclencher les confettis immédiatement
@@ -71,12 +55,12 @@ export default function SuccessProPage() {
         }, 3000)
 
       } catch (error) {
-        console.error('❌ Erreur lors de la validation:', error)
+        console.error('❌ Erreur lors de l\'affichage de la page de succès:', error)
         setLoading(false)
       }
     }
 
-    validatePaymentAndShow()
+    showSuccessPage()
   }, [router])
 
   const handleGoToDashboard = () => {

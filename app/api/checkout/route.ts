@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/success?payment=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/cancel?payment=cancelled`,
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/success-pro?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/paiement-requis`,
       client_reference_id: user.id, // Ajouter l'user_id comme référence client
       metadata: {
         user_id: user.id,

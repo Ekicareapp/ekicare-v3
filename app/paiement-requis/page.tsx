@@ -35,6 +35,8 @@ export default function PaiementRequisPage() {
 
   const handleGoToPayment = async () => {
     try {
+      console.log('💳 Début du processus de paiement pour user:', userInfo?.id)
+      
       const response = await fetch('/api/checkout-session', {
         method: 'POST',
         headers: {
@@ -48,14 +50,28 @@ export default function PaiementRequisPage() {
       const data = await response.json()
       
       if (data.url) {
+        console.log('✅ URL Stripe reçue, redirection...')
         window.location.href = data.url
       } else {
         console.error('❌ Erreur Stripe:', data.error)
-        alert('Erreur lors de la redirection vers Stripe: ' + (data.error || 'Erreur inconnue'))
+        
+        // Messages d'erreur plus détaillés
+        let errorMessage = 'Erreur lors de la redirection vers Stripe'
+        if (data.error) {
+          if (data.error.includes('Configuration Stripe manquante')) {
+            errorMessage = 'Configuration Stripe manquante. Veuillez contacter le support.'
+          } else if (data.error.includes('User ID requis')) {
+            errorMessage = 'Erreur de session. Veuillez vous reconnecter.'
+          } else {
+            errorMessage = data.error
+          }
+        }
+        
+        alert(errorMessage)
       }
     } catch (error) {
-      console.error('Erreur lors de la création de la session de paiement:', error)
-      alert('Erreur lors de la création de la session de paiement')
+      console.error('❌ Erreur lors de la création de la session de paiement:', error)
+      alert('Erreur de connexion. Vérifiez votre connexion internet et réessayez.')
     }
   }
 
