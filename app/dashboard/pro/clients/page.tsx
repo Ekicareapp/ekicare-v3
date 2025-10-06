@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Card from '@/app/dashboard/pro/components/Card';
 import Button from '@/app/dashboard/pro/components/Button';
 import Input from '@/app/dashboard/pro/components/Input';
 import Modal from '@/app/dashboard/pro/components/Modal';
-import { Search, Eye, Phone, Mail, MapPin, Download, X } from 'lucide-react';
+import { Search, Eye, Phone, Mail, MapPin, Download, X, Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
 
 interface Client {
   id: string;
@@ -14,83 +15,205 @@ interface Client {
   email: string;
   telephone: string;
   adresse: string;
-  ville: string;
-  equides: string[];
-  derniereVisite: string;
   totalRendezVous: number;
+  derniereVisite: string | null;
 }
 
 export default function ClientsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const clients: Client[] = [
-    {
-      id: '1',
-      nom: 'Dubois',
-      prenom: 'Marie',
-      email: 'marie.dubois@email.com',
-      telephone: '06 12 34 56 78',
-      adresse: '123 rue de la Paix',
-      ville: 'Paris 15ème',
-      equides: ['Bella', 'Thunder'],
-      derniereVisite: '2024-01-10',
-      totalRendezVous: 8
-    },
-    {
-      id: '2',
-      nom: 'Martin',
-      prenom: 'Pierre',
-      email: 'pierre.martin@email.com',
-      telephone: '06 23 45 67 89',
-      adresse: '456 avenue des Champs',
-      ville: 'Paris 8ème',
-      equides: ['Luna'],
-      derniereVisite: '2024-01-08',
-      totalRendezVous: 5
-    },
-    {
-      id: '3',
-      nom: 'Laurent',
-      prenom: 'Sophie',
-      email: 'sophie.laurent@email.com',
-      telephone: '06 34 56 78 90',
-      adresse: '789 boulevard Saint-Germain',
-      ville: 'Paris 7ème',
-      equides: ['Spirit', 'Storm', 'Luna'],
-      derniereVisite: '2024-01-12',
-      totalRendezVous: 12
-    },
-    {
-      id: '4',
-      nom: 'Dupont',
-      prenom: 'Jean',
-      email: 'jean.dupont@email.com',
-      telephone: '06 45 67 89 01',
-      adresse: '321 rue de Rivoli',
-      ville: 'Paris 1er',
-      equides: ['Thunder'],
-      derniereVisite: '2024-01-05',
-      totalRendezVous: 3
-    },
-    {
-      id: '5',
-      nom: 'Moreau',
-      prenom: 'Claire',
-      email: 'claire.moreau@email.com',
-      telephone: '06 56 78 90 12',
-      adresse: '654 rue de la République',
-      ville: 'Paris 11ème',
-      equides: ['Bella', 'Spirit'],
-      derniereVisite: '2024-01-14',
-      totalRendezVous: 6
-    }
-  ];
+  // Charger les clients directement depuis Supabase côté client
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Vérifier d'abord si l'utilisateur est connecté
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          throw new Error('Vous devez être connecté pour voir vos clients');
+        }
+        
+        console.log('✅ Utilisateur connecté:', user.id);
+        
+        // Vérifier que l'utilisateur est un professionnel
+        const { data: userData, error: userRoleError } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        if (userRoleError || !userData || userData.role !== 'PRO') {
+          throw new Error('Seuls les professionnels peuvent accéder à cette page');
+        }
+        
+        console.log('✅ Rôle vérifié:', userData.role);
+        
+        // Vérifier le profil pro pour confirmer l'ID
+        const { data: proProfile, error: proProfileError } = await supabase
+          .from('pro_profiles')
+          .select('user_id, prenom, nom')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (proProfileError) {
+          console.error('❌ Erreur profil pro:', proProfileError);
+        } else {
+          console.log('👨‍⚕️ Profil pro trouvé:', proProfile);
+        }
+        
+        // Récupérer les appointments terminés pour ce pro
+        console.log('🔍 Recherche des appointments pour pro_id:', user.id);
+        
+        // D'abord, vérifier tous les appointments de ce pro (tous statuts)
+        const { data: allAppointments, error: allAppointmentsError } = await supabase
+          .from('appointments')
+          .select(`
+            id,
+            pro_id,
+            proprio_id,
+            created_at,
+            main_slot,
+            status
+          `)
+          .eq('pro_id', user.id)
+          .order('main_slot', { ascending: false });
+
+        if (allAppointmentsError) {
+          console.error('❌ Erreur appointments (tous):', allAppointmentsError);
+        } else {
+          console.log('📊 Tous les appointments de ce pro:', allAppointments?.length || 0);
+          console.log('📋 Détail des appointments:', allAppointments);
+        }
+        
+        // Tester différents statuts possibles
+        const possibleStatuses = ['completed', 'terminé', 'terminé', 'COMPLETED', 'TERMINE'];
+        let appointments = null;
+        let appointmentsError = null;
+        
+        for (const status of possibleStatuses) {
+          console.log(`🔍 Test avec statut: "${status}"`);
+          const { data: testAppointments, error: testError } = await supabase
+            .from('appointments')
+            .select(`
+              id,
+              pro_id,
+              proprio_id,
+              created_at,
+              main_slot,
+              status
+            `)
+            .eq('pro_id', user.id)
+            .eq('status', status)
+            .order('main_slot', { ascending: false });
+            
+          if (testError) {
+            console.error(`❌ Erreur avec statut "${status}":`, testError);
+          } else {
+            console.log(`📅 Appointments "${status}" trouvés:`, testAppointments?.length || 0);
+            if (testAppointments && testAppointments.length > 0) {
+              appointments = testAppointments;
+              appointmentsError = null;
+              console.log(`✅ Statut correct trouvé: "${status}"`);
+              break;
+            }
+          }
+        }
+        
+        if (appointmentsError) {
+          console.error('❌ Erreur appointments:', appointmentsError);
+          throw new Error('Erreur lors de la récupération des rendez-vous');
+        }
+        
+        console.log('📅 Appointments finaux trouvés:', appointments?.length || 0);
+        console.log('📋 Détail des appointments finaux:', appointments);
+
+        if (!appointments || appointments.length === 0) {
+          setClients([]);
+          return;
+        }
+
+        // Récupérer les IDs uniques des propriétaires
+        const uniqueProprioIds = [...new Set(appointments.map(apt => apt.proprio_id))];
+        console.log('👥 Propriétaires uniques:', uniqueProprioIds.length);
+
+        // Récupérer les informations des propriétaires
+        const { data: proprioProfiles, error: proprioError } = await supabase
+          .from('proprio_profiles')
+          .select(`
+            user_id,
+            prenom,
+            nom,
+            telephone,
+            adresse,
+            users!proprio_profiles_user_id_fkey (
+              email
+            )
+          `)
+          .in('user_id', uniqueProprioIds);
+
+        if (proprioError) {
+          console.error('❌ Erreur proprio_profiles:', proprioError);
+          throw new Error('Erreur lors de la récupération des profils propriétaires');
+        }
+
+        console.log('✅ Profils propriétaires récupérés:', proprioProfiles?.length || 0);
+
+        // Enrichir les données avec les statistiques des rendez-vous
+        const clientsData = (proprioProfiles || []).map(proprio => {
+          const clientAppointments = appointments.filter(apt => apt.proprio_id === proprio.user_id);
+          
+          // Calculer le nombre total de rendez-vous
+          const totalRendezVous = clientAppointments.length;
+          
+          // Trouver le dernier rendez-vous terminé
+          const dernierRendezVous = clientAppointments.length > 0 
+            ? clientAppointments[0].main_slot 
+            : null;
+
+          return {
+            id: proprio.user_id,
+            nom: proprio.nom,
+            prenom: proprio.prenom,
+            email: proprio.users.email,
+            telephone: proprio.telephone,
+            adresse: proprio.adresse,
+            totalRendezVous,
+            derniereVisite: dernierRendezVous
+          };
+        });
+
+        // Trier par date du dernier rendez-vous (plus récent en premier)
+        clientsData.sort((a, b) => {
+          if (!a.derniereVisite && !b.derniereVisite) return 0;
+          if (!a.derniereVisite) return 1;
+          if (!b.derniereVisite) return -1;
+          return new Date(b.derniereVisite).getTime() - new Date(a.derniereVisite).getTime();
+        });
+
+        console.log('✅ Clients construits:', clientsData.length);
+        setClients(clientsData);
+        
+      } catch (err) {
+        console.error('Error fetching clients:', err);
+        setError(err instanceof Error ? err.message : 'Erreur inconnue');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClients();
+  }, []);
 
   const filteredClients = clients.filter(client =>
     `${client.prenom} ${client.nom}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.ville.toLowerCase().includes(searchTerm.toLowerCase())
+    client.adresse.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleViewClient = (client: Client) => {
@@ -105,10 +228,7 @@ export default function ClientsPage() {
       'Email': client.email,
       'Téléphone': client.telephone,
       'Adresse': client.adresse,
-      'Ville': client.ville,
-      'Nombre d\'équidés': client.equides.length,
-      'Équidés': client.equides.join('; '),
-      'Dernière visite': new Date(client.derniereVisite).toLocaleDateString('fr-FR'),
+      'Dernière visite': client.derniereVisite ? new Date(client.derniereVisite).toLocaleDateString('fr-FR') : 'N/A',
       'Total rendez-vous': client.totalRendezVous
     }));
 
@@ -140,6 +260,68 @@ export default function ClientsPage() {
     document.body.removeChild(link);
   };
 
+  // Affichage du loading
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-[#111827] mb-2">
+              Mes clients
+            </h1>
+            <p className="text-[#6b7280] text-lg">
+              Gérez vos clients
+            </p>
+          </div>
+        </div>
+        
+        <Card variant="elevated" className="text-center py-16">
+          <div className="w-16 h-16 bg-[#f3f4f6] rounded-full flex items-center justify-center mx-auto mb-6">
+            <Loader2 className="w-8 h-8 text-[#6b7280] animate-spin" />
+          </div>
+          <h3 className="text-xl font-semibold text-[#111827] mb-2">Chargement des clients...</h3>
+          <p className="text-[#6b7280]">
+            Récupération de vos données clients en cours.
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
+  // Affichage de l'erreur
+  if (error) {
+    return (
+      <div className="space-y-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-[#111827] mb-2">
+              Mes clients
+            </h1>
+            <p className="text-[#6b7280] text-lg">
+              Gérez vos clients
+            </p>
+          </div>
+        </div>
+        
+        <Card variant="elevated" className="text-center py-16">
+          <div className="w-16 h-16 bg-[#fef2f2] rounded-full flex items-center justify-center mx-auto mb-6">
+            <X className="w-8 h-8 text-[#ef4444]" />
+          </div>
+          <h3 className="text-xl font-semibold text-[#111827] mb-2">Erreur de chargement</h3>
+          <p className="text-[#6b7280] mb-4">
+            {error}
+          </p>
+          <Button 
+            variant="primary" 
+            onClick={() => window.location.reload()}
+          >
+            Réessayer
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -149,7 +331,7 @@ export default function ClientsPage() {
             Mes clients
           </h1>
           <p className="text-[#6b7280] text-lg">
-            Gérez vos clients et leurs équidés
+            Gérez vos clients
           </p>
         </div>
         <Button 
@@ -220,25 +402,10 @@ export default function ClientsPage() {
                 </div>
               </div>
 
-              {/* Equides */}
-              <div>
-                <h4 className="text-sm font-medium text-[#111827] mb-2">Équidés ({client.equides.length})</h4>
-                <div className="flex flex-wrap gap-1">
-                  {client.equides.map((equide, index) => (
-                    <span
-                      key={index}
-                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[#f86f4d10] text-[#f86f4d]"
-                    >
-                      {equide}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
               {/* Stats */}
               <div className="flex items-center justify-between pt-4 border-t border-[#e5e7eb]">
                 <div className="text-sm text-[#6b7280]">
-                  Dernière visite: {new Date(client.derniereVisite).toLocaleDateString('fr-FR')}
+                  Dernière visite: {client.derniereVisite ? new Date(client.derniereVisite).toLocaleDateString('fr-FR') : 'N/A'}
                 </div>
                 <div className="text-sm font-medium text-[#111827]">
                   {client.totalRendezVous} RDV
@@ -257,9 +424,14 @@ export default function ClientsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
             </svg>
           </div>
-          <h3 className="text-xl font-semibold text-[#111827] mb-2">Aucun client trouvé</h3>
+          <h3 className="text-xl font-semibold text-[#111827] mb-2">
+            {searchTerm ? 'Aucun client trouvé' : 'Vous n\'avez pas encore de clients'}
+          </h3>
           <p className="text-[#6b7280]">
-            {searchTerm ? 'Aucun client ne correspond à votre recherche.' : 'Vous n\'avez pas encore de clients.'}
+            {searchTerm 
+              ? 'Aucun client ne correspond à votre recherche.' 
+              : 'Les propriétaires apparaîtront ici après votre premier rendez-vous terminé.'
+            }
           </p>
         </Card>
       )}
@@ -286,25 +458,11 @@ export default function ClientsPage() {
                 </div>
                 <div className="flex items-center space-x-3 md:col-span-2">
                   <MapPin className="w-5 h-5 text-[#6b7280]" />
-                  <span className="text-[#111827]">{selectedClient.adresse}, {selectedClient.ville}</span>
+                  <span className="text-[#111827]">{selectedClient.adresse}</span>
                 </div>
               </div>
             </div>
 
-            {/* Équidés */}
-            <div>
-              <h4 className="font-medium text-[#111827] mb-3">Équidés ({selectedClient.equides.length})</h4>
-              <div className="flex flex-wrap gap-2">
-                {selectedClient.equides.map((equide, index) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#f86f4d10] text-[#f86f4d]"
-                  >
-                    {equide}
-                  </span>
-                ))}
-              </div>
-            </div>
 
             {/* Statistiques */}
             <div>
@@ -317,7 +475,10 @@ export default function ClientsPage() {
                 <div className="bg-[#f9fafb] p-4 rounded-lg">
                   <p className="text-sm text-[#6b7280]">Dernière visite</p>
                   <p className="text-lg font-semibold text-[#111827]">
-                    {new Date(selectedClient.derniereVisite).toLocaleDateString('fr-FR')}
+                    {selectedClient.derniereVisite 
+                      ? new Date(selectedClient.derniereVisite).toLocaleDateString('fr-FR')
+                      : 'N/A'
+                    }
                   </p>
                 </div>
               </div>

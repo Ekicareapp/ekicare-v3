@@ -1,183 +1,275 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Card from '@/app/dashboard/pro/components/Card';
 import Button from '@/app/dashboard/pro/components/Button';
 import NouvelleTourneeModal from '@/app/dashboard/pro/components/NouvelleTourneeModal';
 import ClientDetailModal from '@/app/dashboard/pro/components/ClientDetailModal';
-import { Calendar, MapPin, Clock, Users, Phone, Navigation, Plus, ChevronDown } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, Phone, Navigation, Plus, ChevronDown, Loader2, Trash2, X } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
+import DeleteTourModal from '@/app/dashboard/pro/components/DeleteTourModal';
+import Toast from '@/app/dashboard/pro/components/Toast';
+import { calculateTourDistance, formatDistance } from './utils/distanceCalculator';
 
 interface RendezVous {
   id: string;
+  main_slot: string;
+  status: string;
+  comment: string;
+  duration_minutes: number;
+  equide_ids: string[];
+  proprio_profiles: {
+    prenom: string;
+    nom: string;
+    telephone: string;
+    adresse: string;
+    users: {
+      email: string;
+    };
+  };
+}
+
+// Interface pour les rendez-vous mockés (design uniquement)
+interface MockRendezVous {
+  id: string;
   heure: string;
   client: string;
-  adresse: string;
-  ville: string;
-  type: string;
-  equide: string;
+  cheval: string;
   telephone: string;
-  statut: 'planifie' | 'en-cours' | 'termine' | 'annule';
-  email?: string;
-  equides?: string[];
-  derniereVisite?: string;
-  totalRendezVous?: number;
+  adresse: string;
 }
 
 interface Tournee {
   id: string;
+  name: string;
   date: string;
-  distance: number;
-  duree: number;
-  nombreRendezVous: number;
-  rendezVous: RendezVous[];
+  notes?: string;
+  created_at: string;
+  appointments: RendezVous[];
 }
 
 export default function TourneesPage() {
-  const [selectedTournee, setSelectedTournee] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<any>(null);
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [tournees, setTournees] = useState<Tournee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [tourToDelete, setTourToDelete] = useState<Tournee | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  
+  const [openTours, setOpenTours] = useState<Set<string>>(new Set());
+  const [tourDistances, setTourDistances] = useState<Record<string, number | null>>({});
 
-  const tournees: Tournee[] = [
-    {
-      id: '1',
-      date: '2024-01-15',
-      distance: 25.6,
-      duree: 195, // 3h15 en minutes
-      nombreRendezVous: 3,
-      rendezVous: [
-        {
-          id: '1-1',
-          heure: '09:00',
-          client: 'Marie Dubois',
-          adresse: '123 rue de la Paix',
-          ville: 'Paris 15ème',
-          type: 'Consultation générale',
-          equide: 'Bella',
-          telephone: '06 12 34 56 78',
-          statut: 'planifie',
-          email: 'marie.dubois@email.com',
-          equides: ['Bella', 'Thunder'],
-          derniereVisite: '2024-01-10',
-          totalRendezVous: 8
-        },
-        {
-          id: '1-2',
-          heure: '11:30',
-          client: 'Pierre Martin',
-          adresse: '456 avenue des Champs',
-          ville: 'Paris 8ème',
-          type: 'Vaccination',
-          equide: 'Thunder',
-          telephone: '06 23 45 67 89',
-          statut: 'planifie',
-          email: 'pierre.martin@email.com',
-          equides: ['Luna'],
-          derniereVisite: '2024-01-08',
-          totalRendezVous: 5
-        },
-        {
-          id: '1-3',
-          heure: '14:00',
-          client: 'Sophie Laurent',
-          adresse: '789 boulevard Saint-Germain',
-          ville: 'Paris 7ème',
-          type: 'Contrôle dentaire',
-          equide: 'Luna',
-          telephone: '06 34 56 78 90',
-          statut: 'planifie',
-          email: 'sophie.laurent@email.com',
-          equides: ['Spirit', 'Storm', 'Luna'],
-          derniereVisite: '2024-01-12',
-          totalRendezVous: 12
+
+  // Supprimer automatiquement les tournées expirées
+  const deleteExpiredTours = async (userId: string) => {
+    try {
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      
+      // Récupérer les tournées expirées
+      const { data: expiredTours, error: expiredError } = await supabase
+        .from('tours')
+        .select('id, name, date')
+        .eq('pro_id', userId)
+        .lt('date', today);
+
+      if (expiredError) {
+        console.error('❌ Erreur récupération tournées expirées:', expiredError);
+        return;
+      }
+
+      if (expiredTours && expiredTours.length > 0) {
+        console.log(`🧹 Suppression de ${expiredTours.length} tournée(s) expirée(s)`);
+
+        // Mettre à NULL les tour_id des appointments associés
+        for (const tour of expiredTours) {
+          const { error: updateError } = await supabase
+            .from('appointments')
+            .update({ tour_id: null })
+            .eq('tour_id', tour.id);
+
+          if (updateError) {
+            console.error(`❌ Erreur mise à jour appointments pour tour ${tour.id}:`, updateError);
+          } else {
+            console.log(`✅ Appointments libérés pour tournée: ${tour.name}`);
+          }
         }
-      ]
-    },
-    {
-      id: '2',
-      date: '2024-01-16',
-      distance: 18.2,
-      duree: 180, // 3h en minutes
-      nombreRendezVous: 2,
-      rendezVous: [
-        {
-          id: '2-1',
-          heure: '10:00',
-          client: 'Jean Dupont',
-          adresse: '321 rue de Rivoli',
-          ville: 'Paris 1er',
-          type: 'Chirurgie',
-          equide: 'Storm',
-          telephone: '06 45 67 89 01',
-          statut: 'planifie'
-        },
-        {
-          id: '2-2',
-          heure: '15:30',
-          client: 'Claire Moreau',
-          adresse: '654 rue de la République',
-          ville: 'Paris 11ème',
-          type: 'Consultation',
-          equide: 'Spirit',
-          telephone: '06 56 78 90 12',
-          statut: 'planifie'
+
+        // Supprimer les tournées expirées
+        const { error: deleteError } = await supabase
+          .from('tours')
+          .delete()
+          .eq('pro_id', userId)
+          .lt('date', today);
+
+        if (deleteError) {
+          console.error('❌ Erreur suppression tournées expirées:', deleteError);
+        } else {
+          console.log(`✅ ${expiredTours.length} tournée(s) expirée(s) supprimée(s)`);
         }
-      ]
-    },
-    {
-      id: '3',
-      date: '2024-01-18',
-      distance: 32.1,
-      duree: 240, // 4h en minutes
-      nombreRendezVous: 4,
-      rendezVous: [
-        {
-          id: '3-1',
-          heure: '08:30',
-          client: 'Antoine Bernard',
-          adresse: '987 rue de la Sorbonne',
-          ville: 'Paris 5ème',
-          type: 'Vaccination',
-          equide: 'Apollo',
-          telephone: '06 67 89 01 23',
-          statut: 'planifie'
-        },
-        {
-          id: '3-2',
-          heure: '11:00',
-          client: 'Isabelle Roux',
-          adresse: '654 avenue de l\'Opéra',
-          ville: 'Paris 9ème',
-          type: 'Consultation',
-          equide: 'Nova',
-          telephone: '06 78 90 12 34',
-          statut: 'planifie'
-        },
-        {
-          id: '3-3',
-          heure: '14:30',
-          client: 'Marc Lefebvre',
-          adresse: '321 boulevard Haussmann',
-          ville: 'Paris 8ème',
-          type: 'Contrôle',
-          equide: 'Zeus',
-          telephone: '06 89 01 23 45',
-          statut: 'planifie'
-        },
-        {
-          id: '3-4',
-          heure: '16:45',
-          client: 'Catherine Petit',
-          adresse: '159 rue de la Roquette',
-          ville: 'Paris 11ème',
-          type: 'Soins',
-          equide: 'Athena',
-          telephone: '06 90 12 34 56',
-          statut: 'planifie'
-        }
-      ]
+      }
+    } catch (error) {
+      console.error('❌ Erreur suppression automatique:', error);
     }
-  ];
+  };
+
+  // Charger les tournées depuis Supabase
+  useEffect(() => {
+    const fetchTournees = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Vérifier si l'utilisateur est connecté
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          throw new Error('Vous devez être connecté pour voir vos tournées');
+        }
+        
+        console.log('✅ Utilisateur connecté pour tournées:', user.id);
+
+        // Supprimer automatiquement les tournées expirées
+        await deleteExpiredTours(user.id);
+        
+        // Récupérer les tournées avec leurs rendez-vous
+        const { data: toursData, error: toursError } = await supabase
+          .from('tours')
+          .select(`
+            id,
+            name,
+            date,
+            notes,
+            created_at,
+            appointments (
+              id,
+              main_slot,
+              status,
+              comment,
+              duration_minutes,
+              equide_ids,
+              proprio_profiles!inner (
+                prenom,
+                nom,
+                telephone,
+                adresse,
+                users!proprio_profiles_user_id_fkey (
+                  email
+                )
+              )
+            )
+          `)
+          .eq('pro_id', user.id)
+          .order('date', { ascending: true });
+
+        if (toursError) {
+          console.error('❌ Erreur tournées:', toursError);
+          throw new Error('Erreur lors de la récupération des tournées');
+        }
+        
+        console.log('📅 Tournées trouvées:', toursData?.length || 0);
+        console.log('📋 Détail des tournées:', toursData);
+        
+        setTournees(toursData || []);
+        
+        // Calculer les distances après avoir chargé les tournées
+        if (toursData && toursData.length > 0) {
+          calculateAllDistances(toursData);
+        }
+        
+      } catch (err) {
+        console.error('Error fetching tours:', err);
+        setError(err instanceof Error ? err.message : 'Erreur inconnue');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTournees();
+  }, []);
+
+  // Fonction pour ouvrir la popup de suppression
+  const handleDeleteClick = (tour: Tournee) => {
+    setTourToDelete(tour);
+    setDeleteModalOpen(true);
+  };
+
+  // Fonction pour confirmer la suppression
+  const handleConfirmDelete = async () => {
+    if (!tourToDelete) return;
+
+    try {
+      setDeleting(true);
+
+      // Mettre à jour les appointments pour retirer le tour_id
+      const { error: updateAppointmentsError } = await supabase
+        .from('appointments')
+        .update({ tour_id: null })
+        .eq('tour_id', tourToDelete.id);
+
+      if (updateAppointmentsError) {
+        console.error('❌ Erreur mise à jour appointments:', updateAppointmentsError);
+        throw new Error('Erreur lors de la mise à jour des rendez-vous');
+      }
+
+      // Supprimer la tournée
+      const { error: deleteTourError } = await supabase
+        .from('tours')
+        .delete()
+        .eq('id', tourToDelete.id);
+
+      if (deleteTourError) {
+        console.error('❌ Erreur suppression tournée:', deleteTourError);
+        throw new Error('Erreur lors de la suppression de la tournée');
+      }
+
+      // Rafraîchir la liste
+      setTournees(prev => prev.filter(tour => tour.id !== tourToDelete.id));
+      
+      // Fermer la popup et afficher la notification
+      setDeleteModalOpen(false);
+      setTourToDelete(null);
+      setToast({ message: 'Tournée supprimée avec succès.', type: 'success' });
+      
+      console.log('✅ Tournée supprimée avec succès');
+      
+    } catch (err) {
+      console.error('Error deleting tour:', err);
+      setToast({ 
+        message: err instanceof Error ? err.message : 'Erreur lors de la suppression', 
+        type: 'error' 
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // Fonction pour fermer la popup de suppression
+  const handleCloseDeleteModal = () => {
+    setDeleteModalOpen(false);
+    setTourToDelete(null);
+  };
+
+  // Fonctions utilitaires
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getClientName = (rdv: RendezVous) => {
+    return `${rdv.proprio_profiles.prenom} ${rdv.proprio_profiles.nom}`;
+  };
+
+  const getEquideName = (rdv: RendezVous) => {
+    return rdv.equide_ids && rdv.equide_ids.length > 0 
+      ? `Équidé ${rdv.equide_ids[0]}` 
+      : 'N/A';
+  };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -189,43 +281,172 @@ export default function TourneesPage() {
     });
   };
 
+  const calculateTotalDuration = (appointments: RendezVous[]) => {
+    return appointments.reduce((total, rdv) => total + (rdv.duration_minutes || 0), 0);
+  };
+
+  // Fonctions utilitaires pour les statistiques des tournées
+  const calculateTourStats = (appointments: RendezVous[]) => {
+    const totalDuration = calculateTotalDuration(appointments);
+    const totalDistance = appointments.length * 5; // Estimation 5km par RDV
+    const firstAppointment = appointments.length > 0 ? appointments[0] : null;
+    
+    return {
+      totalDuration,
+      totalDistance,
+      firstAppointment
+    };
+  };
+
+  const getFirstClientPhone = (appointments: RendezVous[]) => {
+    if (appointments.length === 0) return null;
+    return appointments[0].proprio_profiles.telephone;
+  };
+
+  const getFirstClientAddress = (appointments: RendezVous[]) => {
+    if (appointments.length === 0) return null;
+    return appointments[0].proprio_profiles.adresse;
+  };
+
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h${mins.toString().padStart(2, '0')}`;
   };
 
-  const handleViewTournee = (tourneeId: string) => {
-    setSelectedTournee(selectedTournee === tourneeId ? null : tourneeId);
-  };
 
   const handleCallClient = (telephone: string) => {
     window.open(`tel:${telephone}`, '_self');
   };
 
-  const handleOpenGPS = (adresse: string, ville: string) => {
-    const address = encodeURIComponent(`${adresse}, ${ville}`);
+  const handleOpenGPS = (adresse: string) => {
+    const address = encodeURIComponent(adresse);
     window.open(`https://www.google.com/maps/search/?api=1&query=${address}`, '_blank');
   };
 
-  const handleViewClient = (rdv: RendezVous) => {
-    // Extraire le prénom et nom du client
-    const [prenom, ...nomParts] = rdv.client.split(' ');
-    const nom = nomParts.join(' ');
+  const handleOpenMaps = (appointments: RendezVous[]) => {
+    if (appointments.length === 0) return;
+    const firstAddress = getFirstClientAddress(appointments);
+    if (firstAddress) {
+      handleOpenGPS(firstAddress);
+    }
+  };
+
+  const handleCallFirstClient = (appointments: RendezVous[]) => {
+    if (appointments.length === 0) return;
+    const firstPhone = getFirstClientPhone(appointments);
+    if (firstPhone) {
+      handleCallClient(firstPhone);
+    }
+  };
+
+
+  // Fonctions pour gérer les dropdowns
+  const toggleTour = (tourId: string) => {
+    setOpenTours(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(tourId)) {
+        newSet.delete(tourId);
+      } else {
+        newSet.add(tourId);
+      }
+      return newSet;
+    });
+  };
+
+  const isTourOpen = (tourId: string) => openTours.has(tourId);
+
+  // Calculer les distances de toutes les tournées
+  const calculateAllDistances = async (tours: Tournee[]) => {
+    const distances: Record<string, number | null> = {};
     
+    for (const tour of tours) {
+      if (tour.appointments && tour.appointments.length > 1) {
+        try {
+          const result = await calculateTourDistance(tour.appointments, false);
+          distances[tour.id] = result.distance;
+        } catch (error) {
+          console.error(`Erreur calcul distance tour ${tour.id}:`, error);
+          distances[tour.id] = null;
+        }
+      } else {
+        distances[tour.id] = 0;
+      }
+    }
+    
+    setTourDistances(distances);
+  };
+
+  const handleViewClient = (rdv: RendezVous) => {
     setSelectedClient({
-      prenom,
-      nom,
-      email: rdv.email,
-      telephone: rdv.telephone,
-      adresse: rdv.adresse,
-      ville: rdv.ville,
-      equides: rdv.equides,
-      derniereVisite: rdv.derniereVisite,
-      totalRendezVous: rdv.totalRendezVous
+      prenom: rdv.proprio_profiles.prenom,
+      nom: rdv.proprio_profiles.nom,
+      email: rdv.proprio_profiles.users.email,
+      telephone: rdv.proprio_profiles.telephone,
+      adresse: rdv.proprio_profiles.adresse,
+      equides: rdv.equide_ids || [],
     });
     setIsClientModalOpen(true);
   };
+
+  // Affichage du loading
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-[#111827] mb-2">
+              Mes tournées
+            </h1>
+            <p className="text-[#6b7280] text-lg">
+              Gérez vos déplacements et rendez-vous
+            </p>
+          </div>
+        </div>
+        <Card variant="elevated" className="text-center py-16">
+          <div className="w-16 h-16 bg-[#f3f4f6] rounded-full flex items-center justify-center mx-auto mb-4">
+            <Loader2 className="w-8 h-8 text-[#6b7280] animate-spin" />
+          </div>
+          <h3 className="text-xl font-semibold text-[#111827] mb-2">Chargement...</h3>
+          <p className="text-[#6b7280]">
+            Récupération de vos tournées en cours
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
+  // Affichage de l'erreur
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-[#111827] mb-2">
+              Mes tournées
+            </h1>
+            <p className="text-[#6b7280] text-lg">
+              Gérez vos déplacements et rendez-vous
+            </p>
+          </div>
+        </div>
+        <Card variant="elevated" className="text-center py-16">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <X className="w-8 h-8 text-red-500" />
+          </div>
+          <h3 className="text-xl font-semibold text-[#111827] mb-2">Erreur</h3>
+          <p className="text-[#6b7280] mb-4">{error}</p>
+          <Button 
+            variant="primary" 
+            size="sm"
+            onClick={() => window.location.reload()}
+          >
+            Réessayer
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -251,134 +472,151 @@ export default function TourneesPage() {
 
       {/* Liste des tournées */}
       <div className="space-y-3">
-        {tournees.map((tournee) => (
-          <div key={tournee.id} className="bg-white rounded-xl border border-[#e5e7eb] overflow-hidden">
-            {/* Header de la tournée */}
-            <div 
-              className="cursor-pointer hover:bg-[#f9fafb] transition-all duration-200 p-6"
-              onClick={() => handleViewTournee(tournee.id)}
+        {tournees.map((tournee) => {
+          const stats = calculateTourStats(tournee.appointments);
+          const isOpen = isTourOpen(tournee.id);
+          
+          return (
+            <div key={tournee.id} className="bg-white rounded-xl border border-neutral-200">
+              {/* Header cliquable */}
+              <div 
+                className="p-4 cursor-pointer hover:bg-neutral-50 transition-colors"
+                onClick={() => toggleTour(tournee.id)}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-[#f86f4d10] rounded-lg flex items-center justify-center">
-                    <Calendar className="w-6 h-6 text-[#f86f4d]" />
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-neutral-100 rounded-lg flex items-center justify-center">
+                      <Calendar className="w-4 h-4 text-neutral-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-[#111827]">
-                      {formatDate(tournee.date)}
+                      <h3 className="text-lg font-medium text-neutral-900">
+                        {tournee.name || formatDate(tournee.date)}
                     </h3>
-                    <div className="flex items-center space-x-6 text-sm text-gray-500">
-                      <div className="flex items-center space-x-1">
-                        <MapPin className="w-4 h-4" />
-                        <span>{tournee.distance} km</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <Clock className="w-4 h-4" />
-                        <span>{formatDuration(tournee.duree)}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <Users className="w-4 h-4" />
-                        <span>{tournee.nombreRendezVous} rendez-vous</span>
+                      <div className="flex items-center space-x-4 text-sm text-neutral-500">
+                        <span>{formatDate(tournee.date)}</span>
+                        <span>•</span>
+                        <span>{tournee.appointments.length} rendez-vous</span>
+                        <span>•</span>
+                        <span>{formatDistance(tourDistances[tournee.id])}</span>
                       </div>
                     </div>
                   </div>
-                </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<Trash2 className="w-4 h-4" />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteClick(tournee);
+                      }}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    />
                 <ChevronDown 
-                  className={`w-5 h-5 text-[#374151] transition-transform duration-200 ${
-                    selectedTournee === tournee.id ? 'rotate-180' : ''
+                      className={`w-5 h-5 text-neutral-400 transition-transform duration-200 ${
+                        isOpen ? 'rotate-180' : ''
                   }`} 
                 />
+                  </div>
               </div>
             </div>
 
-            {/* Liste des rendez-vous à l'intérieur de la carte */}
+              {/* Contenu du dropdown */}
             <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
-              selectedTournee === tournee.id 
-                ? 'max-h-[1000px] opacity-100' 
-                : 'max-h-0 opacity-0'
-            }`}>
-              <div className="border-t border-[#e5e7eb]">
-                {tournee.rendezVous.map((rdv, index) => (
+                isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+              }`}>
+                <div className="border-t border-neutral-200">
+                  <div className={`p-4 space-y-3 ${
+                    tournee.appointments.length > 4 ? 'max-h-60 overflow-y-auto' : ''
+                  }`}>
+                    {tournee.appointments.map((rdv, index) => (
                   <div 
                     key={rdv.id} 
-                    className={`flex justify-between items-center py-4 px-6 ${
-                      index < tournee.rendezVous.length - 1 ? 'border-b border-[#e5e7eb]' : ''
-                    }`}
-                  >
-                    <div className="flex items-center space-x-4 pl-4">
-                      <div className="w-8 h-8 bg-[#f86f4d10] rounded-lg flex items-center justify-center">
-                        <Clock className="w-4 h-4 text-[#f86f4d]" />
+                        className="flex items-center justify-between p-3 rounded-lg bg-neutral-50 hover:bg-neutral-100 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-3">
+                            <span className="text-sm font-medium text-neutral-500">
+                              {formatTime(rdv.main_slot)}
+                            </span>
+                            <span className="text-sm font-medium text-neutral-900">
+                              {getClientName(rdv)}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2 mt-1">
+                            <span className="text-xs text-neutral-500">
+                              {rdv.proprio_profiles?.adresse?.split(',')[0]}
+                            </span>
+                            <span className="text-xs text-neutral-400">•</span>
+                            <span className="text-xs text-neutral-500">
+                              {getEquideName(rdv)}
+                            </span>
                       </div>
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium text-[#111827]">{rdv.heure}</span>
-                          <span className="text-sm text-[#111827] font-medium">{rdv.client}</span>
                         </div>
-                        <p className="text-sm text-gray-500">{rdv.type} • {rdv.equide}</p>
-                        <p className="text-sm text-gray-500">{rdv.adresse}, {rdv.ville}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-1">
                       <Button
                         variant="ghost"
                         size="sm"
-                        icon={<Users className="w-4 h-4" />}
+                            icon={<Users className="w-3 h-3" />}
                         onClick={() => handleViewClient(rdv)}
-                        className="text-gray-500 hover:text-[#f86f4d]"
-                      >
-                        Fiche
-                      </Button>
+                            className="text-neutral-400 hover:text-neutral-600"
+                          />
                       <Button
                         variant="ghost"
                         size="sm"
-                        icon={<Navigation className="w-4 h-4" />}
-                        onClick={() => handleOpenGPS(rdv.adresse, rdv.ville)}
-                        className="text-gray-500 hover:text-[#f86f4d]"
-                      >
-                        GPS
-                      </Button>
+                            icon={<Navigation className="w-3 h-3" />}
+                            onClick={() => handleOpenGPS(rdv.proprio_profiles.adresse)}
+                            className="text-neutral-400 hover:text-neutral-600"
+                          />
                       <Button
                         variant="ghost"
                         size="sm"
-                        icon={<Phone className="w-4 h-4" />}
-                        onClick={() => handleCallClient(rdv.telephone)}
-                        className="text-gray-500 hover:text-[#f86f4d]"
-                      >
-                        Appeler
-                      </Button>
+                            icon={<Phone className="w-3 h-3" />}
+                            onClick={() => handleCallClient(rdv.proprio_profiles.telephone)}
+                            className="text-neutral-400 hover:text-neutral-600"
+                          />
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
 
       {/* Empty State */}
       {tournees.length === 0 && (
-        <Card variant="elevated" className="text-center py-16">
-          <div className="w-16 h-16 bg-[#f3f4f6] rounded-full flex items-center justify-center mx-auto mb-4">
-            <Calendar className="w-8 h-8 text-[#6b7280]" />
+        <div className="bg-white rounded-xl border border-neutral-200 text-center py-16">
+          <div className="w-12 h-12 bg-neutral-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+            <Calendar className="w-6 h-6 text-neutral-400" />
           </div>
-          <h3 className="text-xl font-semibold text-[#111827] mb-2">Aucune tournée</h3>
-          <p className="text-[#6b7280] mb-4">
-            Vous n'avez pas encore créé de tournée. Commencez par planifier vos déplacements.
+          <h3 className="text-lg font-medium text-neutral-900 mb-2">
+            Aucune tournée planifiée
+          </h3>
+          <p className="text-neutral-500 mb-6">
+            Créez votre première tournée à partir de vos rendez-vous à venir.
           </p>
           <Button 
             variant="primary" 
             size="sm" 
             icon={<Plus className="w-4 h-4" />}
+            onClick={() => setIsModalOpen(true)}
           >
-            Créer ma première tournée
+            Nouvelle tournée
           </Button>
-        </Card>
+        </div>
       )}
 
       {/* Modal Nouvelle tournée */}
       <NouvelleTourneeModal 
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onTourCreated={() => {
+          // Rafraîchir la liste des tournées
+          window.location.reload();
+        }}
       />
 
       {/* Modal Détail client */}
@@ -387,6 +625,24 @@ export default function TourneesPage() {
         onClose={() => setIsClientModalOpen(false)}
         client={selectedClient}
       />
+
+      {/* Modal Suppression tournée */}
+      <DeleteTourModal
+        isOpen={deleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        tourName={tourToDelete?.name || ''}
+        loading={deleting}
+      />
+
+      {/* Toast de notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

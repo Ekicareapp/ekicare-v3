@@ -29,6 +29,23 @@ const priceRangeOptions = [
   { value: '€€€', label: '€€€ - Premium' }
 ];
 
+const timeSlots = [
+  '06:00', '06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30',
+  '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
+  '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
+  '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00'
+];
+
+const daysOfWeek = [
+  { key: 'lundi', label: 'Lundi' },
+  { key: 'mardi', label: 'Mardi' },
+  { key: 'mercredi', label: 'Mercredi' },
+  { key: 'jeudi', label: 'Jeudi' },
+  { key: 'vendredi', label: 'Vendredi' },
+  { key: 'samedi', label: 'Samedi' },
+  { key: 'dimanche', label: 'Dimanche' }
+];
+
 export default function ProfilPage() {
   const [formData, setFormData] = useState({
     prenom: '',
@@ -47,6 +64,16 @@ export default function ProfilPage() {
     averageConsultationDuration: ''
   });
 
+  const [workingHours, setWorkingHours] = useState<Record<string, { active: boolean; start: string; end: string }>>({
+    lundi: { active: false, start: '08:00', end: '17:00' },
+    mardi: { active: false, start: '08:00', end: '17:00' },
+    mercredi: { active: false, start: '08:00', end: '17:00' },
+    jeudi: { active: false, start: '08:00', end: '17:00' },
+    vendredi: { active: false, start: '08:00', end: '17:00' },
+    samedi: { active: false, start: '08:00', end: '17:00' },
+    dimanche: { active: false, start: '08:00', end: '17:00' }
+  });
+
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -63,6 +90,43 @@ export default function ProfilPage() {
     message: string;
   }>({ type: null, message: '' });
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Fonctions pour gérer les horaires de travail
+  const handleWorkingDayToggle = (day: string) => {
+    setWorkingHours(prev => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        active: !prev[day].active
+      }
+    }));
+  };
+
+  const handleWorkingTimeChange = (day: string, field: 'start' | 'end', value: string) => {
+    setWorkingHours(prev => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        [field]: value
+      }
+    }));
+  };
+
+  const validateWorkingHours = () => {
+    for (const day of daysOfWeek) {
+      const dayHours = workingHours[day.key];
+      if (dayHours.active && dayHours.start >= dayHours.end) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   // Charger les données du profil au montage du composant
   useEffect(() => {
@@ -129,6 +193,21 @@ export default function ProfilPage() {
                 ? String(proProfile.average_consultation_duration)
                 : ''
             });
+
+            // Charger les horaires de travail
+            if (proProfile.working_hours && typeof proProfile.working_hours === 'object') {
+              // Fusionner avec les valeurs par défaut pour s'assurer que tous les jours sont présents
+              const defaultHours = {
+                lundi: { active: false, start: '08:00', end: '17:00' },
+                mardi: { active: false, start: '08:00', end: '17:00' },
+                mercredi: { active: false, start: '08:00', end: '17:00' },
+                jeudi: { active: false, start: '08:00', end: '17:00' },
+                vendredi: { active: false, start: '08:00', end: '17:00' },
+                samedi: { active: false, start: '08:00', end: '17:00' },
+                dimanche: { active: false, start: '08:00', end: '17:00' }
+              };
+              setWorkingHours({ ...defaultHours, ...proProfile.working_hours });
+            }
             console.log('✅ Profil professionnel chargé:', proProfile);
             console.log('✅ Années d\'expérience chargées:', proProfile.experience_years);
           }
@@ -342,6 +421,20 @@ export default function ProfilPage() {
 
   const handleSave = async () => {
     try {
+      // Validation des horaires de travail
+      if (!validateWorkingHours()) {
+        alert('Erreur : L\'heure de début doit être antérieure à l\'heure de fin pour les jours actifs.');
+        return;
+      }
+
+      // Préparer les horaires de travail (seulement les jours actifs)
+      const activeWorkingHours: Record<string, { active: boolean; start: string; end: string }> = {};
+      Object.entries(workingHours).forEach(([day, hours]) => {
+        if (hours.active) {
+          activeWorkingHours[day] = hours;
+        }
+      });
+
       // Préparer les données pour la sauvegarde (sans photo_url car géré séparément)
       const profileData = {
         prenom: formData.prenom,
@@ -355,7 +448,8 @@ export default function ProfilPage() {
         payment_methods: formData.moyensPaiement,
         price_range: formData.priceRange,
         experience_years: Number(formData.experienceYears || 0),
-        average_consultation_duration: formData.averageConsultationDuration === '' ? null : Number(formData.averageConsultationDuration)
+        average_consultation_duration: formData.averageConsultationDuration === '' ? null : Number(formData.averageConsultationDuration),
+        working_hours: activeWorkingHours
       };
       
       console.log('💾 Sauvegarde du profil:', profileData);
@@ -385,12 +479,12 @@ export default function ProfilPage() {
       
       // Feedback de succès
       console.log('✅ Profil sauvegardé avec succès !');
-      alert('Profil sauvegardé avec succès !');
+      showToast('Horaires de travail enregistrés avec succès', 'success');
       
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);
       setPhotoError(error instanceof Error ? error.message : 'Erreur lors de la sauvegarde');
-      alert('Erreur lors de la sauvegarde du profil');
+      showToast('Erreur lors de la sauvegarde du profil', 'error');
     }
   };
 
@@ -697,6 +791,70 @@ export default function ProfilPage() {
         </div>
       </Card>
 
+      {/* Horaires de travail */}
+      <Card variant="elevated">
+        <h2 className="text-xl font-semibold text-[#111827] mb-6">Horaires de travail</h2>
+        
+        <div className="space-y-3">
+          {daysOfWeek.map((day) => {
+            const dayHours = workingHours[day.key] || { active: false, start: '08:00', end: '17:00' };
+            return (
+              <div key={day.key} className="flex items-center justify-between py-3 px-4 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors">
+                {/* Case à cocher et label du jour */}
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    id={`work-${day.key}`}
+                    checked={dayHours.active}
+                    onChange={() => handleWorkingDayToggle(day.key)}
+                    disabled={!isEditing}
+                    className="w-4 h-4 text-[#ff6b35] bg-white border-neutral-300 rounded focus:ring-2 focus:ring-[#ff6b35] focus:ring-offset-0 disabled:bg-neutral-100 disabled:border-neutral-200"
+                  />
+                  <label htmlFor={`work-${day.key}`} className="text-sm font-medium text-neutral-900 cursor-pointer">
+                    {day.label}
+                  </label>
+                </div>
+
+                {/* Dropdowns pour les heures */}
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2">
+                    <select
+                      value={dayHours.start}
+                      onChange={(e) => handleWorkingTimeChange(day.key, 'start', e.target.value)}
+                      disabled={!isEditing || !dayHours.active}
+                      className="px-3 py-1.5 text-sm border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff6b35] focus:border-transparent disabled:bg-neutral-100 disabled:text-neutral-400 disabled:border-neutral-200"
+                    >
+                      {timeSlots.map((time) => (
+                        <option key={time} value={time}>
+                          {time}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <span className="text-neutral-400 text-sm">—</span>
+
+                  <div className="flex items-center space-x-2">
+                    <select
+                      value={dayHours.end}
+                      onChange={(e) => handleWorkingTimeChange(day.key, 'end', e.target.value)}
+                      disabled={!isEditing || !dayHours.active}
+                      className="px-3 py-1.5 text-sm border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff6b35] focus:border-transparent disabled:bg-neutral-100 disabled:text-neutral-400 disabled:border-neutral-200"
+                    >
+                      {timeSlots.map((time) => (
+                        <option key={time} value={time}>
+                          {time}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+
       {/* Zone d'intervention */}
       <Card variant="elevated">
         <h2 className="text-xl font-semibold text-[#111827] mb-6">Zone d'intervention</h2>
@@ -905,6 +1063,24 @@ export default function ProfilPage() {
                   </Button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast notification */}
+      {toast && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <div className={`px-4 py-3 rounded-lg shadow-lg border transition-all duration-300 ${
+            toast.type === 'success' 
+              ? 'bg-green-50 border-green-200 text-green-800' 
+              : 'bg-red-50 border-red-200 text-red-800'
+          }`}>
+            <div className="flex items-center space-x-2">
+              <div className={`w-2 h-2 rounded-full ${
+                toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+              }`}></div>
+              <span className="text-sm font-medium">{toast.message}</span>
             </div>
           </div>
         </div>
