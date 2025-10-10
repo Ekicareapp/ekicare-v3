@@ -13,6 +13,11 @@ export default function SuccessProPage() {
     // Afficher la page de succès immédiatement après paiement
     const showSuccessPage = async () => {
       try {
+        if (!supabase) {
+          router.push('/login')
+          return
+        }
+        
         // Vérifier la session Supabase
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         

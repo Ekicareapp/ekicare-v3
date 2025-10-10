@@ -5,7 +5,7 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import Tabs from '../components/Tabs';
 import Modal from '../components/Modal';
-import { Eye, X, CheckCircle, RotateCcw, Calendar, FileText, MoreVertical, Phone, MapPin } from 'lucide-react';
+import { Eye, X, CheckCircle, RotateCcw, Calendar, FileText, MoreVertical } from 'lucide-react';
 import Toast from '../../pro/components/Toast';
 import { formatDateTimeForDisplay, createUTCDateTime } from '@/lib/dateUtils';
 import { createClient } from '@supabase/supabase-js';
@@ -293,18 +293,18 @@ export default function RendezVousPage() {
     
     const setupRealtimeSubscription = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase!.auth.getSession();
         if (!session?.access_token) {
           console.log('❌ Aucune session pour Realtime');
           return;
         }
 
         // Récupérer l'ID de l'utilisateur connecté
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase!.auth.getUser();
         if (!user) return;
 
         // Récupérer le rôle de l'utilisateur
-        const { data: userData } = await supabase
+        const { data: userData } = await supabase!
           .from('users')
           .select('role')
           .eq('id', user.id)
@@ -318,7 +318,7 @@ export default function RendezVousPage() {
           filter = `proprio_id=eq.${user.id}`;
         } else if (userData.role === 'PRO') {
           // Pour les PRO, on doit récupérer leur pro_id
-          const { data: proProfile } = await supabase
+          const { data: proProfile } = await supabase!
             .from('pro_profiles')
             .select('id')
             .eq('user_id', user.id)
@@ -404,7 +404,7 @@ export default function RendezVousPage() {
           setLoading(true);
           
           // Récupérer le token d'authentification depuis Supabase
-          const { data: { session } } = await supabase.auth.getSession();
+          const { data: { session } } = await supabase!.auth.getSession();
           if (!session?.access_token) {
             console.error('❌ Aucune session active');
             return;
@@ -542,7 +542,7 @@ export default function RendezVousPage() {
         }
         
         // Récupérer le token d'authentification depuis Supabase
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase!.auth.getSession();
         if (!session?.access_token) {
           console.error('❌ Aucune session active');
           showToast('Erreur d\'authentification. Veuillez vous reconnecter.', 'error');

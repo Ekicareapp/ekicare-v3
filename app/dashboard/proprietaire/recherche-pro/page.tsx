@@ -3,13 +3,12 @@
 import { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import Input from '../components/Input';
 import Modal from '../components/Modal';
 import Avatar from '../components/Avatar';
 import { MapPin, Building2 } from 'lucide-react';
 import Script from 'next/script';
 import { supabase } from '@/lib/supabaseClient';
-import { getProfessionalWorkingHours, WorkingHours, isDateWorkingDay, generateAvailableTimeSlots } from '../utils/workingHours';
+import { getProfessionalWorkingHours, WorkingHours, isDateWorkingDay } from '../utils/workingHours';
 import WorkingHoursCalendar from '../components/WorkingHoursCalendar';
 import Toast from '../../pro/components/Toast';
 import { createUTCDateTime } from '@/lib/dateUtils';
@@ -98,13 +97,13 @@ export default function RechercheProPage() {
   useEffect(() => {
     const fetchEquides = async () => {
       try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        const { data: { user }, error: userError } = await supabase!.auth.getUser();
         if (userError || !user) {
           console.error('Utilisateur non authentifié:', userError);
           return;
         }
 
-        const { data, error } = await supabase
+        const { data, error } = await supabase!
           .from('equides')
           .select('id, nom')
           .eq('proprio_id', user.id);
@@ -215,10 +214,10 @@ export default function RechercheProPage() {
             
             // Ajouter des détails supplémentaires si disponibles
             if (place.address_components) {
-              const streetNumber = place.address_components.find(comp => comp.types.includes('street_number'))?.long_name;
-              const route = place.address_components.find(comp => comp.types.includes('route'))?.long_name;
-              const city = place.address_components.find(comp => comp.types.includes('locality'))?.long_name;
-              const postalCode = place.address_components.find(comp => comp.types.includes('postal_code'))?.long_name;
+              const streetNumber = place.address_components.find((comp: any) => comp.types.includes('street_number'))?.long_name;
+              const route = place.address_components.find((comp: any) => comp.types.includes('route'))?.long_name;
+              const city = place.address_components.find((comp: any) => comp.types.includes('locality'))?.long_name;
+              const postalCode = place.address_components.find((comp: any) => comp.types.includes('postal_code'))?.long_name;
               
               if (streetNumber && route && !fullAddress.includes(streetNumber)) {
                 fullAddress = `${streetNumber} ${route}, ${postalCode} ${city}, France`;
@@ -293,7 +292,7 @@ export default function RechercheProPage() {
 
     try {
       // Récupérer tous les professionnels vérifiés avec leur profession
-      const { data, error } = await supabase
+      const { data, error } = await supabase!
         .from('pro_profiles')
         .select('*')
         .eq('is_verified', true)
@@ -494,7 +493,7 @@ export default function RechercheProPage() {
       // DEBUG: Vérifier l'état de l'authentification
       console.log('🔍 DEBUG: Vérification de l\'authentification...');
       
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase!.auth.getUser();
       
       if (authError) {
         console.error('❌ DEBUG: Erreur auth:', authError);
@@ -511,7 +510,7 @@ export default function RechercheProPage() {
       console.log('✅ DEBUG: Utilisateur connecté:', user.id, user.email);
       
       // DEBUG: Vérifier la session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase!.auth.getSession();
       
       if (sessionError) {
         console.error('❌ DEBUG: Erreur session:', sessionError);
@@ -549,7 +548,7 @@ export default function RechercheProPage() {
       console.log('📋 Données à envoyer:', appointmentData);
       
       // Récupérer le token depuis Supabase
-      const { data: { session: authSession } } = await supabase.auth.getSession();
+      const { data: { session: authSession } } = await supabase!.auth.getSession();
       const token = authSession?.access_token;
       
       if (!token) {

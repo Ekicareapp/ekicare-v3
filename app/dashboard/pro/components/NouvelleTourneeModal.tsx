@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Modal from './Modal';
 import Button from './Button';
-import { Calendar, MapPin, Clock, Users, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
 interface Appointment {
@@ -49,8 +49,13 @@ export default function NouvelleTourneeModal({ isOpen, onClose, onTourCreated }:
         setLoading(true);
         setError(null);
         
+        // Vérifier que Supabase est initialisé
+        if (!supabase) {
+          throw new Error('Client Supabase non initialisé');
+        }
+        
         // Vérifier si l'utilisateur est connecté
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        const { data: { user }, error: authError } = await supabase!.auth.getUser();
         if (authError || !user) {
           throw new Error('Vous devez être connecté pour créer une tournée');
         }
@@ -58,7 +63,7 @@ export default function NouvelleTourneeModal({ isOpen, onClose, onTourCreated }:
         console.log('✅ Utilisateur connecté pour nouvelle tournée:', user.id);
         
         // Récupérer le profil pro pour obtenir le pro_id
-        const { data: proProfile, error: proProfileError } = await supabase
+        const { data: proProfile, error: proProfileError } = await supabase!
           .from('pro_profiles')
           .select('id')
           .eq('user_id', user.id)
@@ -71,7 +76,7 @@ export default function NouvelleTourneeModal({ isOpen, onClose, onTourCreated }:
         console.log('🔍 Pro ID récupéré:', proProfile.id);
         
         // Récupérer les rendez-vous confirmés sans tournée
-        const { data: appointmentsData, error: appointmentsError } = await supabase
+        const { data: appointmentsData, error: appointmentsError } = await supabase!
           .from('appointments')
           .select('id, main_slot, status, comment, duration_minutes, tour_id, equide_ids, proprio_id, address')
           .eq('pro_id', proProfile.id)
@@ -89,7 +94,7 @@ export default function NouvelleTourneeModal({ isOpen, onClose, onTourCreated }:
         console.log('📋 Détail des rendez-vous bruts:', appointmentsData);
         
         // Test : Vérifier s'il y a des appointments pour ce pro
-        const { data: allAppointments, error: allAppointmentsError } = await supabase
+        const { data: allAppointments, error: allAppointmentsError } = await supabase!
           .from('appointments')
           .select('id, pro_id, status, main_slot, tour_id')
           .eq('pro_id', proProfile.id);
@@ -102,12 +107,20 @@ export default function NouvelleTourneeModal({ isOpen, onClose, onTourCreated }:
         // Enrichir les données des propriétaires et des équidés
         const enrichedAppointments = await Promise.all(
           (appointmentsData || []).map(async (appointment) => {
-            let proprioData = {};
-            let equides = [];
+            let proprioData: any = {
+              proprio_profiles: {
+                prenom: '',
+                nom: '',
+                telephone: '',
+                adresse: '',
+                users: { email: '' }
+              }
+            };
+            let equides: any[] = [];
             
             // Récupérer les données du propriétaire
             if (appointment.proprio_id) {
-              const { data: proprioProfile } = await supabase
+              const { data: proprioProfile } = await supabase!
                 .from('proprio_profiles')
                 .select('prenom, nom, telephone, adresse')
                 .eq('user_id', appointment.proprio_id)
@@ -115,7 +128,7 @@ export default function NouvelleTourneeModal({ isOpen, onClose, onTourCreated }:
               
               if (proprioProfile) {
                 // Récupérer l'email depuis la table users
-                const { data: userData } = await supabase
+                const { data: userData } = await supabase!
                   .from('users')
                   .select('email')
                   .eq('id', appointment.proprio_id)
@@ -132,7 +145,7 @@ export default function NouvelleTourneeModal({ isOpen, onClose, onTourCreated }:
             
             // Récupérer les noms des équidés
             if (appointment.equide_ids && appointment.equide_ids.length > 0) {
-              const { data: equidesData, error: equidesError } = await supabase
+              const { data: equidesData, error: equidesError } = await supabase!
                 .from('equides')
                 .select('nom')
                 .in('id', appointment.equide_ids);
@@ -261,8 +274,13 @@ export default function NouvelleTourneeModal({ isOpen, onClose, onTourCreated }:
       setLoading(true);
       setError(null);
       
+      // Vérifier que Supabase est initialisé
+      if (!supabase) {
+        throw new Error('Client Supabase non initialisé');
+      }
+      
       // Vérifier si l'utilisateur est connecté
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase!.auth.getUser();
       if (authError || !user) {
         throw new Error('Vous devez être connecté pour créer une tournée');
       }
@@ -283,7 +301,7 @@ export default function NouvelleTourneeModal({ isOpen, onClose, onTourCreated }:
       // Utiliser la date sélectionnée par l'utilisateur
       const tourDate = selectedDate;
       
-      const { data: tourData, error: tourError } = await supabase
+      const { data: tourData, error: tourError } = await supabase!
         .from('tours')
         .insert({
           pro_id: user.id,
@@ -302,7 +320,7 @@ export default function NouvelleTourneeModal({ isOpen, onClose, onTourCreated }:
       console.log('✅ Tournée créée:', tourData);
       
       // Mettre à jour les rendez-vous avec le tour_id
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabase!
         .from('appointments')
         .update({ tour_id: tourData.id })
         .in('id', selectedAppointments);

@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react';
 import Card from '@/app/dashboard/pro/components/Card';
 import Button from '@/app/dashboard/pro/components/Button';
-import Input from '@/app/dashboard/pro/components/Input';
 import Modal from '@/app/dashboard/pro/components/Modal';
-import { Search, Eye, Phone, Mail, MapPin, Download, X, Loader2 } from 'lucide-react';
+import { Search, Eye, Phone, MapPin, Download, X, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
 interface Client {
@@ -35,8 +34,14 @@ export default function ClientsPage() {
         setLoading(true);
         setError(null);
 
+        // Vérifier que Supabase est initialisé
+        if (!supabase) {
+          setError('Client Supabase non initialisé');
+          return;
+        }
+
         // Récupérer la session utilisateur
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase!.auth.getSession();
         if (!session) {
           setError('Non authentifié');
           return;
@@ -45,7 +50,7 @@ export default function ClientsPage() {
         console.log('🔍 Session utilisateur:', session.user.id);
 
         // Récupérer l'ID du profil PRO
-        const { data: proProfile, error: proError } = await supabase
+        const { data: proProfile, error: proError } = await supabase!
           .from('pro_profiles')
           .select('id')
           .eq('user_id', session.user.id)
@@ -60,7 +65,7 @@ export default function ClientsPage() {
         console.log('🔍 Profil PRO trouvé:', proProfile.id);
 
         // Récupérer les RDV confirmés
-        const { data: confirmedAppointments, error: appointmentsError } = await supabase
+        const { data: confirmedAppointments, error: appointmentsError } = await supabase!
           .from('appointments')
           .select('proprio_id')
           .eq('pro_id', proProfile.id)
@@ -82,7 +87,7 @@ export default function ClientsPage() {
         }
 
         // Récupérer les profils des propriétaires
-        const { data: clients, error: clientsError } = await supabase
+        const { data: clients, error: clientsError } = await supabase!
           .from('proprio_profiles')
           .select(`
             id,
@@ -107,7 +112,7 @@ export default function ClientsPage() {
         // Calculer les statistiques pour chaque client
         const clientsWithStats = await Promise.all(
           clients.map(async (client) => {
-            const { data: appointments, error: appointmentsError } = await supabase
+            const { data: appointments, error: appointmentsError } = await supabase!
               .from('appointments')
               .select('id, main_slot, status, created_at')
               .eq('pro_id', proProfile.id)
@@ -120,7 +125,7 @@ export default function ClientsPage() {
                 id: client.id,
                 nom: client.nom,
                 prenom: client.prenom,
-                photo: null,
+                photo: undefined,
                 telephone: client.telephone,
                 adresse: client.adresse,
                 totalRendezVous: 0,
@@ -142,7 +147,7 @@ export default function ClientsPage() {
               id: client.id,
               nom: client.nom,
               prenom: client.prenom,
-              photo: null,
+              photo: undefined,
               telephone: client.telephone,
               adresse: client.adresse,
               totalRendezVous,
@@ -168,6 +173,8 @@ export default function ClientsPage() {
 
   // Synchronisation temps réel améliorée
   useEffect(() => {
+    if (!supabase) return;
+    
     const channel = supabase
       .channel('clients-realtime')
       .on('postgres_changes', {
@@ -181,7 +188,11 @@ export default function ClientsPage() {
         const fetchClients = async () => {
           try {
             setSyncing(true);
-            const { data: { session } } = await supabase.auth.getSession();
+            if (!supabase) {
+              console.log('⚠️  Client Supabase non initialisé');
+              return;
+            }
+            const { data: { session } } = await supabase!.auth.getSession();
             if (!session) {
               console.log('⚠️  Pas de session, arrêt du rechargement');
               return;
@@ -190,7 +201,7 @@ export default function ClientsPage() {
             console.log('🔄 Rechargement des clients...');
 
             // Récupérer l'ID du profil PRO
-            const { data: proProfile, error: proError } = await supabase
+            const { data: proProfile, error: proError } = await supabase!
               .from('pro_profiles')
               .select('id')
               .eq('user_id', session.user.id)
@@ -202,7 +213,7 @@ export default function ClientsPage() {
             }
 
             // Récupérer les RDV confirmés
-            const { data: confirmedAppointments, error: appointmentsError } = await supabase
+            const { data: confirmedAppointments, error: appointmentsError } = await supabase!
               .from('appointments')
               .select('proprio_id')
               .eq('pro_id', proProfile.id)
@@ -221,7 +232,7 @@ export default function ClientsPage() {
             }
 
             // Récupérer les profils des propriétaires
-            const { data: clients, error: clientsError } = await supabase
+            const { data: clients, error: clientsError } = await supabase!
               .from('proprio_profiles')
               .select(`
                 id,
@@ -243,7 +254,7 @@ export default function ClientsPage() {
             // Calculer les statistiques pour chaque client
             const clientsWithStats = await Promise.all(
               clients.map(async (client) => {
-                const { data: appointments, error: appointmentsError } = await supabase
+                const { data: appointments, error: appointmentsError } = await supabase!
                   .from('appointments')
                   .select('id, main_slot, status, created_at')
                   .eq('pro_id', proProfile.id)
@@ -256,7 +267,7 @@ export default function ClientsPage() {
                     id: client.id,
                     nom: client.nom,
                     prenom: client.prenom,
-                    photo: null,
+                    photo: undefined,
                     telephone: client.telephone,
                     adresse: client.adresse,
                     totalRendezVous: 0,
@@ -278,7 +289,7 @@ export default function ClientsPage() {
                   id: client.id,
                   nom: client.nom,
                   prenom: client.prenom,
-                  photo: null,
+                  photo: undefined,
                   telephone: client.telephone,
                   adresse: client.adresse,
                   totalRendezVous,
@@ -303,7 +314,7 @@ export default function ClientsPage() {
 
     return () => {
       console.log('🔌 Déconnexion du channel clients-realtime');
-      supabase.removeChannel(channel);
+      supabase?.removeChannel(channel);
     };
   }, []);
 

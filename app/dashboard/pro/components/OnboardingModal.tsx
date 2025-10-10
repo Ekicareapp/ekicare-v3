@@ -29,7 +29,6 @@ export default function OnboardingModal({ isOpen, onClose, onComplete }: Onboard
       isOpen={isOpen}
       onClose={handleCloseModal}
       title="Complétez votre profil"
-      size="md"
     >
       <div className="space-y-6">
         <p className="text-sm text-gray-600 leading-relaxed">

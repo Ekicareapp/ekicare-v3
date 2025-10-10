@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Modal from './Modal';
 import Button from './Button';
-import { FileText, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 
 interface CompteRenduModalProps {
   isOpen: boolean;
@@ -58,7 +58,6 @@ export default function CompteRenduModal({
       isOpen={isOpen}
       onClose={handleClose}
       title="Compte-rendu du rendez-vous"
-      size="lg"
     >
       <div className="space-y-6">
         {/* Informations du rendez-vous */}

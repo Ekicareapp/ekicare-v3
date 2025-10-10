@@ -1,19 +1,18 @@
 'use client'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
-export default function SuccessPage() {
-  const [paymentStatus, setPaymentStatus] = useState<string>('')
+function SuccessContent() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
     // Récupérer le statut du paiement depuis l'URL
     const status = searchParams.get('payment')
-    setPaymentStatus(status || 'success')
     
     console.log('🎉 Page de succès chargée avec le statut:', status)
   }, [searchParams])
+  
   return (
     <div className="min-h-screen bg-[#f9fafb] flex items-center justify-center px-4 overflow-x-hidden">
       <div className="w-full max-w-md">
@@ -53,5 +52,13 @@ export default function SuccessPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function SuccessPage() {
+  return (
+    <Suspense fallback={<div>Chargement...</div>}>
+      <SuccessContent />
+    </Suspense>
   )
 }

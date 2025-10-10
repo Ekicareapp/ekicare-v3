@@ -70,7 +70,7 @@ async function getUserFromRequest(request: Request) {
   }
 }
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { user, error: userError } = await getUserFromRequest(request);
     if (userError || !user) {
@@ -78,7 +78,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Récupérer le rôle de l'utilisateur
     const { data: userData, error: userRoleError } = await supabaseAdmin
@@ -154,7 +154,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { user, error: userError } = await getUserFromRequest(request);
     if (userError || !user) {
@@ -162,7 +162,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     // Récupérer le rendez-vous actuel
@@ -304,7 +304,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { user, error: userError } = await getUserFromRequest(request);
     if (userError || !user) {
@@ -312,7 +312,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Vérifier que l'utilisateur peut supprimer ce rendez-vous (seulement proprio en statut pending)
     const { data: appointment, error: fetchError } = await supabaseAdmin

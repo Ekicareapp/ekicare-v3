@@ -5,7 +5,7 @@ import Card from '@/app/dashboard/pro/components/Card';
 import Button from '@/app/dashboard/pro/components/Button';
 import NouvelleTourneeModal from '@/app/dashboard/pro/components/NouvelleTourneeModal';
 import ClientDetailModal from '@/app/dashboard/pro/components/ClientDetailModal';
-import { Calendar, MapPin, Clock, Users, Phone, Navigation, Plus, ChevronDown, Loader2, Trash2, X, MoreVertical } from 'lucide-react';
+import { Calendar, Users, Phone, Navigation, Plus, ChevronDown, Loader2, Trash2, X, MoreVertical } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import DeleteTourModal from '@/app/dashboard/pro/components/DeleteTourModal';
 import Toast from '@/app/dashboard/pro/components/Toast';
@@ -69,7 +69,7 @@ export default function TourneesPage() {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
       
       // Récupérer les tournées expirées
-      const { data: expiredTours, error: expiredError } = await supabase
+      const { data: expiredTours, error: expiredError } = await supabase!
         .from('tours')
         .select('id, name, date')
         .eq('pro_id', userId)
@@ -85,7 +85,7 @@ export default function TourneesPage() {
 
         // Mettre à NULL les tour_id des appointments associés
         for (const tour of expiredTours) {
-          const { error: updateError } = await supabase
+          const { error: updateError } = await supabase!
             .from('appointments')
             .update({ tour_id: null })
             .eq('tour_id', tour.id);
@@ -98,7 +98,7 @@ export default function TourneesPage() {
         }
 
         // Supprimer les tournées expirées
-        const { error: deleteError } = await supabase
+        const { error: deleteError } = await supabase!
           .from('tours')
           .delete()
           .eq('pro_id', userId)
@@ -123,7 +123,7 @@ export default function TourneesPage() {
         setError(null);
         
         // Vérifier si l'utilisateur est connecté
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        const { data: { user }, error: authError } = await supabase!.auth.getUser();
         if (authError || !user) {
           throw new Error('Vous devez être connecté pour voir vos tournées');
         }
@@ -134,7 +134,7 @@ export default function TourneesPage() {
         await deleteExpiredTours(user.id);
         
         // Récupérer les tournées avec leurs rendez-vous
-        const { data: toursData, error: toursError } = await supabase
+        const { data: toursData, error: toursError } = await supabase!
           .from('tours')
           .select(`
             id,
@@ -172,7 +172,7 @@ export default function TourneesPage() {
                 
                 // Récupérer les données du propriétaire
                 if (appointment.proprio_id) {
-                  const { data: proprioProfile } = await supabase
+                  const { data: proprioProfile } = await supabase!
                     .from('proprio_profiles')
                     .select('prenom, nom, telephone, adresse')
                     .eq('user_id', appointment.proprio_id)
@@ -180,7 +180,7 @@ export default function TourneesPage() {
                   
                   if (proprioProfile) {
                     // Récupérer l'email depuis la table users
-                    const { data: userData } = await supabase
+                    const { data: userData } = await supabase!
                       .from('users')
                       .select('email')
                       .eq('id', appointment.proprio_id)
@@ -210,7 +210,7 @@ export default function TourneesPage() {
         );
         
         console.log('✅ Tournées enrichies:', enrichedTours);
-        setTournees(enrichedTours);
+        setTournees(enrichedTours as any);
         
         
       } catch (err) {
@@ -252,7 +252,7 @@ export default function TourneesPage() {
       setDeleting(true);
 
       // Mettre à jour les appointments pour retirer le tour_id
-      const { error: updateAppointmentsError } = await supabase
+      const { error: updateAppointmentsError } = await supabase!
         .from('appointments')
         .update({ tour_id: null })
         .eq('tour_id', tourToDelete.id);
@@ -263,7 +263,7 @@ export default function TourneesPage() {
       }
 
       // Supprimer la tournée
-      const { error: deleteTourError } = await supabase
+      const { error: deleteTourError } = await supabase!
         .from('tours')
         .delete()
         .eq('id', tourToDelete.id);
@@ -576,16 +576,13 @@ export default function TourneesPage() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={<Trash2 className="w-4 h-4" />}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteClick(tournee);
-                      }}
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                    />
+                    <button
+                      onClick={() => handleDeleteClick(tournee)}
+                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Supprimer la tournée"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                 <ChevronDown 
                       className={`w-5 h-5 text-neutral-400 transition-transform duration-200 ${
                         isOpen ? 'rotate-180' : ''

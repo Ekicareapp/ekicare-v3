@@ -8,19 +8,19 @@ export async function POST(request: Request) {
   try {
     const form = await request.formData()
     // Extraction des champs texte
-    let email = form.get('email')?.toString() || ''
-    let password = form.get('password')?.toString() || ''
-    let role = form.get('role')?.toString() || ''
-    let prenom = form.get('prenom')?.toString() || ''
-    let nom = form.get('nom')?.toString() || ''
-    let telephone = form.get('telephone')?.toString() || ''
-    let adresse = form.get('adresse')?.toString() || ''
-    let profession = form.get('profession')?.toString() || ''
-    let ville_nom = form.get('ville_nom')?.toString() || ''
-    let ville_lat = form.get('ville_lat')?.toString() || ''
-    let ville_lng = form.get('ville_lng')?.toString() || ''
-    let rayon_km = form.get('rayon_km')?.toString() || ''
-    let siret = form.get('siret')?.toString() || ''
+    const email = form.get('email')?.toString() || ''
+    const password = form.get('password')?.toString() || ''
+    let role = form.get('role')?.toString() || '' // let car modifié après
+    const prenom = form.get('prenom')?.toString() || ''
+    const nom = form.get('nom')?.toString() || ''
+    const telephone = form.get('telephone')?.toString() || ''
+    const adresse = form.get('adresse')?.toString() || ''
+    const profession = form.get('profession')?.toString() || ''
+    const ville_nom = form.get('ville_nom')?.toString() || ''
+    const ville_lat = form.get('ville_lat')?.toString() || ''
+    const ville_lng = form.get('ville_lng')?.toString() || ''
+    const rayon_km = form.get('rayon_km')?.toString() || ''
+    const siret = form.get('siret')?.toString() || ''
     // Fichiers
     const photo = form.get('photo') as File | null
     const justificatif = form.get('justificatif') as File | null

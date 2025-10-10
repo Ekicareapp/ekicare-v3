@@ -9,6 +9,11 @@ const supabaseAdmin = createClient(
 
 export async function GET(request: Request) {
   try {
+    // Vérifier que le client Supabase est initialisé
+    if (!supabase) {
+      return NextResponse.json({ error: 'Supabase client not initialized' }, { status: 500 });
+    }
+    
     // Utiliser le client Supabase normal pour l'authentification
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     

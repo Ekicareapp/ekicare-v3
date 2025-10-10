@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { LayoutDashboard, CalendarDays, Search, User } from 'lucide-react'
-import { supabase } from '@/lib/supabaseClient'
 import LogoutButton from '@/components/LogoutButton'
 import AuthGuard from '@/components/AuthGuard'
 import './globals.css'

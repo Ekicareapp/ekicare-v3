@@ -3,12 +3,11 @@
 import { useState } from 'react';
 import Modal from './Modal';
 import Button from './Button';
-import { Calendar, Clock, X } from 'lucide-react';
+import { Calendar, Clock } from 'lucide-react';
 
 interface ReplanificationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  appointmentId: string;
   alternateSlots?: string[]; // liste des créneaux proposés par le proprio (format ISO)
   onConfirm: (newDate: string) => void;
 }
@@ -16,7 +15,6 @@ interface ReplanificationModalProps {
 export default function ReplanificationModal({
   isOpen,
   onClose,
-  appointmentId,
   alternateSlots = [],
   onConfirm
 }: ReplanificationModalProps) {
@@ -79,7 +77,6 @@ export default function ReplanificationModal({
       isOpen={isOpen}
       onClose={handleClose}
       title="Replanifier le rendez-vous"
-      size="lg"
     >
       <div className="space-y-6">
         {/* Créneaux alternatifs proposés */}

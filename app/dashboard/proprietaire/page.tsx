@@ -47,7 +47,7 @@ export default function DashboardPage() {
         setLoading(true);
 
         // Récupérer l'utilisateur connecté
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        const { data: { user }, error: userError } = await supabase!.auth.getUser();
         if (userError || !user) {
           console.error('Utilisateur non authentifié:', userError);
           setLoading(false);
@@ -57,7 +57,7 @@ export default function DashboardPage() {
         console.log('👤 Utilisateur connecté:', user.id);
 
         // 1. Récupérer les rendez-vous à venir (confirmés et annulés futurs)
-        const { data: appointmentsData, error: appointmentsError } = await supabase
+        const { data: appointmentsData, error: appointmentsError } = await supabase!
           .from('appointments')
           .select('id, main_slot, comment, status, equide_ids, pro_id')
           .eq('proprio_id', user.id)
@@ -76,11 +76,11 @@ export default function DashboardPage() {
           const enrichedAppointments = await Promise.all(
             (appointmentsData || []).map(async (appointment) => {
               let proData = {};
-              let equides = [];
+              let equides: any[] = [];
               
               // Récupérer les données du pro
               if (appointment.pro_id) {
-                const { data: proProfile } = await supabase
+                const { data: proProfile } = await supabase!
                   .from('pro_profiles')
                   .select('prenom, nom')
                   .eq('user_id', appointment.pro_id)
@@ -90,7 +90,7 @@ export default function DashboardPage() {
               
               // Récupérer les équidés
               if (appointment.equide_ids && appointment.equide_ids.length > 0) {
-                const { data: equidesData } = await supabase
+                const { data: equidesData } = await supabase!
                   .from('equides')
                   .select('nom')
                   .in('id', appointment.equide_ids);
@@ -110,7 +110,7 @@ export default function DashboardPage() {
         }
 
         // 2. Récupérer les équidés du propriétaire
-        const { data: equidesData, error: equidesError } = await supabase
+        const { data: equidesData, error: equidesError } = await supabase!
           .from('equides')
           .select('id, nom, age, sexe, race, couleur')
           .eq('proprio_id', user.id)

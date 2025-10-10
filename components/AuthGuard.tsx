@@ -19,6 +19,14 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
     const checkAuth = async () => {
       try {
+        if (!supabase) {
+          if (mounted) {
+            setIsAuthenticated(false)
+            setIsLoading(false)
+          }
+          return
+        }
+        
         // Vérifier la session actuelle
         const { data: { session }, error } = await supabase.auth.getSession()
         
@@ -41,7 +49,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         }
 
         // Vérifier que l'utilisateur a un profil dans la base de données
-        const { data: userRow, error: userError } = await supabase
+        const { data: userRow, error: userError } = await supabase!
           .from('users')
           .select('role')
           .eq('id', session.user.id)
@@ -74,6 +82,13 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     const timeoutId = setTimeout(checkAuth, 100)
 
     // Écouter les changements d'authentification
+    if (!supabase) {
+      return () => {
+        mounted = false
+        clearTimeout(timeoutId)
+      }
+    }
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('🔄 Changement d\'authentification:', event, session?.user?.email)
       

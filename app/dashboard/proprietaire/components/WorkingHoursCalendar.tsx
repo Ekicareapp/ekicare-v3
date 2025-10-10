@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { WorkingHours, isDateWorkingDay } from '../utils/workingHours';
 
 interface WorkingHoursCalendarProps {
@@ -19,7 +19,7 @@ export default function WorkingHoursCalendar({
   className = ""
 }: WorkingHoursCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(value);
+  const [_selectedDate, setSelectedDate] = useState(value);
 
   // Générer les jours du mois (semaine commence par lundi)
   const generateCalendarDays = () => {

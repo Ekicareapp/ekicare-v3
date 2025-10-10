@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import Input from '../components/Input';
-import Select from '../components/Select';
 import Modal from '../components/Modal';
 import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
@@ -45,7 +44,7 @@ export default function ProfilPage() {
         setLoading(true);
         
         // 1. Récupérer l'utilisateur connecté
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        const { data: { user }, error: userError } = await supabase!.auth.getUser();
         if (userError || !user) {
           console.error('Utilisateur non authentifié:', userError);
           setLoading(false);
@@ -53,7 +52,7 @@ export default function ProfilPage() {
         }
 
         // 2. Vérifier le rôle dans la table users
-        const { data: userRow, error: userRowError } = await supabase
+        const { data: userRow, error: userRowError } = await supabase!
           .from('users')
           .select('role, email')
           .eq('id', user.id)
@@ -67,7 +66,7 @@ export default function ProfilPage() {
 
         // 3. Charger les infos depuis proprio_profiles si PROPRIETAIRE
         if (userRow.role === 'PROPRIETAIRE') {
-          const { data: proprioProfile, error: proprioError } = await supabase
+          const { data: proprioProfile, error: proprioError } = await supabase!
             .from('proprio_profiles')
             .select('*')
             .eq('user_id', user.id)
@@ -130,7 +129,7 @@ export default function ProfilPage() {
       setSaveStatus({ type: null, message: '' });
 
       // 1. Récupérer l'utilisateur connecté
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase!.auth.getUser();
       if (userError || !user) {
         setSaveStatus({ 
           type: 'error', 
@@ -140,7 +139,7 @@ export default function ProfilPage() {
       }
 
       // 2. Vérifier le rôle dans la table users
-      const { data: userRow, error: userRowError } = await supabase
+      const { data: userRow, error: userRowError } = await supabase!
         .from('users')
         .select('role')
         .eq('id', user.id)
@@ -164,7 +163,7 @@ export default function ProfilPage() {
           adresse: formData.adresse
         });
         
-        const { error: updateError } = await supabase
+        const { error: updateError } = await supabase!
           .from('proprio_profiles')
           .update({
             prenom: formData.prenom,
@@ -249,7 +248,7 @@ export default function ProfilPage() {
       }
 
       // Mise à jour du mot de passe via Supabase Auth
-      const { error } = await supabase.auth.updateUser({
+      const { error } = await supabase!.auth.updateUser({
         password: passwordData.newPassword
       });
 

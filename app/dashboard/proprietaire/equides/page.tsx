@@ -52,7 +52,7 @@ export default function EquidesPage() {
         setLoading(true);
         
         // Récupérer l'utilisateur connecté
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        const { data: { user }, error: userError } = await supabase!.auth.getUser();
         if (userError || !user) {
           console.error('Utilisateur non authentifié:', userError);
           setLoading(false);
@@ -62,7 +62,7 @@ export default function EquidesPage() {
         setUserId(user.id);
 
         // Charger les équidés du propriétaire
-        const { data, error } = await supabase
+        const { data, error } = await supabase!
           .from('equides')
           .select('*')
           .eq('proprio_id', user.id)
@@ -107,7 +107,7 @@ export default function EquidesPage() {
 
     try {
       // Insérer le nouvel équidé dans Supabase
-      const { data, error } = await supabase
+      const { data, error } = await supabase!
         .from('equides')
         .insert([
           {
@@ -174,7 +174,7 @@ export default function EquidesPage() {
 
     try {
       // Mettre à jour l'équidé dans Supabase
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('equides')
         .update({
           nom: formData.nom,
@@ -231,7 +231,7 @@ export default function EquidesPage() {
 
     try {
       // Supprimer l'équidé de Supabase
-      const { error } = await supabase
+      const { error } = await supabase!
         .from('equides')
         .delete()
         .eq('id', equideId);

@@ -1,12 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
+import { usePathname } from 'next/navigation';
 import LogoutButton from '@/components/LogoutButton';
 
 interface SidebarProps {
-  isOpen: boolean;
   onClose: () => void;
   isDesktop: boolean;
 }
@@ -19,9 +17,8 @@ const navigation = [
   { name: 'Mon profil', href: '/dashboard/proprietaire/profil' },
 ];
 
-export default function Sidebar({ isOpen, onClose, isDesktop }: SidebarProps) {
+export default function Sidebar({ onClose, isDesktop }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
 
 
   return (

@@ -13,6 +13,8 @@ export interface WorkingHours {
  */
 export const getProfessionalWorkingHours = async (userId: string): Promise<WorkingHours | null> => {
   try {
+    if (!supabase) return null;
+    
     const { data, error } = await supabase
       .from('pro_profiles')
       .select('working_hours')

@@ -1,15 +1,16 @@
 'use client'
 import Link from 'next/link'
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
-export default function CancelPage() {
+function CancelContent() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
     const status = searchParams.get('payment')
     console.log('❌ Page d\'annulation chargée avec le statut:', status)
   }, [searchParams])
+  
   return (
     <div className="min-h-screen bg-[#f9fafb] flex items-center justify-center px-4 overflow-x-hidden">
       <div className="w-full max-w-md">
@@ -49,5 +50,13 @@ export default function CancelPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function CancelPage() {
+  return (
+    <Suspense fallback={<div>Chargement...</div>}>
+      <CancelContent />
+    </Suspense>
   )
 }

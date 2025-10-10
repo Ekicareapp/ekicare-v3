@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Card from '@/app/dashboard/pro/components/Card';
 import Button from '@/app/dashboard/pro/components/Button';
 import Input from '@/app/dashboard/pro/components/Input';
-import { User, Mail, Phone, MapPin, Briefcase, Calendar, CreditCard, Save, AlertTriangle, Upload, Camera, CheckCircle, XCircle } from 'lucide-react';
+import { User, Save, AlertTriangle, Upload, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
 const professions = [
@@ -135,7 +135,7 @@ export default function ProfilPage() {
         setLoading(true);
         
         // 1. Récupérer l'utilisateur connecté
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        const { data: { user }, error: userError } = await supabase!.auth.getUser();
         if (userError || !user) {
           console.error('Utilisateur non authentifié:', userError);
           setLoading(false);
@@ -144,7 +144,7 @@ export default function ProfilPage() {
         }
 
         // 2. Vérifier le rôle dans la table users
-        const { data: userRow, error: userRowError } = await supabase
+        const { data: userRow, error: userRowError } = await supabase!
           .from('users')
           .select('role, email')
           .eq('id', user.id)
@@ -159,7 +159,7 @@ export default function ProfilPage() {
 
         // 3. Charger les infos depuis pro_profiles si PROFESSIONNEL
         if (userRow.role === 'PRO') {
-          const { data: proProfile, error: proError } = await supabase
+          const { data: proProfile, error: proError } = await supabase!
             .from('pro_profiles')
             .select('*')
             .eq('user_id', user.id)
@@ -296,7 +296,7 @@ export default function ProfilPage() {
       setIsUploadingPhoto(true);
       
       // Récupérer l'utilisateur actuel
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase!.auth.getUser();
       if (userError || !user) {
         throw new Error('Utilisateur non authentifié');
       }
@@ -305,7 +305,7 @@ export default function ProfilPage() {
       const filePath = `${user.id}/profile.jpg`;
       
       // Upload vers Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase!.storage
         .from('pro_photo')
         .upload(filePath, file, {
           cacheControl: '3600',
@@ -317,7 +317,7 @@ export default function ProfilPage() {
       }
       
       // Récupérer l'URL publique de l'image avec cache buster
-      const { data: urlData } = supabase.storage
+      const { data: urlData } = supabase!.storage
         .from('pro_photo')
         .getPublicUrl(filePath);
       
@@ -325,7 +325,7 @@ export default function ProfilPage() {
       const urlWithCacheBuster = `${urlData.publicUrl}?t=${Date.now()}`;
       
       // Mettre à jour la base de données avec l'URL de la photo
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabase!
         .from('pro_profiles')
         .update({ photo_url: urlWithCacheBuster })
         .eq('user_id', user.id);
@@ -377,14 +377,14 @@ export default function ProfilPage() {
   const handleRemovePhoto = async () => {
     try {
       // Récupérer l'utilisateur actuel
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase!.auth.getUser();
       if (userError || !user) {
         throw new Error('Utilisateur non authentifié');
       }
       
       // Supprimer l'image du Storage
       const filePath = `${user.id}/profile.jpg`;
-      const { error: deleteError } = await supabase.storage
+      const { error: deleteError } = await supabase!.storage
         .from('pro_photo')
         .remove([filePath]);
       
@@ -394,7 +394,7 @@ export default function ProfilPage() {
       }
       
       // Mettre à jour la base de données pour supprimer l'URL
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabase!
         .from('pro_profiles')
         .update({ photo_url: null })
         .eq('user_id', user.id);
@@ -455,13 +455,13 @@ export default function ProfilPage() {
       console.log('💾 Sauvegarde du profil:', profileData);
       
       // Récupérer l'utilisateur actuel
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase!.auth.getUser();
       if (userError || !user) {
         throw new Error('Utilisateur non authentifié');
       }
       
       // Sauvegarder en base de données
-      const { data, error } = await supabase
+      const { data, error } = await supabase!
         .from('pro_profiles')
         .upsert({
           user_id: user.id,
@@ -534,7 +534,7 @@ export default function ProfilPage() {
       }
 
       // Mise à jour du mot de passe via Supabase Auth
-      const { error } = await supabase.auth.updateUser({
+      const { error } = await supabase!.auth.updateUser({
         password: passwordData.newPassword
       });
 

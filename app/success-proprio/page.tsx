@@ -41,6 +41,11 @@ export default function SuccessProprioPage() {
     // Vérifier la session et récupérer les informations du propriétaire connecté
     const fetchUserInfo = async () => {
       try {
+        if (!supabase) {
+          router.push('/login')
+          return
+        }
+        
         // Vérifier d'abord la session Supabase
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         

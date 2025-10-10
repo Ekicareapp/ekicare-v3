@@ -32,7 +32,6 @@ export default function ClientDetailModal({
       isOpen={isOpen}
       onClose={onClose}
       title={`${client.prenom} ${client.nom}`}
-      size="lg"
     >
       <div className="space-y-6">
         {/* Informations de contact */}

@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Card from './components/Card';
-import Button from './components/Button';
 import OnboardingModal from './components/OnboardingModal';
-import { Calendar, Clock, Users, Bell, Plus, Eye } from 'lucide-react';
+import { Calendar, Clock, Users } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { formatDateTimeForDisplay } from '@/lib/dateUtils';
 
@@ -45,7 +44,7 @@ export default function ProDashboardPage() {
         setIsCheckingOnboarding(true);
         
         // Récupérer l'utilisateur connecté
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        const { data: { user }, error: userError } = await supabase!.auth.getUser();
         if (userError || !user) {
           console.error('Utilisateur non authentifié:', userError);
           setIsCheckingOnboarding(false);
@@ -53,7 +52,7 @@ export default function ProDashboardPage() {
         }
 
         // Vérifier le statut d'onboarding dans pro_profiles
-        const { data: proProfile, error: profileError } = await supabase
+        const { data: proProfile, error: profileError } = await supabase!
           .from('pro_profiles')
           .select('first_login_completed')
           .eq('user_id', user.id)
@@ -93,7 +92,7 @@ export default function ProDashboardPage() {
         setLoading(true);
 
         // Récupérer l'utilisateur connecté
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        const { data: { user }, error: userError } = await supabase!.auth.getUser();
         if (userError || !user) {
           console.error('Utilisateur non authentifié:', userError);
           setLoading(false);
@@ -101,7 +100,7 @@ export default function ProDashboardPage() {
         }
 
         // Récupérer le profil pro pour obtenir le pro_id
-        const { data: proProfile, error: proProfileError } = await supabase
+        const { data: proProfile, error: proProfileError } = await supabase!
           .from('pro_profiles')
           .select('id')
           .eq('user_id', user.id)
@@ -117,7 +116,7 @@ export default function ProDashboardPage() {
         console.log('🔍 Pro ID récupéré:', proId);
 
         // Test : Vérifier s'il y a des appointments pour ce pro
-        const { data: allAppointments, error: allAppointmentsError } = await supabase
+        const { data: allAppointments, error: allAppointmentsError } = await supabase!
           .from('appointments')
           .select('id, pro_id, status, main_slot, created_at')
           .eq('pro_id', proId);
@@ -138,7 +137,7 @@ export default function ProDashboardPage() {
 
         // Test : Vérifier s'il y a des tours pour ce pro
         // D'abord essayer avec proId (ID du profil pro)
-        const { data: allTours, error: allToursError } = await supabase
+        const { data: allTours, error: allToursError } = await supabase!
           .from('tours')
           .select('id, pro_id, name, date, created_at')
           .eq('pro_id', proId);
@@ -149,7 +148,7 @@ export default function ProDashboardPage() {
         
         if (!allToursData || allToursData.length === 0) {
           console.log('🔄 Aucune tournée avec proId, essai avec user.id...');
-          const { data: allToursUser, error: allToursUserError } = await supabase
+          const { data: allToursUser, error: allToursUserError } = await supabase!
             .from('tours')
             .select('id, pro_id, name, date, created_at')
             .eq('pro_id', user.id);
@@ -175,7 +174,7 @@ export default function ProDashboardPage() {
         console.log('- Demain:', tomorrow);
 
         // 1. Récupérer les rendez-vous d'aujourd'hui (tous statuts d'abord)
-        const { data: todayAppointments, error: todayError } = await supabase
+        const { data: todayAppointments, error: todayError } = await supabase!
           .from('appointments')
           .select('id, main_slot, comment, status, equide_ids, proprio_id')
           .eq('pro_id', proId)
@@ -195,13 +194,13 @@ export default function ProDashboardPage() {
           // Enrichir avec les noms des équidés et les données des propriétaires
           const enrichedToday = await Promise.all(
             (todayAppointments || []).map(async (appointment) => {
-              let equides = [];
+              let equides: any[] = [];
               let proprioData = {};
               
               // Récupérer les équidés
               console.log('🔍 Appointment equide_ids:', appointment.equide_ids);
               if (appointment.equide_ids && appointment.equide_ids.length > 0) {
-                const { data: equidesData, error: equidesError } = await supabase
+                const { data: equidesData, error: equidesError } = await supabase!
                   .from('equides')
                   .select('nom')
                   .in('id', appointment.equide_ids);
@@ -213,7 +212,7 @@ export default function ProDashboardPage() {
               
               // Récupérer les données du propriétaire
               if (appointment.proprio_id) {
-                const { data: proprioProfile } = await supabase
+                const { data: proprioProfile } = await supabase!
                   .from('proprio_profiles')
                   .select('prenom, nom')
                   .eq('user_id', appointment.proprio_id)
@@ -233,7 +232,7 @@ export default function ProDashboardPage() {
         }
 
         // 2. Récupérer les prochains rendez-vous (tous statuts d'abord)
-        const { data: upcomingAppointments, error: upcomingError } = await supabase
+        const { data: upcomingAppointments, error: upcomingError } = await supabase!
           .from('appointments')
           .select('id, main_slot, comment, status, equide_ids, proprio_id')
           .eq('pro_id', proId)
@@ -253,13 +252,13 @@ export default function ProDashboardPage() {
           // Enrichir avec les noms des équidés et les données des propriétaires
           const enrichedUpcoming = await Promise.all(
             (upcomingAppointments || []).map(async (appointment) => {
-              let equides = [];
+              let equides: any[] = [];
               let proprioData = {};
               
               // Récupérer les équidés
               console.log('🔍 Appointment equide_ids:', appointment.equide_ids);
               if (appointment.equide_ids && appointment.equide_ids.length > 0) {
-                const { data: equidesData, error: equidesError } = await supabase
+                const { data: equidesData, error: equidesError } = await supabase!
                   .from('equides')
                   .select('nom')
                   .in('id', appointment.equide_ids);
@@ -271,7 +270,7 @@ export default function ProDashboardPage() {
               
               // Récupérer les données du propriétaire
               if (appointment.proprio_id) {
-                const { data: proprioProfile } = await supabase
+                const { data: proprioProfile } = await supabase!
                   .from('proprio_profiles')
                   .select('prenom, nom')
                   .eq('user_id', appointment.proprio_id)
@@ -292,7 +291,7 @@ export default function ProDashboardPage() {
 
         // 3. Récupérer les prochaines tournées
         // Essayer d'abord avec pro_id = proId (ID du profil pro)
-        const { data: tours, error: toursError } = await supabase
+        const { data: tours, error: toursError } = await supabase!
           .from('tours')
           .select(`
             id,
@@ -316,7 +315,7 @@ export default function ProDashboardPage() {
         
         if (!toursData || toursData.length === 0) {
           console.log('🔄 Aucune tournée avec proId, essai avec user.id...');
-          const { data: toursUser, error: toursUserError } = await supabase
+          const { data: toursUser, error: toursUserError } = await supabase!
             .from('tours')
             .select(`
               id,
@@ -360,14 +359,14 @@ export default function ProDashboardPage() {
   const handleOnboardingComplete = async () => {
     try {
       // Récupérer l'utilisateur connecté
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase!.auth.getUser();
       if (userError || !user) {
         console.error('Utilisateur non authentifié:', userError);
         return;
       }
 
       // Mettre à jour first_login_completed à true
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabase!
         .from('pro_profiles')
         .update({ first_login_completed: true })
         .eq('user_id', user.id);

@@ -48,3 +48,4 @@ COMMENT ON TRIGGER trigger_create_client_relation ON appointments IS
 
 
 
+
