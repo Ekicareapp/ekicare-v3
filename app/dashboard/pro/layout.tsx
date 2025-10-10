@@ -34,7 +34,7 @@ export default function ProDashboardLayout({ children }: { children: React.React
       return
     }
 
-    const checkVerification = async () => {
+    const checkVerification = async (retryCount = 0) => {
       try {
         const response = await fetch('/api/profile')
         const data = await response.json()
@@ -43,16 +43,27 @@ export default function ProDashboardLayout({ children }: { children: React.React
         const isVerified = data.profile && data.profile.is_verified === true
         const isSubscribed = data.profile && data.profile.is_subscribed === true
         
+        console.log('🔍 Vérification du statut:', { isVerified, isSubscribed, retryCount })
+        
         if (isVerified || isSubscribed) {
           setIsVerified(true)
+        } else if (retryCount < 3) {
+          // Retry après un délai si pas encore vérifié (pour laisser le temps au webhook)
+          console.log(`⏳ Statut non vérifié, retry ${retryCount + 1}/3 dans 2 secondes...`)
+          setTimeout(() => checkVerification(retryCount + 1), 2000)
         } else {
+          console.log('❌ Statut non vérifié après 3 tentatives')
           setIsVerified(false)
           router.push('/paiement-requis')
         }
       } catch (error) {
         console.error('Erreur lors de la vérification:', error)
-        setIsVerified(false)
-        router.push('/paiement-requis')
+        if (retryCount < 3) {
+          setTimeout(() => checkVerification(retryCount + 1), 2000)
+        } else {
+          setIsVerified(false)
+          router.push('/paiement-requis')
+        }
       }
     }
     
