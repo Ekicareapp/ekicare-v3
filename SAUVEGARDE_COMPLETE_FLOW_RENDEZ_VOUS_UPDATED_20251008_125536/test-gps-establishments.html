@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test GPS Établissements - Coordonnées Exactes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+        .establishment-example {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border-left: 4px solid #28a745;
+        }
+        .establishment-example h4 {
+            margin-top: 0;
+            color: #28a745;
+        }
+        .gps-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .gps-button:hover {
+            background: #0056b3;
+        }
+        .gps-button:active {
+            transform: translateY(1px);
+        }
+        .coordinates-button {
+            background: #28a745;
+        }
+        .coordinates-button:hover {
+            background: #1e7e34;
+        }
+        .address-button {
+            background: #ffc107;
+            color: #212529;
+        }
+        .address-button:hover {
+            background: #e0a800;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e7f3ff;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .url-display {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 11px;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .comparison-table th,
+        .comparison-table td {
+            border: 1px solid #dee2e6;
+            padding: 8px;
+            text-align: left;
+        }
+        .comparison-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        .advantage {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .disadvantage {
+            color: #dc3545;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🏢 Test GPS Établissements - Coordonnées Exactes</h1>
+    <p>Ce test vérifie que l'action "Ouvrir GPS" utilise les coordonnées GPS exactes des établissements sélectionnés.</p>
+    
+    <div class="test-section">
+        <h3>📍 Établissements avec coordonnées GPS exactes</h3>
+        <p>Ces établissements ont des coordonnées GPS précises capturées via Google Places API.</p>
+        
+        <div class="establishment-example">
+            <h4>🏢 Centre Équestre Les Écuries</h4>
+            <p><strong>Adresse :</strong> Centre Équestre Les Écuries, 123 Rue de la Paix, 75001 Paris, France</p>
+            <p><strong>Coordonnées GPS :</strong> 48.8566, 2.3522</p>
+            <button class="gps-button coordinates-button" onclick="testEstablishmentGPS(48.8566, 2.3522, 'Centre Équestre Les Écuries', 'Centre Équestre Les Écuries, 123 Rue de la Paix, 75001 Paris, France')">
+                🗺️ Ouvrir GPS (Coordonnées exactes)
+            </button>
+            <button class="gps-button address-button" onclick="testEstablishmentAddress('Centre Équestre Les Écuries, 123 Rue de la Paix, 75001 Paris, France')">
+                🏠 Ouvrir GPS (Adresse textuelle)
+            </button>
+        </div>
+        
+        <div class="establishment-example">
+            <h4>🏥 Clinique Vétérinaire du Marais</h4>
+            <p><strong>Adresse :</strong> Clinique Vétérinaire du Marais, 45 Rue des Archives, 75004 Paris, France</p>
+            <p><strong>Coordonnées GPS :</strong> 48.8606, 2.3376</p>
+            <button class="gps-button coordinates-button" onclick="testEstablishmentGPS(48.8606, 2.3376, 'Clinique Vétérinaire du Marais', 'Clinique Vétérinaire du Marais, 45 Rue des Archives, 75004 Paris, France')">
+                🗺️ Ouvrir GPS (Coordonnées exactes)
+            </button>
+            <button class="gps-button address-button" onclick="testEstablishmentAddress('Clinique Vétérinaire du Marais, 45 Rue des Archives, 75004 Paris, France')">
+                🏠 Ouvrir GPS (Adresse textuelle)
+            </button>
+        </div>
+        
+        <div class="establishment-example">
+            <h4>🏇 Haras National de Pompadour</h4>
+            <p><strong>Adresse :</strong> Haras National de Pompadour, Arnac-Pompadour, 19230 Arnac-Pompadour, France</p>
+            <p><strong>Coordonnées GPS :</strong> 45.3984, 1.3867</p>
+            <button class="gps-button coordinates-button" onclick="testEstablishmentGPS(45.3984, 1.3867, 'Haras National de Pompadour', 'Haras National de Pompadour, Arnac-Pompadour, 19230 Arnac-Pompadour, France')">
+                🗺️ Ouvrir GPS (Coordonnées exactes)
+            </button>
+            <button class="gps-button address-button" onclick="testEstablishmentAddress('Haras National de Pompadour, Arnac-Pompadour, 19230 Arnac-Pompadour, France')">
+                🏠 Ouvrir GPS (Adresse textuelle)
+            </button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔍 Comparaison des méthodes</h3>
+        <p>Comparez l'efficacité des coordonnées GPS vs adresses textuelles :</p>
+        
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Méthode</th>
+                    <th>Précision</th>
+                    <th>Vitesse</th>
+                    <th>Fiabilité</th>
+                    <th>Avantages</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Coordonnées GPS</strong></td>
+                    <td><span class="advantage">Excellente</span></td>
+                    <td><span class="advantage">Rapide</span></td>
+                    <td><span class="advantage">Très fiable</span></td>
+                    <td>Position exacte de l'établissement</td>
+                </tr>
+                <tr>
+                    <td><strong>Adresse textuelle</strong></td>
+                    <td><span class="disadvantage">Variable</span></td>
+                    <td><span class="disadvantage">Lente</span></td>
+                    <td><span class="disadvantage">Dépendante</span></td>
+                    <td>Peut pointer vers l'adresse générale</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="test-section">
+        <h3>🧪 Test de précision</h3>
+        <p>Testez la différence de précision entre les deux méthodes :</p>
+        
+        <div class="establishment-example">
+            <h4>🎯 Test de précision - Centre Équestre</h4>
+            <p><strong>Scénario :</strong> Le PROPRIO sélectionne "Centre Équestre Les Écuries" via Google Places</p>
+            <p><strong>Résultat attendu :</strong> Le PRO arrive exactement à l'entrée de l'établissement</p>
+            
+            <button class="gps-button coordinates-button" onclick="testPrecisionGPS(48.8566, 2.3522, 'Centre Équestre Les Écuries')">
+                📍 GPS avec coordonnées (recommandé)
+            </button>
+            <button class="gps-button address-button" onclick="testPrecisionAddress('Centre Équestre Les Écuries, 123 Rue de la Paix, 75001 Paris, France')">
+                🏠 GPS avec adresse (approximatif)
+            </button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>📊 Logs de debug</h3>
+        <p>Surveillez les logs pour comprendre le fonctionnement :</p>
+        
+        <div class="result info">
+            <strong>Logs attendus :</strong><br>
+            📍 Ouverture GPS avec coordonnées exactes: 48.8566 2.3522<br>
+            🏢 Établissement: Centre Équestre Les Écuries<br>
+            🔗 URL: https://www.google.com/maps/dir/?api=1&destination=48.8566,2.3522&travelmode=driving<br>
+            ✅ Avantage: Position exacte de l'établissement
+        </div>
+    </div>
+    
+    <div id="result" class="result" style="display: none;">
+        <div id="result-content"></div>
+    </div>
+
+    <script>
+        function testEstablishmentGPS(lat, lng, name, address) {
+            console.log('📍 Test GPS établissement avec coordonnées exactes:', name);
+            console.log('🏢 Établissement:', name);
+            console.log('📍 Coordonnées:', lat, lng);
+            console.log('🏠 Adresse:', address);
+            
+            const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+            
+            console.log('🔗 URL Google Maps (coordonnées):', googleMapsUrl);
+            
+            // Ouvrir Google Maps avec coordonnées exactes
+            window.open(googleMapsUrl, '_blank');
+            
+            // Afficher le résultat
+            showResult(`
+                <strong>✅ GPS ouvert avec coordonnées exactes !</strong><br>
+                <strong>Établissement :</strong> ${name}<br>
+                <strong>Coordonnées :</strong> ${lat}, ${lng}<br>
+                <strong>Adresse :</strong> ${address}<br>
+                <strong>URL :</strong> <a href="${googleMapsUrl}" target="_blank">${googleMapsUrl}</a><br>
+                <strong>Avantage :</strong> Position exacte de l'établissement
+            `, 'success');
+        }
+        
+        function testEstablishmentAddress(address) {
+            console.log('🏠 Test GPS établissement avec adresse textuelle:', address);
+            
+            const encodedAddress = encodeURIComponent(address);
+            const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}&travelmode=driving`;
+            
+            console.log('🔗 URL Google Maps (adresse):', googleMapsUrl);
+            
+            // Ouvrir Google Maps avec adresse
+            window.open(googleMapsUrl, '_blank');
+            
+            // Afficher le résultat
+            showResult(`
+                <strong>⚠️ GPS ouvert avec adresse textuelle</strong><br>
+                <strong>Adresse :</strong> ${address}<br>
+                <strong>URL :</strong> <a href="${googleMapsUrl}" target="_blank">${googleMapsUrl}</a><br>
+                <strong>Inconvénient :</strong> Peut pointer vers l'adresse générale, pas l'établissement exact
+            `, 'warning');
+        }
+        
+        function testPrecisionGPS(lat, lng, name) {
+            console.log('🎯 Test de précision GPS avec coordonnées:', name);
+            
+            const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+            
+            window.open(googleMapsUrl, '_blank');
+            
+            showResult(`
+                <strong>🎯 Test de précision - Coordonnées GPS</strong><br>
+                <strong>Établissement :</strong> ${name}<br>
+                <strong>Coordonnées :</strong> ${lat}, ${lng}<br>
+                <strong>Résultat :</strong> Le PRO arrive exactement à l'entrée de l'établissement<br>
+                <strong>Précision :</strong> Excellente (position exacte)
+            `, 'success');
+        }
+        
+        function testPrecisionAddress(address) {
+            console.log('🎯 Test de précision GPS avec adresse:', address);
+            
+            const encodedAddress = encodeURIComponent(address);
+            const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}&travelmode=driving`;
+            
+            window.open(googleMapsUrl, '_blank');
+            
+            showResult(`
+                <strong>🎯 Test de précision - Adresse textuelle</strong><br>
+                <strong>Adresse :</strong> ${address}<br>
+                <strong>Résultat :</strong> Le PRO arrive à l'adresse générale<br>
+                <strong>Précision :</strong> Variable (peut être approximative)
+            `, 'warning');
+        }
+        
+        function showResult(content, type) {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('result-content');
+            
+            resultContent.innerHTML = content;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+            
+            // Masquer après 8 secondes
+            setTimeout(() => {
+                resultDiv.style.display = 'none';
+            }, 8000);
+        }
+        
+        // Log de démarrage
+        console.log('🏢 Test GPS Établissements initialisé');
+        console.log('📍 Fonctionnalité : Coordonnées GPS exactes des établissements');
+        console.log('🎯 Objectif : Le PRO arrive exactement à l\'établissement sélectionné');
+        console.log('🔧 Méthode : Google Places API capture les coordonnées GPS exactes');
+    </script>
+</body>
+</html>

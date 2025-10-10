@@ -1,0 +1,134 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Global focus styles for form controls (Linear style) */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #f86f4d !important; /* main brand color */
+  box-shadow: none; /* avoid double ring effects */
+}
+
+/* Ensure focus-visible also has no native outline */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
+/* Animations pour les transitions de pages */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Classes d'animation utilitaires */
+.animate-fade-in-up {
+  animation: fadeInUp 0.3s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+/* Optimisation des transitions */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Amélioration des performances de scroll */
+.dashboard-content {
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Styles pour les placeholders - amélioration de la lisibilité */
+input::placeholder,
+textarea::placeholder {
+  color: #6b7280 !important;
+  opacity: 1 !important;
+  font-weight: 400;
+}
+
+/* Placeholders pour les champs de recherche */
+input[type="search"]::placeholder {
+  color: #6b7280 !important;
+  opacity: 1 !important;
+}
+
+/* Placeholders pour les champs de formulaire */
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="tel"]::placeholder,
+input[type="password"]::placeholder,
+input[type="number"]::placeholder,
+textarea::placeholder {
+  color: #6b7280 !important;
+  opacity: 1 !important;
+}
+
+/* Placeholders pour les champs avec focus */
+input:focus::placeholder,
+textarea:focus::placeholder {
+  color: #9ca3af !important;
+  opacity: 0.8 !important;
+}
+
+/* Styles spécifiques pour le dashboard */
+.dashboard-layout input::placeholder,
+.dashboard-layout textarea::placeholder {
+  color: #6b7280 !important;
+  opacity: 1 !important;
+}
+
+/* Classe utilitaire Tailwind pour les placeholders */
+.placeholder-gray-500::placeholder {
+  color: #6b7280 !important;
+  opacity: 1 !important;
+}
+
+.placeholder-gray-400::placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+}

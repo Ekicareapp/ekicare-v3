@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Autocomplétion Améliorée - Établissements</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .input-container {
+            position: relative;
+            margin: 20px 0;
+        }
+        input {
+            width: 100%;
+            padding: 12px 12px 12px 40px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .test-examples {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .test-examples h3 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+        .test-examples ul {
+            margin: 10px 0;
+        }
+        .test-examples li {
+            margin: 5px 0;
+            font-family: monospace;
+            background: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Autocomplétion Améliorée - Établissements</h1>
+    <p>Ce test vérifie que l'API Google Places propose maintenant des établissements et adresses exactes.</p>
+    
+    <div class="test-examples">
+        <h3>🎯 Exemples à tester :</h3>
+        <ul>
+            <li>Centre équestre</li>
+            <li>Clinique vétérinaire</li>
+            <li>123 Rue de Rivoli</li>
+            <li>Haras national</li>
+            <li>Écurie de dressage</li>
+            <li>Cabinet vétérinaire</li>
+            <li>Manège équestre</li>
+            <li>École d'équitation</li>
+        </ul>
+    </div>
+    
+    <div class="input-container">
+        <svg class="icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        <input 
+            id="address-input" 
+            type="text" 
+            placeholder="Saisissez une adresse exacte (ex: 123 Rue de la Paix, Paris ou Centre équestre Les Écuries...)"
+        />
+    </div>
+    
+    <div id="result" class="result" style="display: none;">
+        <h3>Résultat :</h3>
+        <div id="result-content"></div>
+    </div>
+    
+    <div id="status" class="result">
+        <strong>Status :</strong> <span id="status-text">Chargement de l'API Google...</span>
+    </div>
+
+    <script>
+        let autocomplete;
+        let isGoogleLoaded = false;
+        
+        // Vérifier si Google Maps est chargé
+        function checkGoogleMaps() {
+            if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+                isGoogleLoaded = true;
+                document.getElementById('status-text').textContent = '✅ Google Maps chargé - Autocomplétion améliorée active';
+                document.getElementById('status').className = 'result success';
+                initializeAutocomplete();
+            } else {
+                document.getElementById('status-text').textContent = '❌ Google Maps non chargé';
+                document.getElementById('status').className = 'result error';
+            }
+        }
+        
+        // Initialiser l'autocomplétion
+        function initializeAutocomplete() {
+            if (!isGoogleLoaded) {
+                console.log('❌ Google Maps pas encore chargé');
+                return;
+            }
+            
+            const input = document.getElementById('address-input');
+            if (!input) {
+                console.log('❌ Input non trouvé');
+                return;
+            }
+            
+            console.log('🔍 Initialisation de l\'autocomplétion améliorée...');
+            
+            autocomplete = new google.maps.places.Autocomplete(input, {
+                types: ['establishment', 'geocode'], // Établissements + adresses géocodées
+                componentRestrictions: { country: 'fr' },
+                fields: ['place_id', 'name', 'geometry', 'formatted_address', 'address_components', 'types', 'vicinity']
+            });
+            
+            autocomplete.addListener('place_changed', () => {
+                const place = autocomplete.getPlace();
+                console.log('📍 Lieu sélectionné:', place);
+                
+                const resultDiv = document.getElementById('result');
+                const resultContent = document.getElementById('result-content');
+                
+                if (place.place_id && place.geometry && place.geometry.location) {
+                    const lat = place.geometry.location.lat();
+                    const lng = place.geometry.location.lng();
+                    
+                    // Construire une adresse plus précise
+                    let fullAddress = '';
+                    
+                    if (place.formatted_address) {
+                        fullAddress = place.formatted_address;
+                    } else if (place.name && place.vicinity) {
+                        // Pour les établissements : nom + zone
+                        fullAddress = `${place.name}, ${place.vicinity}`;
+                    } else if (place.name) {
+                        fullAddress = place.name;
+                    }
+                    
+                    // Ajouter des détails supplémentaires si disponibles
+                    if (place.address_components) {
+                        const streetNumber = place.address_components.find(comp => comp.types.includes('street_number'))?.long_name;
+                        const route = place.address_components.find(comp => comp.types.includes('route'))?.long_name;
+                        const city = place.address_components.find(comp => comp.types.includes('locality'))?.long_name;
+                        const postalCode = place.address_components.find(comp => comp.types.includes('postal_code'))?.long_name;
+                        
+                        if (streetNumber && route && !fullAddress.includes(streetNumber)) {
+                            fullAddress = `${streetNumber} ${route}, ${postalCode} ${city}, France`;
+                        }
+                    }
+                    
+                    // Déterminer le type de lieu
+                    let placeType = 'Adresse';
+                    if (place.types) {
+                        if (place.types.includes('establishment')) {
+                            placeType = '🏢 Établissement';
+                        } else if (place.types.includes('street_address')) {
+                            placeType = '🏠 Adresse exacte';
+                        } else if (place.types.includes('route')) {
+                            placeType = '🛣️ Rue';
+                        } else if (place.types.includes('locality')) {
+                            placeType = '🏙️ Ville';
+                        }
+                    }
+                    
+                    resultContent.innerHTML = `
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <p><strong>📍 Adresse :</strong><br>${fullAddress}</p>
+                                <p><strong>🎯 Type :</strong> ${placeType}</p>
+                                <p><strong>🏢 Nom :</strong> ${place.name || 'N/A'}</p>
+                                <p><strong>📍 Zone :</strong> ${place.vicinity || 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p><strong>🌍 Coordonnées :</strong><br>${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
+                                <p><strong>🆔 Place ID :</strong><br><code>${place.place_id}</code></p>
+                                <p><strong>🏷️ Types :</strong><br>${place.types ? place.types.join(', ') : 'N/A'}</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    resultDiv.className = 'result success';
+                    resultDiv.style.display = 'block';
+                    
+                    console.log('✅ Adresse sélectionnée:', fullAddress);
+                    console.log('📍 Coordonnées:', lat, lng);
+                    console.log('🏢 Types:', place.types);
+                    console.log('🏢 Nom:', place.name);
+                    console.log('🏢 Zone:', place.vicinity);
+                } else {
+                    resultContent.innerHTML = '<p>❌ Aucune adresse valide sélectionnée</p>';
+                    resultDiv.className = 'result error';
+                    resultDiv.style.display = 'block';
+                }
+            });
+            
+            console.log('✅ Autocomplétion améliorée initialisée');
+        }
+        
+        // Vérifier périodiquement si Google Maps est chargé
+        const checkInterval = setInterval(() => {
+            if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+                clearInterval(checkInterval);
+                checkGoogleMaps();
+            }
+        }, 100);
+        
+        // Timeout après 10 secondes
+        setTimeout(() => {
+            if (!isGoogleLoaded) {
+                clearInterval(checkInterval);
+                document.getElementById('status-text').textContent = '❌ Timeout - Google Maps non chargé après 10s';
+                document.getElementById('status').className = 'result error';
+            }
+        }, 10000);
+    </script>
+    
+    <!-- Script Google Maps -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA1Ay3RQld9Jr_7cKZKksNNj82ltpLkVFM&libraries=places&callback=checkGoogleMaps" async defer></script>
+</body>
+</html>
+
+
+
+

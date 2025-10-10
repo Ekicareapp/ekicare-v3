@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Comptage Clients - RDV Confirmés</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+        .scenario {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border-left: 4px solid #28a745;
+        }
+        .scenario h4 {
+            margin-top: 0;
+            color: #28a745;
+        }
+        .appointment-list {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .appointment {
+            padding: 5px;
+            margin: 2px 0;
+            border-radius: 3px;
+        }
+        .appointment.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .appointment.confirmed {
+            background: #d4edda;
+            color: #155724;
+        }
+        .appointment.completed {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .appointment.rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e7f3ff;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .calculation {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border-left: 4px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <h1>👥 Test Comptage Clients - RDV Confirmés</h1>
+    <p>Ce test vérifie que seuls les RDV confirmés sont comptés dans le total des rendez-vous d'un client.</p>
+    
+    <div class="test-section">
+        <h3>📊 Scénarios de test</h3>
+        <p>Testez différents cas avec des RDV dans différents statuts.</p>
+        
+        <div class="scenario">
+            <h4>✅ Cas 1 - Client avec RDV confirmés uniquement</h4>
+            <p><strong>Client :</strong> Jean Dupont</p>
+            <div class="appointment-list">
+                <div class="appointment confirmed">✅ RDV 1 - Confirmé - 15/10/2025</div>
+                <div class="appointment confirmed">✅ RDV 2 - Confirmé - 20/10/2025</div>
+                <div class="appointment completed">✅ RDV 3 - Terminé - 25/10/2025</div>
+            </div>
+            <div class="calculation">
+                <strong>Calcul attendu :</strong><br>
+                • RDV confirmés : 2<br>
+                • RDV terminés : 1<br>
+                • Total affiché : 2 (seulement les confirmés)
+            </div>
+            <button class="test-button" onclick="testClientCounting([
+                {id: 1, status: 'confirmed', date: '2025-10-15'},
+                {id: 2, status: 'confirmed', date: '2025-10-20'},
+                {id: 3, status: 'completed', date: '2025-10-25'}
+            ], 'Jean Dupont')">🧪 Tester comptage</button>
+        </div>
+        
+        <div class="scenario">
+            <h4>⚠️ Cas 2 - Client avec RDV en attente</h4>
+            <p><strong>Client :</strong> Marie Martin</p>
+            <div class="appointment-list">
+                <div class="appointment pending">⏳ RDV 1 - En attente - 15/10/2025</div>
+                <div class="appointment pending">⏳ RDV 2 - En attente - 20/10/2025</div>
+                <div class="appointment confirmed">✅ RDV 3 - Confirmé - 25/10/2025</div>
+            </div>
+            <div class="calculation">
+                <strong>Calcul attendu :</strong><br>
+                • RDV en attente : 2 (ne comptent pas)<br>
+                • RDV confirmés : 1<br>
+                • Total affiché : 1 (seulement les confirmés)
+            </div>
+            <button class="test-button" onclick="testClientCounting([
+                {id: 1, status: 'pending', date: '2025-10-15'},
+                {id: 2, status: 'pending', date: '2025-10-20'},
+                {id: 3, status: 'confirmed', date: '2025-10-25'}
+            ], 'Marie Martin')">🧪 Tester comptage</button>
+        </div>
+        
+        <div class="scenario">
+            <h4>❌ Cas 3 - Client avec RDV refusés</h4>
+            <p><strong>Client :</strong> Pierre Durand</p>
+            <div class="appointment-list">
+                <div class="appointment rejected">❌ RDV 1 - Refusé - 15/10/2025</div>
+                <div class="appointment rejected">❌ RDV 2 - Refusé - 20/10/2025</div>
+                <div class="appointment confirmed">✅ RDV 3 - Confirmé - 25/10/2025</div>
+            </div>
+            <div class="calculation">
+                <strong>Calcul attendu :</strong><br>
+                • RDV refusés : 2 (ne comptent pas)<br>
+                • RDV confirmés : 1<br>
+                • Total affiché : 1 (seulement les confirmés)
+            </div>
+            <button class="test-button" onclick="testClientCounting([
+                {id: 1, status: 'rejected', date: '2025-10-15'},
+                {id: 2, status: 'rejected', date: '2025-10-20'},
+                {id: 3, status: 'confirmed', date: '2025-10-25'}
+            ], 'Pierre Durand')">🧪 Tester comptage</button>
+        </div>
+        
+        <div class="scenario">
+            <h4>🚫 Cas 4 - Client avec seulement des RDV en attente</h4>
+            <p><strong>Client :</strong> Sophie Leroy</p>
+            <div class="appointment-list">
+                <div class="appointment pending">⏳ RDV 1 - En attente - 15/10/2025</div>
+                <div class="appointment pending">⏳ RDV 2 - En attente - 20/10/2025</div>
+            </div>
+            <div class="calculation">
+                <strong>Calcul attendu :</strong><br>
+                • RDV en attente : 2 (ne comptent pas)<br>
+                • RDV confirmés : 0<br>
+                • Total affiché : 0 (aucun RDV confirmé)<br>
+                • <strong>Résultat :</strong> Le client ne devrait pas apparaître dans "Mes clients"
+            </div>
+            <button class="test-button" onclick="testClientCounting([
+                {id: 1, status: 'pending', date: '2025-10-15'},
+                {id: 2, status: 'pending', date: '2025-10-20'}
+            ], 'Sophie Leroy')">🧪 Tester comptage</button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔧 Test de la logique de comptage</h3>
+        <p>Testez la fonction de comptage avec des paramètres personnalisés :</p>
+        
+        <div class="scenario">
+            <h4>Paramètres personnalisés</h4>
+            <p>Entrez vos propres statuts de RDV pour tester :</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;">
+                <div>
+                    <label>Statuts (séparés par des virgules):</label>
+                    <input type="text" id="statuses" value="pending,confirmed,completed,rejected" style="width: 100%; padding: 5px;">
+                </div>
+                <div>
+                    <label>Nom du client:</label>
+                    <input type="text" id="client-name" value="Test Client" style="width: 100%; padding: 5px;">
+                </div>
+            </div>
+            <button class="test-button" onclick="testCustomCounting()">🧪 Tester avec paramètres personnalisés</button>
+        </div>
+    </div>
+    
+    <div id="result" class="result" style="display: none;">
+        <div id="result-content"></div>
+    </div>
+
+    <script>
+        // Fonction pour compter les RDV confirmés
+        function countConfirmedAppointments(appointments) {
+            const confirmedAppointments = appointments.filter(rdv => rdv.status === 'confirmed');
+            return confirmedAppointments.length;
+        }
+
+        // Fonction pour compter tous les RDV (ancienne logique)
+        function countAllAppointments(appointments) {
+            return appointments.length;
+        }
+
+        function testClientCounting(appointments, clientName) {
+            console.log('🧪 Test comptage client:', { clientName, appointments });
+            
+            const totalAll = countAllAppointments(appointments);
+            const totalConfirmed = countConfirmedAppointments(appointments);
+            
+            console.log('📊 Résultats:', { totalAll, totalConfirmed });
+            
+            // Afficher le résultat
+            showResult(`
+                <strong>🧪 Test comptage - ${clientName}</strong><br>
+                <strong>RDV totaux :</strong> ${totalAll}<br>
+                <strong>RDV confirmés :</strong> ${totalConfirmed}<br>
+                <strong>Ancienne logique (incorrecte) :</strong> ${totalAll} RDV<br>
+                <strong>Nouvelle logique (correcte) :</strong> ${totalConfirmed} RDV<br>
+                <strong>Différence :</strong> ${totalAll - totalConfirmed} RDV en moins<br>
+                <strong>Résultat :</strong> ${totalConfirmed > 0 ? '✅ Client visible' : '❌ Client masqué'}
+            `, totalConfirmed > 0 ? 'success' : 'info');
+        }
+
+        function testCustomCounting() {
+            const statusesInput = document.getElementById('statuses').value;
+            const clientName = document.getElementById('client-name').value;
+            
+            const statuses = statusesInput.split(',').map(s => s.trim());
+            const appointments = statuses.map((status, index) => ({
+                id: index + 1,
+                status: status,
+                date: `2025-10-${15 + index}`
+            }));
+            
+            testClientCounting(appointments, clientName);
+        }
+
+        function showResult(content, type) {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('result-content');
+            
+            resultContent.innerHTML = content;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+            
+            // Masquer après 10 secondes
+            setTimeout(() => {
+                resultDiv.style.display = 'none';
+            }, 10000);
+        }
+
+        // Log de démarrage
+        console.log('👥 Test Comptage Clients initialisé');
+        console.log('📍 Fonctionnalité : Comptage des RDV confirmés uniquement');
+        console.log('🎯 Objectif : Seuls les RDV confirmés comptent dans le total');
+    </script>
+</body>
+</html>
+
+
+
+

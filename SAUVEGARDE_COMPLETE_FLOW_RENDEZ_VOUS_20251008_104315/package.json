@@ -1,0 +1,40 @@
+{
+  "name": "ekicare-v3",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "lint": "eslint",
+    "save": "git add . && if git diff --staged --quiet; then echo '✅ Aucun changement à sauvegarder'; else git commit -m \"savepoint: $(date '+%Y-%m-%d %H:%M:%S')\" && git push origin main && echo '✅ Sauvegarde effectuée avec succès'; fi"
+  },
+  "dependencies": {
+    "@react-google-maps/api": "^2.20.7",
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.58.0",
+    "@types/canvas-confetti": "^1.9.0",
+    "canvas-confetti": "^1.9.3",
+    "dotenv": "^17.2.3",
+    "framer-motion": "^12.23.19",
+    "lucide-react": "^0.544.0",
+    "next": "15.5.3",
+    "node-fetch": "^3.3.2",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "stripe": "^18.5.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "critters": "^0.0.23",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.3",
+    "eslint-plugin-prettier": "^5.5.4",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

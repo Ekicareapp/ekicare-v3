@@ -1,0 +1,15 @@
+{
+  "data": [
+    {
+      "id": "ddebea9a-27fb-4ab0-91f4-a96db8c500e2",
+      "nom": "Fillie",
+      "prenom": "Tibère",
+      "photo": null,
+      "telephone": "06 12 34 56 78",
+      "adresse": "123 Rue de Test, 75001 Paris",
+      "totalRendezVous": 1,
+      "derniereVisite": "2025-10-08T09:07:30.040Z",
+      "dateAjout": "2025-10-08T09:07:30.040Z"
+    }
+  ]
+}

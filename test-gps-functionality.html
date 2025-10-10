@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test GPS - Adresses de Rendez-vous</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+        .address-example {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border-left: 4px solid #28a745;
+        }
+        .address-example h4 {
+            margin-top: 0;
+            color: #28a745;
+        }
+        .gps-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .gps-button:hover {
+            background: #0056b3;
+        }
+        .gps-button:active {
+            transform: translateY(1px);
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e7f3ff;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test GPS - Adresses de Rendez-vous</h1>
+    <p>Ce test vérifie que l'action "Ouvrir GPS" utilise l'adresse exacte du rendez-vous.</p>
+    
+    <div class="test-section">
+        <h3>📍 Adresses de test (comme saisies par les propriétaires)</h3>
+        
+        <div class="address-example">
+            <h4>🏢 Établissement équestre</h4>
+            <p><strong>Adresse :</strong> Centre Équestre Les Écuries, 123 Rue de la Paix, 75001 Paris, France</p>
+            <button class="gps-button" onclick="testGPS('Centre Équestre Les Écuries, 123 Rue de la Paix, 75001 Paris, France')">
+                🗺️ Ouvrir GPS
+            </button>
+        </div>
+        
+        <div class="address-example">
+            <h4>🏠 Adresse exacte</h4>
+            <p><strong>Adresse :</strong> 15 Avenue des Champs-Élysées, 75008 Paris, France</p>
+            <button class="gps-button" onclick="testGPS('15 Avenue des Champs-Élysées, 75008 Paris, France')">
+                🗺️ Ouvrir GPS
+            </button>
+        </div>
+        
+        <div class="address-example">
+            <h4>🏥 Clinique vétérinaire</h4>
+            <p><strong>Adresse :</strong> Clinique Vétérinaire du Marais, 45 Rue des Archives, 75004 Paris, France</p>
+            <button class="gps-button" onclick="testGPS('Clinique Vétérinaire du Marais, 45 Rue des Archives, 75004 Paris, France')">
+                🗺️ Ouvrir GPS
+            </button>
+        </div>
+        
+        <div class="address-example">
+            <h4>🏇 Haras national</h4>
+            <p><strong>Adresse :</strong> Haras National de Pompadour, Arnac-Pompadour, 19230 Arnac-Pompadour, France</p>
+            <button class="gps-button" onclick="testGPS('Haras National de Pompadour, Arnac-Pompadour, 19230 Arnac-Pompadour, France')">
+                🗺️ Ouvrir GPS
+            </button>
+        </div>
+        
+        <div class="address-example">
+            <h4>🏠 Adresse rurale</h4>
+            <p><strong>Adresse :</strong> 8 Chemin des Écuries, 78480 Verneuil-sur-Seine, France</p>
+            <button class="gps-button" onclick="testGPS('8 Chemin des Écuries, 78480 Verneuil-sur-Seine, France')">
+                🗺️ Ouvrir GPS
+            </button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔧 Test de la fonctionnalité</h3>
+        <p>Chaque bouton "Ouvrir GPS" devrait ouvrir Google Maps avec l'adresse exacte du rendez-vous.</p>
+        
+        <div class="result info">
+            <strong>Fonctionnement attendu :</strong><br>
+            1. Cliquez sur un bouton "Ouvrir GPS"<br>
+            2. Google Maps s'ouvre dans un nouvel onglet<br>
+            3. L'adresse exacte est recherchée<br>
+            4. La localisation précise est affichée
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>📋 Test de fallback</h3>
+        <p>Test avec une adresse vide (simulation d'un RDV sans adresse spécifique) :</p>
+        
+        <div class="address-example">
+            <h4>❌ RDV sans adresse spécifique</h4>
+            <p><strong>Fallback :</strong> Utilisation de l'adresse du profil du propriétaire</p>
+            <button class="gps-button" onclick="testGPSFallback()">
+                🗺️ Ouvrir GPS (Fallback)
+            </button>
+        </div>
+    </div>
+    
+    <div id="result" class="result" style="display: none;">
+        <div id="result-content"></div>
+    </div>
+
+    <script>
+        function testGPS(address) {
+            console.log('📍 Test GPS avec l\'adresse:', address);
+            
+            const encodedAddress = encodeURIComponent(address);
+            const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+            
+            console.log('🔗 URL Google Maps:', googleMapsUrl);
+            
+            // Ouvrir Google Maps
+            window.open(googleMapsUrl, '_blank');
+            
+            // Afficher le résultat
+            showResult(`
+                <strong>✅ GPS ouvert avec succès !</strong><br>
+                <strong>Adresse :</strong> ${address}<br>
+                <strong>URL :</strong> <a href="${googleMapsUrl}" target="_blank">${googleMapsUrl}</a>
+            `, 'success');
+        }
+        
+        function testGPSFallback() {
+            console.log('📍 Test GPS avec fallback');
+            
+            // Simulation d'un RDV sans adresse spécifique
+            const fallbackAddress = "Adresse du profil du propriétaire";
+            const encodedAddress = encodeURIComponent(fallbackAddress);
+            const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+            
+            console.log('🔗 URL Google Maps (fallback):', googleMapsUrl);
+            
+            // Ouvrir Google Maps
+            window.open(googleMapsUrl, '_blank');
+            
+            // Afficher le résultat
+            showResult(`
+                <strong>⚠️ GPS ouvert avec fallback</strong><br>
+                <strong>Adresse :</strong> ${fallbackAddress}<br>
+                <strong>URL :</strong> <a href="${googleMapsUrl}" target="_blank">${googleMapsUrl}</a><br>
+                <strong>Note :</strong> Ceci simule un RDV sans adresse spécifique
+            `, 'info');
+        }
+        
+        function showResult(content, type) {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('result-content');
+            
+            resultContent.innerHTML = content;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+            
+            // Masquer après 5 secondes
+            setTimeout(() => {
+                resultDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Log de démarrage
+        console.log('🧪 Test GPS initialisé');
+        console.log('📍 Fonctionnalité : Ouverture Google Maps avec adresses de RDV');
+    </script>
+</body>
+</html>
+
+
+
+

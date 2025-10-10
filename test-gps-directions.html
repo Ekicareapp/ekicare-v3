@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test GPS Directions - Itinéraires Directs</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+        .address-example {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border-left: 4px solid #28a745;
+        }
+        .address-example h4 {
+            margin-top: 0;
+            color: #28a745;
+        }
+        .gps-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .gps-button:hover {
+            background: #0056b3;
+        }
+        .gps-button:active {
+            transform: translateY(1px);
+        }
+        .coordinates-button {
+            background: #28a745;
+        }
+        .coordinates-button:hover {
+            background: #1e7e34;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e7f3ff;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .url-display {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 11px;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧭 Test GPS Directions - Itinéraires Directs</h1>
+    <p>Ce test vérifie que l'action "Ouvrir GPS" ouvre directement l'itinéraire avec les coordonnées exactes.</p>
+    
+    <div class="test-section">
+        <h3>📍 Test avec coordonnées GPS exactes (Priorité 1)</h3>
+        <p>Utilise les coordonnées GPS précises pour l'itinéraire le plus exact.</p>
+        
+        <div class="address-example">
+            <h4>🏢 Centre Équestre (Coordonnées exactes)</h4>
+            <p><strong>Latitude :</strong> 48.8566</p>
+            <p><strong>Longitude :</strong> 2.3522</p>
+            <p><strong>Adresse :</strong> Centre Équestre Les Écuries, 123 Rue de la Paix, 75001 Paris</p>
+            <button class="gps-button coordinates-button" onclick="testGPSCoordinates(48.8566, 2.3522, 'Centre Équestre Les Écuries')">
+                🗺️ Ouvrir GPS (Coordonnées)
+            </button>
+        </div>
+        
+        <div class="address-example">
+            <h4>🏥 Clinique Vétérinaire (Coordonnées exactes)</h4>
+            <p><strong>Latitude :</strong> 48.8606</p>
+            <p><strong>Longitude :</strong> 2.3376</p>
+            <p><strong>Adresse :</strong> Clinique Vétérinaire du Marais, 45 Rue des Archives, 75004 Paris</p>
+            <button class="gps-button coordinates-button" onclick="testGPSCoordinates(48.8606, 2.3376, 'Clinique Vétérinaire du Marais')">
+                🗺️ Ouvrir GPS (Coordonnées)
+            </button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🏠 Test avec adresse textuelle (Priorité 2)</h3>
+        <p>Utilise l'adresse textuelle si les coordonnées ne sont pas disponibles.</p>
+        
+        <div class="address-example">
+            <h4>🏢 Centre Équestre (Adresse textuelle)</h4>
+            <p><strong>Adresse :</strong> Centre Équestre Les Écuries, 123 Rue de la Paix, 75001 Paris, France</p>
+            <button class="gps-button" onclick="testGPSAddress('Centre Équestre Les Écuries, 123 Rue de la Paix, 75001 Paris, France')">
+                🗺️ Ouvrir GPS (Adresse)
+            </button>
+        </div>
+        
+        <div class="address-example">
+            <h4>🏠 Adresse exacte</h4>
+            <p><strong>Adresse :</strong> 15 Avenue des Champs-Élysées, 75008 Paris, France</p>
+            <button class="gps-button" onclick="testGPSAddress('15 Avenue des Champs-Élysées, 75008 Paris, France')">
+                🗺️ Ouvrir GPS (Adresse)
+            </button>
+        </div>
+        
+        <div class="address-example">
+            <h4>🏇 Haras national</h4>
+            <p><strong>Adresse :</strong> Haras National de Pompadour, Arnac-Pompadour, 19230 Arnac-Pompadour, France</p>
+            <button class="gps-button" onclick="testGPSAddress('Haras National de Pompadour, Arnac-Pompadour, 19230 Arnac-Pompadour, France')">
+                🗺️ Ouvrir GPS (Adresse)
+            </button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔄 Test de fallback (Priorité 3)</h3>
+        <p>Utilise l'adresse du profil du propriétaire si aucune adresse de RDV n'est disponible.</p>
+        
+        <div class="address-example">
+            <h4>👤 Adresse du profil propriétaire</h4>
+            <p><strong>Fallback :</strong> Adresse du profil du propriétaire</p>
+            <button class="gps-button" onclick="testGPSFallback()">
+                🗺️ Ouvrir GPS (Fallback)
+            </button>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>🔧 Comparaison des méthodes</h3>
+        <p>Comparez les différentes méthodes d'ouverture GPS :</p>
+        
+        <div class="address-example">
+            <h4>📍 Même adresse, différentes méthodes</h4>
+            <p><strong>Adresse :</strong> Centre Équestre Les Écuries, 123 Rue de la Paix, 75001 Paris</p>
+            
+            <button class="gps-button" onclick="testSearchMethod('Centre Équestre Les Écuries, 123 Rue de la Paix, 75001 Paris')">
+                🔍 Recherche (ancienne méthode)
+            </button>
+            
+            <button class="gps-button" onclick="testGPSAddress('Centre Équestre Les Écuries, 123 Rue de la Paix, 75001 Paris')">
+                🗺️ Itinéraire (nouvelle méthode)
+            </button>
+            
+            <button class="gps-button coordinates-button" onclick="testGPSCoordinates(48.8566, 2.3522, 'Centre Équestre Les Écuries')">
+                📍 Coordonnées (méthode optimale)
+            </button>
+        </div>
+    </div>
+    
+    <div id="result" class="result" style="display: none;">
+        <div id="result-content"></div>
+    </div>
+
+    <script>
+        function testGPSCoordinates(lat, lng, name) {
+            console.log('📍 Test GPS avec coordonnées exactes:', lat, lng);
+            
+            const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+            
+            console.log('🔗 URL Google Maps (coordonnées):', googleMapsUrl);
+            
+            // Ouvrir Google Maps avec coordonnées exactes
+            window.open(googleMapsUrl, '_blank');
+            
+            // Afficher le résultat
+            showResult(`
+                <strong>✅ GPS ouvert avec coordonnées exactes !</strong><br>
+                <strong>Nom :</strong> ${name}<br>
+                <strong>Coordonnées :</strong> ${lat}, ${lng}<br>
+                <strong>URL :</strong> <a href="${googleMapsUrl}" target="_blank">${googleMapsUrl}</a><br>
+                <strong>Avantage :</strong> Position la plus précise possible
+            `, 'success');
+        }
+        
+        function testGPSAddress(address) {
+            console.log('📍 Test GPS avec adresse textuelle:', address);
+            
+            const encodedAddress = encodeURIComponent(address);
+            const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}&travelmode=driving`;
+            
+            console.log('🔗 URL Google Maps (adresse):', googleMapsUrl);
+            
+            // Ouvrir Google Maps avec adresse
+            window.open(googleMapsUrl, '_blank');
+            
+            // Afficher le résultat
+            showResult(`
+                <strong>✅ GPS ouvert avec adresse textuelle !</strong><br>
+                <strong>Adresse :</strong> ${address}<br>
+                <strong>URL :</strong> <a href="${googleMapsUrl}" target="_blank">${googleMapsUrl}</a><br>
+                <strong>Avantage :</strong> Adresse lisible et compréhensible
+            `, 'success');
+        }
+        
+        function testGPSFallback() {
+            console.log('📍 Test GPS avec fallback');
+            
+            const fallbackAddress = "Adresse du profil du propriétaire";
+            const encodedAddress = encodeURIComponent(fallbackAddress);
+            const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}&travelmode=driving`;
+            
+            console.log('🔗 URL Google Maps (fallback):', googleMapsUrl);
+            
+            // Ouvrir Google Maps avec fallback
+            window.open(googleMapsUrl, '_blank');
+            
+            // Afficher le résultat
+            showResult(`
+                <strong>⚠️ GPS ouvert avec fallback</strong><br>
+                <strong>Adresse :</strong> ${fallbackAddress}<br>
+                <strong>URL :</strong> <a href="${googleMapsUrl}" target="_blank">${googleMapsUrl}</a><br>
+                <strong>Note :</strong> Utilisé quand aucune adresse de RDV n'est disponible
+            `, 'warning');
+        }
+        
+        function testSearchMethod(address) {
+            console.log('🔍 Test avec méthode de recherche (ancienne)');
+            
+            const encodedAddress = encodeURIComponent(address);
+            const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+            
+            console.log('🔗 URL Google Maps (recherche):', googleMapsUrl);
+            
+            // Ouvrir Google Maps avec recherche
+            window.open(googleMapsUrl, '_blank');
+            
+            // Afficher le résultat
+            showResult(`
+                <strong>🔍 GPS ouvert avec méthode de recherche</strong><br>
+                <strong>Adresse :</strong> ${address}<br>
+                <strong>URL :</strong> <a href="${googleMapsUrl}" target="_blank">${googleMapsUrl}</a><br>
+                <strong>Inconvénient :</strong> Ouvre la recherche, pas l'itinéraire direct
+            `, 'info');
+        }
+        
+        function showResult(content, type) {
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('result-content');
+            
+            resultContent.innerHTML = content;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+            
+            // Masquer après 8 secondes
+            setTimeout(() => {
+                resultDiv.style.display = 'none';
+            }, 8000);
+        }
+        
+        // Log de démarrage
+        console.log('🧭 Test GPS Directions initialisé');
+        console.log('📍 Fonctionnalité : Ouverture d\'itinéraires directs avec coordonnées exactes');
+        console.log('🎯 Objectif : Le PRO peut lancer directement l\'itinéraire vers le client');
+    </script>
+</body>
+</html>
+
+
+
+
