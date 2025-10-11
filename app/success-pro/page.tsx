@@ -146,8 +146,8 @@ export default function SuccessProPage() {
               setStatusMessage('Finalisation de votre abonnement...')
             } else if (attempts === 10) {
               setStatusMessage('Traitement du paiement en cours...')
-            } else if (attempts === 15) {
-              // Après 15 secondes, tenter une vérification manuelle
+            } else if (attempts === 8) {
+              // Après 8 secondes, tenter une vérification manuelle (réduit pour meilleure UX)
               console.log('⏰ [FALLBACK] Webhook lent, tentative de vérification manuelle...')
               setStatusMessage('Vérification directe avec Stripe...')
               const manuallyVerified = await manualVerification()

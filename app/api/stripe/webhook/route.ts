@@ -52,13 +52,35 @@ export async function POST(request: NextRequest) {
       console.error('❌ [WEBHOOK] Signature verification FAILED')
       console.error('❌ [WEBHOOK] Error message:', err.message)
       console.error('❌ [WEBHOOK] Error type:', err.type)
+      console.error('❌ [WEBHOOK] Error code:', err.code)
+      console.error('❌ [WEBHOOK] Error stack:', err.stack)
+      console.error('❌ [WEBHOOK] Webhook secret present:', !!webhookSecret)
       console.error('❌ [WEBHOOK] Webhook secret length:', webhookSecret?.length)
+      console.error('❌ [WEBHOOK] Webhook secret starts with:', webhookSecret?.substring(0, 10))
+      console.error('❌ [WEBHOOK] Signature present:', !!signature)
       console.error('❌ [WEBHOOK] Signature length:', signature?.length)
-      console.error('❌ [WEBHOOK] Body preview:', body.substring(0, 100))
+      console.error('❌ [WEBHOOK] Signature starts with:', signature?.substring(0, 20))
+      console.error('❌ [WEBHOOK] Body length:', body.length)
+      console.error('❌ [WEBHOOK] Body preview:', body.substring(0, 200))
+      console.error('❌ [WEBHOOK] Headers:', JSON.stringify({
+        'content-type': request.headers.get('content-type'),
+        'stripe-signature': signature?.substring(0, 20) + '...',
+        'user-agent': request.headers.get('user-agent')
+      }))
+      
       return NextResponse.json({ 
         error: 'Invalid signature', 
         details: err.message,
-        hint: 'Vérifiez que STRIPE_WEBHOOK_SECRET correspond au webhook Stripe Dashboard' 
+        errorType: err.type,
+        errorCode: err.code,
+        hint: 'Vérifiez que STRIPE_WEBHOOK_SECRET correspond au webhook Stripe Dashboard',
+        debug: {
+          secretPresent: !!webhookSecret,
+          secretLength: webhookSecret?.length,
+          signaturePresent: !!signature,
+          signatureLength: signature?.length,
+          bodyLength: body.length
+        }
       }, { status: 400 })
     }
 
