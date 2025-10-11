@@ -26,15 +26,31 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
  * après un paiement réussi. Il doit être fiable et robuste.
  */
 export async function POST(request: NextRequest) {
-  console.log('🛰️ [WEBHOOK] Webhook Stripe reçu')
+  const startTime = Date.now()
+  
+  // 📊 LOGS DÉTAILLÉS POUR DIAGNOSTIC
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('🛰️ [WEBHOOK] Nouveau webhook Stripe reçu')
+  console.log('🕐 [WEBHOOK] Timestamp:', new Date().toISOString())
   
   try {
     // 1. RÉCUPÉRATION DU RAW BODY (critique pour la signature)
     const body = await request.text()
     const signature = request.headers.get('stripe-signature')
+    const webhookId = request.headers.get('stripe-webhook-id')
+    const userAgent = request.headers.get('user-agent')
+    const requestUrl = request.url
+    
+    // Logs détaillés des headers et requête
+    console.log('📍 [WEBHOOK] URL appelée:', requestUrl)
+    console.log('🔑 [WEBHOOK] Webhook ID:', webhookId)
+    console.log('👤 [WEBHOOK] User-Agent:', userAgent)
+    console.log('📦 [WEBHOOK] Body length:', body.length)
+    console.log('📦 [WEBHOOK] Body preview (50 chars):', body.substring(0, 50))
     
     if (!signature) {
       console.error('❌ [WEBHOOK] Signature Stripe manquante')
+      console.error('❌ [WEBHOOK] Headers disponibles:', Array.from(request.headers.keys()))
       return NextResponse.json({ error: 'Signature manquante' }, { status: 400 })
     }
 
@@ -43,9 +59,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Configuration manquante' }, { status: 500 })
     }
 
-    console.log('🔍 [WEBHOOK] Body length:', body.length)
-    console.log('🔍 [WEBHOOK] Signature présentes:', signature ? 'Oui' : 'Non')
-    console.log('🔍 [WEBHOOK] Secret configuré:', webhookSecret ? 'Oui' : 'Non')
+    // Logs de diagnostic pour la signature
+    console.log('🔐 [WEBHOOK] Signature présente:', !!signature)
+    console.log('🔐 [WEBHOOK] Signature length:', signature.length)
+    console.log('🔐 [WEBHOOK] Signature preview:', signature.substring(0, 30) + '...')
+    console.log('🔐 [WEBHOOK] Secret configuré:', !!webhookSecret)
+    console.log('🔐 [WEBHOOK] Secret type:', typeof webhookSecret)
+    console.log('🔐 [WEBHOOK] Secret length:', webhookSecret.length)
+    console.log('🔐 [WEBHOOK] Secret starts with whsec_:', webhookSecret.startsWith('whsec_'))
 
     // 2. VÉRIFICATION DE LA SIGNATURE STRIPE
     let event: Stripe.Event
@@ -53,10 +74,21 @@ export async function POST(request: NextRequest) {
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
       console.log('✅ [WEBHOOK] Signature vérifiée avec succès')
-      console.log('📋 [WEBHOOK] Événement type:', event.type)
+      console.log('📋 [WEBHOOK] Event ID:', event.id)
+      console.log('📋 [WEBHOOK] Event type:', event.type)
+      console.log('📋 [WEBHOOK] Event livemode:', event.livemode)
+      console.log('📋 [WEBHOOK] Event created:', new Date(event.created * 1000).toISOString())
     } catch (err: any) {
       console.error('❌ [WEBHOOK] Erreur vérification signature:', err.message)
-      return NextResponse.json({ error: `Signature invalide: ${err.message}` }, { status: 400 })
+      console.error('❌ [WEBHOOK] Stack trace:', err.stack)
+      console.error('❌ [WEBHOOK] Type erreur:', err.type)
+      console.error('❌ [WEBHOOK] Code erreur:', err.code)
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+      return NextResponse.json({ 
+        error: `Signature invalide: ${err.message}`,
+        webhookId: webhookId,
+        timestamp: new Date().toISOString()
+      }, { status: 400 })
     }
 
     // 3. TRAITEMENT DES ÉVÉNEMENTS
@@ -77,12 +109,30 @@ export async function POST(request: NextRequest) {
         console.log(`ℹ️ [WEBHOOK] Événement non géré: ${event.type}`)
     }
 
+    const duration = Date.now() - startTime
     console.log('✅ [WEBHOOK] Événement traité avec succès')
-    return NextResponse.json({ received: true })
+    console.log('⏱️ [WEBHOOK] Durée totale:', duration, 'ms')
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    
+    return NextResponse.json({ 
+      received: true,
+      eventId: event.id,
+      eventType: event.type,
+      duration: duration
+    })
 
   } catch (error: any) {
+    const duration = Date.now() - startTime
     console.error('❌ [WEBHOOK] Erreur générale:', error)
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+    console.error('❌ [WEBHOOK] Message:', error.message)
+    console.error('❌ [WEBHOOK] Stack:', error.stack)
+    console.error('⏱️ [WEBHOOK] Durée avant erreur:', duration, 'ms')
+    console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    return NextResponse.json({ 
+      error: 'Erreur serveur',
+      message: error.message,
+      duration: duration
+    }, { status: 500 })
   }
 }
 
