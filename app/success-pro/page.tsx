@@ -67,6 +67,11 @@ export default function SuccessProPage() {
 
         const checkSubscriptionStatus = async (): Promise<boolean> => {
           try {
+            if (!supabase) {
+              console.error('❌ Supabase client not available')
+              return false
+            }
+            
             const { data: profile, error: profileError } = await supabase
               .from('pro_profiles')
               .select('is_verified, is_subscribed')
