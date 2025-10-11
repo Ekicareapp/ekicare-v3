@@ -53,7 +53,7 @@ export default function SuccessProPage() {
         console.log('📋 Stripe Session ID:', stripeSessionId)
 
         // POLLING : Vérifier que le webhook a bien mis à jour is_verified et is_subscribed
-        const maxAttempts = 30 // 30 tentatives (30 secondes max)
+        const maxAttempts = 15 // 15 tentatives (15 secondes max)
         let attempts = 0
         let isSubscriptionActive = false
 
@@ -148,8 +148,8 @@ export default function SuccessProPage() {
               setStatusMessage('Finalisation de votre abonnement...')
             } else if (attempts === 10) {
               setStatusMessage('Traitement du paiement en cours...')
-            } else if (attempts === 3) {
-              // Après 3 secondes, tenter une vérification manuelle (plus rapide)
+            } else if (attempts === 2) {
+              // Après 2 secondes, tenter une vérification manuelle (encore plus rapide)
               console.log('⏰ [FALLBACK] Webhook lent, tentative de vérification manuelle...')
               setStatusMessage('Vérification directe avec Stripe...')
               const manuallyVerified = await manualVerification()
