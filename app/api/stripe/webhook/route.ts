@@ -36,8 +36,9 @@ export async function POST(request: NextRequest) {
   console.log('🔑 [WEBHOOK] Service Role Key présent:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
   
   try {
-    // Récupérer le body RAW sans parsing
-    const body = await request.text()
+    // Récupérer le body RAW sans parsing (arrayBuffer pour préserver l'encodage exact)
+    const bodyBuffer = await request.arrayBuffer()
+    const body = Buffer.from(bodyBuffer).toString('utf8')
     console.log('📦 [WEBHOOK] Body length:', body.length)
     console.log('📦 [WEBHOOK] Body preview:', body.substring(0, 100))
     
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
         console.log('🔐 [WEBHOOK] Signature header:', signature)
         console.log('🔐 [WEBHOOK] Secret utilisé:', webhookSecret.substring(0, 20) + '...')
         
-        event = stripe.webhooks.constructEvent(body, signature!, webhookSecret)
+        event = stripe.webhooks.constructEvent(bodyBuffer, signature!, webhookSecret)
         console.log('✅ [WEBHOOK] Signature vérifiée - Événement:', event.type)
       } catch (err: any) {
         console.error('⚠️ [WEBHOOK] Webhook signature verification failed:', err.message)

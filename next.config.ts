@@ -26,6 +26,11 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+  
+  // CRITIQUE : Désactiver le parsing automatique pour les webhooks
+  experimental: {
+    serverComponentsExternalPackages: ['stripe'],
+  },
 }
 
 export default nextConfig
