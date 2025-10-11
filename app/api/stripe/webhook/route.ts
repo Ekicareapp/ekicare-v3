@@ -152,7 +152,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
         is_subscribed: true
       })
       .eq('user_id', userId)
-      .select('id, prenom, nom, email')
+      .select('id, prenom, nom')
       .single()
 
     if (updateError) {
