@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       }
     } else {
       console.warn('⚠️ [WEBHOOK] No endpoint secret defined - using JSON.parse')
-      event = JSON.parse(body)
+      event = JSON.parse(bodyString)
     }
 
     // Handle the event
