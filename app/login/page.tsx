@@ -69,7 +69,7 @@ export default function LoginPage() {
 
         // Si le professionnel n'est pas vérifié, redirection vers paiement
         if (!proProfile.is_verified || !proProfile.is_subscribed) {
-          window.location.href = '/activation-pro'
+          window.location.href = '/paiement-requis'
           return
         }
       }
