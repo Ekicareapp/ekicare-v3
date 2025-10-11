@@ -27,10 +27,6 @@ const nextConfig: NextConfig = {
     ]
   },
   
-  // CRITIQUE : Désactiver le parsing automatique pour les webhooks
-  experimental: {
-    serverActionsBodySizeLimit: '2mb',
-  },
 }
 
 export default nextConfig
