@@ -36,3 +36,4 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 # Webhook fix
 # Updated Stripe configuration Sat Oct 11 12:32:32 CEST 2025
+# Updated webhook secret Sat Oct 11 12:52:39 CEST 2025
