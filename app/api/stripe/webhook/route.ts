@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
-// 🛰️ WEBHOOK STRIPE ROBUSTE - SOURCE DE VÉRITÉ
-export const runtime = 'nodejs'
-export const dynamic = 'force-dynamic'
+// ⚡ CONFIGURATION CRITIQUE POUR WEBHOOKS STRIPE
+export const runtime = 'nodejs' // OBLIGATOIRE pour Buffer
+export const dynamic = 'force-dynamic' // Désactive le cache
 
 // Configuration Stripe
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY!
@@ -20,124 +20,80 @@ const supabase = createClient(
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
-// 🔍 DIAGNOSTIC AU DÉMARRAGE
-console.log('🔧 [WEBHOOK-INIT] Configuration chargée:')
-console.log('  - Stripe Secret Key:', stripeSecretKey ? `${stripeSecretKey.substring(0, 12)}...` : 'MANQUANT')
-console.log('  - Stripe Secret Key Mode:', stripeSecretKey?.startsWith('sk_test_') ? 'TEST' : stripeSecretKey?.startsWith('sk_live_') ? 'LIVE' : 'INVALIDE')
-console.log('  - Webhook Secret:', webhookSecret ? `${webhookSecret.substring(0, 12)}...` : 'MANQUANT')
-console.log('  - Webhook Secret Valid:', webhookSecret?.startsWith('whsec_') ? 'OUI' : 'NON')
+// 🔍 VALIDATION AU DÉMARRAGE
+if (!stripeSecretKey || !webhookSecret) {
+  console.error('❌ [WEBHOOK-INIT] Configuration Stripe manquante!')
+  console.error('  - STRIPE_SECRET_KEY:', !!stripeSecretKey)
+  console.error('  - STRIPE_WEBHOOK_SECRET:', !!webhookSecret)
+} else {
+  console.log('✅ [WEBHOOK-INIT] Configuration Stripe chargée')
+  console.log('  - Mode:', stripeSecretKey.startsWith('sk_test_') ? 'TEST' : 'LIVE')
+  console.log('  - Webhook Secret:', `${webhookSecret.substring(0, 12)}...`)
+}
 
 /**
- * 🛰️ WEBHOOK STRIPE - SOURCE DE VÉRITÉ
+ * 🛰️ WEBHOOK STRIPE HANDLER
  * 
- * Ce webhook est la source principale de mise à jour des statuts
- * après un paiement réussi. Il doit être fiable et robuste.
+ * CRITIQUE : Ce endpoint doit recevoir le body RAW (non parsé) pour valider la signature Stripe.
+ * La signature Stripe est calculée sur le body exact envoyé, tout parsing le rend invalide.
+ * 
+ * @see https://stripe.com/docs/webhooks/signatures
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
+  const timestamp = new Date().toISOString()
   
-  // 📊 LOGS DÉTAILLÉS POUR DIAGNOSTIC
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-  console.log('🛰️ [WEBHOOK] Nouveau webhook Stripe reçu')
-  console.log('🕐 [WEBHOOK] Timestamp:', new Date().toISOString())
+  console.log(`🛰️ [WEBHOOK] Webhook reçu à ${timestamp}`)
   
   try {
-    // 1. RÉCUPÉRATION DU RAW BODY EN ARRAYBUFFER (critique pour la signature)
-    // ⚡ IMPORTANT : Ne JAMAIS utiliser request.text() ou request.json()
-    // Stripe nécessite le buffer brut exact pour la vérification de signature
+    // ⚡ ÉTAPE 1 : Récupération du RAW BODY
+    // CRITIQUE : Utiliser arrayBuffer() puis Buffer.from() pour garantir les bytes exacts
     const arrayBuffer = await request.arrayBuffer()
-    const body = Buffer.from(arrayBuffer)
+    const rawBody = Buffer.from(arrayBuffer)
     
+    // ⚡ ÉTAPE 2 : Récupération de la signature Stripe
     const signature = request.headers.get('stripe-signature')
-    const webhookId = request.headers.get('stripe-webhook-id')
-    const userAgent = request.headers.get('user-agent')
-    const host = request.headers.get('host')
-    const requestUrl = request.url
     
-    // 🔍 ANALYSE SIGNATURE DÉTAILLÉE
-    // Format Stripe: t=timestamp,v1=signature,v0=signature
-    let signatureTimestamp = 'N/A'
-    let signatureV1 = 'N/A'
-    let signatureV0 = 'N/A'
-    
-    if (signature) {
-      const parts = signature.split(',')
-      for (const part of parts) {
-        if (part.startsWith('t=')) {
-          signatureTimestamp = part.substring(2)
-        } else if (part.startsWith('v1=')) {
-          signatureV1 = part.substring(3, 13) + '...' // Tronqué pour sécurité
-        } else if (part.startsWith('v0=')) {
-          signatureV0 = part.substring(3, 13) + '...' // Tronqué pour sécurité
-        }
-      }
+    // Validation immédiate
+    if (!rawBody || rawBody.length === 0) {
+      console.error('❌ [WEBHOOK] Body vide')
+      return NextResponse.json({ error: 'Body manquant' }, { status: 400 })
     }
-    
-    // 📊 LOGS DÉTAILLÉS POUR AUDIT
-    console.log('━━━ REQUÊTE ━━━')
-    console.log('📍 [WEBHOOK] URL complète:', requestUrl)
-    console.log('🌐 [WEBHOOK] Host:', host)
-    console.log('🔑 [WEBHOOK] Webhook ID:', webhookId)
-    console.log('👤 [WEBHOOK] User-Agent:', userAgent)
-    
-    console.log('━━━ BODY ━━━')
-    console.log('📦 [WEBHOOK] Body type:', typeof body)
-    console.log('📦 [WEBHOOK] Body instanceof Buffer:', body instanceof Buffer)
-    console.log('📦 [WEBHOOK] Body length:', body.length, 'bytes')
-    console.log('📦 [WEBHOOK] Body preview (50 chars):', body.toString('utf8').substring(0, 50))
-    
-    console.log('━━━ SIGNATURE STRIPE ━━━')
-    console.log('🔐 [WEBHOOK] Signature présente:', !!signature)
-    console.log('🔐 [WEBHOOK] Signature complète (tronquée):', signature ? signature.substring(0, 60) + '...' : 'MANQUANTE')
-    console.log('🔐 [WEBHOOK] → Timestamp (t):', signatureTimestamp)
-    console.log('🔐 [WEBHOOK] → Signature v1 (tronquée):', signatureV1)
-    console.log('🔐 [WEBHOOK] → Signature v0 (tronquée):', signatureV0)
-    
-    console.log('━━━ CONFIGURATION SERVEUR ━━━')
-    console.log('🔑 [WEBHOOK] Webhook Secret configuré:', webhookSecret ? `${webhookSecret.substring(0, 12)}...` : 'MANQUANT')
-    console.log('🔑 [WEBHOOK] Secret valid (whsec_):', webhookSecret?.startsWith('whsec_'))
-    console.log('🔑 [WEBHOOK] Stripe Key Mode:', stripeSecretKey?.startsWith('sk_test_') ? 'TEST' : 'LIVE')
-    console.log('🔑 [WEBHOOK] Environment:', process.env.VERCEL_ENV || 'local')
     
     if (!signature) {
-      console.error('❌ [WEBHOOK] Signature Stripe manquante')
-      console.error('❌ [WEBHOOK] Headers disponibles:', Array.from(request.headers.keys()))
+      console.error('❌ [WEBHOOK] Stripe-Signature header manquant')
       return NextResponse.json({ error: 'Signature manquante' }, { status: 400 })
     }
-
-    if (!webhookSecret) {
-      console.error('❌ [WEBHOOK] STRIPE_WEBHOOK_SECRET non configuré')
-      return NextResponse.json({ error: 'Configuration manquante' }, { status: 500 })
-    }
-
-    // 2. VÉRIFICATION DE LA SIGNATURE STRIPE avec le buffer brut
+    
+    // Logs de diagnostic
+    console.log('✅ [WEBHOOK] Body récupéré:', rawBody.length, 'bytes')
+    console.log('✅ [WEBHOOK] Signature présente')
+    console.log('🔍 [WEBHOOK] Environment:', process.env.VERCEL_ENV || 'local')
+    
+    // ⚡ ÉTAPE 3 : VÉRIFICATION DE LA SIGNATURE STRIPE
     let event: Stripe.Event
     
     try {
-      // ⚡ CRITIQUE : Passer le Buffer brut directement à Stripe
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
+      // CRITIQUE : Passer le Buffer brut directement à Stripe
+      event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret)
       
       console.log('━━━ SIGNATURE VALIDÉE ✅ ━━━')
       console.log('✅ [WEBHOOK] Signature vérifiée avec succès')
       console.log('📋 [WEBHOOK] Event ID:', event.id)
       console.log('📋 [WEBHOOK] Event type:', event.type)
       console.log('📋 [WEBHOOK] Event livemode:', event.livemode)
-      console.log('📋 [WEBHOOK] Event created:', new Date(event.created * 1000).toISOString())
       
-      // 🔍 VÉRIFICATION MODE COHÉRENT
-      const expectedLiveMode = stripeSecretKey?.startsWith('sk_live_')
+      // Vérification mode cohérent
+      const expectedLiveMode = stripeSecretKey.startsWith('sk_live_')
       if (event.livemode !== expectedLiveMode) {
-        console.error('━━━ ERREUR MODE INCOHÉRENT ❌ ━━━')
-        console.error('⚠️ [WEBHOOK] MODE MISMATCH DÉTECTÉ !')
-        console.error('  - Event livemode:', event.livemode, '(reçu de Stripe)')
-        console.error('  - Stripe Key Mode:', expectedLiveMode ? 'LIVE' : 'TEST', '(configuré)')
-        console.error('  - Action: Vérifier que les clés Stripe correspondent au même mode')
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+        console.error('⚠️ [WEBHOOK] MODE MISMATCH !')
+        console.error('  - Event livemode:', event.livemode)
+        console.error('  - Config mode:', expectedLiveMode ? 'LIVE' : 'TEST')
         return NextResponse.json({ 
-          error: 'Mode incohérent: event livemode ne correspond pas aux clés configurées',
+          error: 'Mode incohérent',
           eventLivemode: event.livemode,
-          configuredMode: expectedLiveMode ? 'LIVE' : 'TEST',
-          hint: 'Vérifier STRIPE_SECRET_KEY et STRIPE_WEBHOOK_SECRET'
+          configuredMode: expectedLiveMode ? 'LIVE' : 'TEST'
         }, { status: 400 })
       }
       
@@ -145,71 +101,30 @@ export async function POST(request: NextRequest) {
       
     } catch (err: any) {
       console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-      console.error('❌ ERREUR SIGNATURE STRIPE - MISMATCH DÉTECTÉ')
+      console.error('❌ ERREUR SIGNATURE STRIPE')
       console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-      
-      console.error('━━━ ERREUR ━━━')
-      console.error('❌ [WEBHOOK] Échec vérification signature')
       console.error('❌ [WEBHOOK] Message:', err.message)
       console.error('❌ [WEBHOOK] Type:', err.type)
-      console.error('❌ [WEBHOOK] Code:', err.code)
-      
-      console.error('━━━ SIGNATURE REÇUE ━━━')
-      console.error('🔐 [WEBHOOK] Timestamp (t):', signatureTimestamp)
-      console.error('🔐 [WEBHOOK] Signature v1:', signatureV1)
-      console.error('🔐 [WEBHOOK] Signature v0:', signatureV0)
-      console.error('🔐 [WEBHOOK] Signature complète:', signature?.substring(0, 80) + '...')
-      
-      console.error('━━━ SECRET CONFIGURÉ ━━━')
-      console.error('🔑 [WEBHOOK] Secret tronqué:', webhookSecret?.substring(0, 12) + '...')
-      console.error('🔑 [WEBHOOK] Secret valide (whsec_):', webhookSecret?.startsWith('whsec_'))
-      console.error('🔑 [WEBHOOK] Environment:', process.env.VERCEL_ENV || 'local')
-      
-      console.error('━━━ DIAGNOSTIC COMPLET ━━━')
-      console.error('🔍 [WEBHOOK] Timestamp:', new Date().toISOString())
-      console.error('🔍 [WEBHOOK] Webhook ID:', webhookId)
-      console.error('🔍 [WEBHOOK] Host:', host)
-      console.error('🔍 [WEBHOOK] URL:', requestUrl)
-      console.error('🔍 [WEBHOOK] Body Buffer:', body instanceof Buffer)
-      console.error('🔍 [WEBHOOK] Body Length:', body.length, 'bytes')
-      console.error('🔍 [WEBHOOK] Stripe Key Mode:', stripeSecretKey?.startsWith('sk_test_') ? 'TEST' : 'LIVE')
-      
-      console.error('━━━ CAUSE PROBABLE ━━━')
-      console.error('⚠️  Le secret configuré ne correspond PAS à celui de l\'endpoint Stripe')
-      console.error('⚠️  SOIT: Plusieurs endpoints actifs avec secrets différents')
-      console.error('⚠️  SOIT: Secret non mis à jour après régénération')
-      console.error('⚠️  SOIT: Secret en Preview au lieu de Production sur Vercel')
-      
-      console.error('━━━ ACTIONS REQUISES ━━━')
-      console.error('1. 🔍 Aller dans Stripe Dashboard → Webhooks')
-      console.error('2. ❌ SUPPRIMER tous les endpoints sauf UN')
-      console.error('3. 🔄 RÉGÉNÉRER le secret (Roll secret)')
-      console.error('4. 📋 COPIER le nouveau whsec_...')
-      console.error('5. ⚙️  METTRE À JOUR dans Vercel en PRODUCTION')
-      console.error('6. 🚀 REDÉPLOYER')
-      
-      console.error('━━━ COMPARAISON POUR DEBUG ━━━')
-      console.error('Pour identifier l\'endpoint problématique:')
-      console.error('1. Comparer le timestamp:', signatureTimestamp)
-      console.error('2. Chercher dans Stripe Dashboard → Webhooks → Event logs')
-      console.error('3. Trouver l\'event avec ce timestamp')
-      console.error('4. Voir quel endpoint l\'a envoyé')
-      
-      console.error('━━━ STACK TRACE ━━━')
-      console.error(err.stack)
+      console.error('🔍 [WEBHOOK] Body length:', rawBody.length, 'bytes')
+      console.error('🔍 [WEBHOOK] Signature preview:', signature.substring(0, 50) + '...')
+      console.error('🔍 [WEBHOOK] Secret preview:', webhookSecret.substring(0, 12) + '...')
+      console.error('🔍 [WEBHOOK] Environment:', process.env.VERCEL_ENV)
+      console.error('')
+      console.error('━━━ SOLUTIONS POSSIBLES ━━━')
+      console.error('1. Vérifier qu\'un seul endpoint est actif dans Stripe Dashboard')
+      console.error('2. Vérifier que STRIPE_WEBHOOK_SECRET correspond à cet endpoint')
+      console.error('3. Régénérer le webhook secret si nécessaire')
+      console.error('4. Vérifier que le secret est bien en Production sur Vercel')
       console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
       
       return NextResponse.json({ 
-        error: 'Signature mismatch: le secret ne correspond pas',
+        error: 'Signature invalide',
         message: err.message,
-        webhookId: webhookId,
-        timestamp: new Date().toISOString(),
-        signatureTimestamp: signatureTimestamp,
-        hint: 'Un seul endpoint doit être actif avec le bon secret en Production'
+        hint: 'Vérifier le webhook secret et qu\'un seul endpoint est actif'
       }, { status: 400 })
     }
-
-    // 3. TRAITEMENT DES ÉVÉNEMENTS
+    
+    // ⚡ ÉTAPE 4 : TRAITEMENT DES ÉVÉNEMENTS
     switch (event.type) {
       case 'checkout.session.completed':
         await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session)
@@ -226,7 +141,7 @@ export async function POST(request: NextRequest) {
       default:
         console.log(`ℹ️ [WEBHOOK] Événement non géré: ${event.type}`)
     }
-
+    
     const duration = Date.now() - startTime
     console.log('✅ [WEBHOOK] Événement traité avec succès')
     console.log('⏱️ [WEBHOOK] Durée totale:', duration, 'ms')
@@ -238,18 +153,16 @@ export async function POST(request: NextRequest) {
       eventType: event.type,
       duration: duration
     })
-
+    
   } catch (error: any) {
     const duration = Date.now() - startTime
-    console.error('❌ [WEBHOOK] Erreur générale:', error)
-    console.error('❌ [WEBHOOK] Message:', error.message)
-    console.error('❌ [WEBHOOK] Stack:', error.stack)
+    console.error('❌ [WEBHOOK] Erreur générale:', error.message)
     console.error('⏱️ [WEBHOOK] Durée avant erreur:', duration, 'ms')
     console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    
     return NextResponse.json({ 
       error: 'Erreur serveur',
-      message: error.message,
-      duration: duration
+      message: error.message
     }, { status: 500 })
   }
 }
@@ -261,143 +174,56 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   console.log('💳 [WEBHOOK] Checkout session completed:', session.id)
   
   try {
-    // Récupérer l'ID utilisateur depuis plusieurs sources possibles
+    // Récupérer l'ID utilisateur
     const userId = session.client_reference_id || session.metadata?.userId || session.metadata?.user_id
-    const userEmail = session.customer_email || session.customer_details?.email
-    
-    console.log('🔍 [WEBHOOK] Données de la session:')
-    console.log('  - client_reference_id:', session.client_reference_id)
-    console.log('  - metadata.userId:', session.metadata?.userId)
-    console.log('  - metadata.user_id:', session.metadata?.user_id)
-    console.log('  - user_id final:', userId)
     
     if (!userId) {
-      console.error('❌ [WEBHOOK] user_id manquant dans les métadonnées et client_reference_id')
+      console.error('❌ [WEBHOOK] user_id manquant')
       return
     }
-
+    
     console.log('👤 [WEBHOOK] User ID:', userId)
-    console.log('📧 [WEBHOOK] Email:', userEmail)
     console.log('💰 [WEBHOOK] Payment status:', session.payment_status)
-    console.log('🔗 [WEBHOOK] Customer ID:', session.customer)
-    console.log('📋 [WEBHOOK] Subscription ID:', session.subscription)
-
-    // Vérifier que le paiement est bien confirmé
+    
     if (session.payment_status !== 'paid') {
       console.log('⚠️ [WEBHOOK] Paiement non confirmé:', session.payment_status)
       return
     }
-
-    // 1. VÉRIFIER SI LE PROFIL EXISTE
-    console.log('🔍 [WEBHOOK] Recherche du profil pour user_id:', userId)
     
+    // Vérifier si le profil existe
     const { data: existingProfile, error: findError } = await supabase
       .from('pro_profiles')
       .select('*')
       .eq('user_id', userId)
     
-    console.log('📊 [WEBHOOK] Résultat recherche profil:')
-    console.log('  - Profils trouvés:', existingProfile?.length || 0)
-    console.log('  - Erreur:', findError?.message || 'Aucune')
-    
-    if (findError) {
-      console.error('❌ [WEBHOOK] Erreur lors de la recherche du profil:', findError)
-      // Ne pas bloquer, continuer quand même
-    }
-
-    if (!existingProfile || existingProfile.length === 0) {
-      console.error('⚠️ [WEBHOOK] AUCUN PROFIL TROUVÉ pour user_id:', userId)
-      console.error('⚠️ [WEBHOOK] Le profil professionnel doit être créé AVANT le paiement')
-      console.error('⚠️ [WEBHOOK] Vérifier que le signup crée bien le profil dans pro_profiles')
-      
-      // Vérifier si l'utilisateur existe au moins dans la table users
-      const { data: user, error: userError } = await supabase
-        .from('users')
-        .select('id, email, role')
-        .eq('id', userId)
-        .single()
-      
-      if (userError || !user) {
-        console.error('❌ [WEBHOOK] Utilisateur inexistant dans la table users:', userError)
-        return
-      }
-      
-      console.log('✅ [WEBHOOK] Utilisateur trouvé:', user.email, '- Role:', user.role)
-      
-      // L'utilisateur existe mais pas son profil pro -> Cas anormal
-      console.error('❌ [WEBHOOK] ERREUR CRITIQUE: User existe mais pro_profile manquant')
-      console.error('❌ [WEBHOOK] Le paiement a été effectué mais le profil n\'a pas été créé lors du signup')
-      
+    if (findError || !existingProfile || existingProfile.length === 0) {
+      console.error('❌ [WEBHOOK] Profil non trouvé pour user_id:', userId)
       return
     }
-
-    // 2. METTRE À JOUR LE PROFIL
+    
     const profile = existingProfile[0]
     console.log('✅ [WEBHOOK] Profil trouvé, ID:', profile.id)
-    console.log('📊 [WEBHOOK] État actuel:')
-    console.log('  - is_verified:', profile.is_verified)
-    console.log('  - is_subscribed:', profile.is_subscribed)
     
-    // ⚡ MISE À JOUR ROBUSTE : Uniquement les champs qui existent dans le schéma
-    const updateData: any = {
+    // Mettre à jour le profil
+    const updateData = {
       is_verified: true,
       is_subscribed: true
     }
-
-    // Ajouter les champs Stripe seulement s'ils existent dans le schéma
-    // Note: Ces champs ne sont PAS dans le schéma actuel, donc on les sauvegarde dans metadata si nécessaire
-    console.log('💾 [WEBHOOK] Données Stripe reçues:')
-    console.log('  - Customer ID:', session.customer)
-    console.log('  - Subscription ID:', session.subscription)
-    console.log('  - Session ID:', session.id)
-    console.log('  - Email:', userEmail)
     
-    console.log('🔄 [WEBHOOK] Mise à jour avec:', updateData)
-    console.log('ℹ️ [WEBHOOK] Champs Stripe non sauvegardés (colonnes inexistantes dans le schéma):')
-    console.log('  - stripe_customer_id:', session.customer)
-    console.log('  - stripe_subscription_id:', session.subscription)
-    console.log('  - stripe_session_id:', session.id)
-
-    const { data: updatedProfile, error: updateError } = await supabase
+    const { error: updateError } = await supabase
       .from('pro_profiles')
       .update(updateData)
       .eq('user_id', userId)
-      .select()
-
+    
     if (updateError) {
-      console.error('❌ [WEBHOOK] Erreur mise à jour profil:', updateError)
-      console.error('❌ [WEBHOOK] Code erreur:', updateError.code)
-      console.error('❌ [WEBHOOK] Message:', updateError.message)
-      console.error('❌ [WEBHOOK] Details:', updateError.details)
-      
-      // Si l'erreur est liée à une colonne manquante, on continue quand même
-      if (updateError.code === 'PGRST204') {
-        console.log('⚠️ [WEBHOOK] Colonne manquante détectée, mais is_verified et is_subscribed sont les seuls champs critiques')
-        // Réessayer avec uniquement les champs de base
-        const minimalUpdate = { is_verified: true, is_subscribed: true }
-        const { error: retryError } = await supabase
-          .from('pro_profiles')
-          .update(minimalUpdate)
-          .eq('user_id', userId)
-        
-        if (retryError) {
-          console.error('❌ [WEBHOOK] Échec de la mise à jour minimale:', retryError)
-          throw retryError
-        }
-        
-        console.log('✅ [WEBHOOK] Mise à jour minimale réussie (is_verified + is_subscribed)')
-        return
-      }
-      
-      throw updateError
+      console.error('❌ [WEBHOOK] Erreur mise à jour profil:', updateError.message)
+      return
     }
-
-    console.log('✅ [WEBHOOK] Profil mis à jour avec succès')
-    console.log('📊 [WEBHOOK] Données mises à jour:', updatedProfile)
+    
+    console.log('✅ [WEBHOOK] Profil activé avec succès')
     
   } catch (error: any) {
-    console.error('❌ [WEBHOOK] Erreur handleCheckoutSessionCompleted:', error)
-    throw error
+    console.error('❌ [WEBHOOK] Erreur handleCheckoutSessionCompleted:', error.message)
   }
 }
 
@@ -414,52 +240,41 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       console.log('⚠️ [WEBHOOK] Customer ID manquant')
       return
     }
-
-    console.log('👤 [WEBHOOK] Customer ID:', customerId)
-
-    // Trouver le profil par customer_id Stripe (sans .single() pour éviter PGRST116)
+    
+    // Trouver le profil par customer_id Stripe
     const { data: profiles, error: findError } = await supabase
       .from('pro_profiles')
       .select('*')
       .eq('stripe_customer_id', customerId)
-
-    if (findError) {
-      console.error('❌ [WEBHOOK] Erreur recherche profil:', findError)
-      return
-    }
-
-    if (!profiles || profiles.length === 0) {
+    
+    if (findError || !profiles || profiles.length === 0) {
       console.log('⚠️ [WEBHOOK] Profil non trouvé pour customer:', customerId)
       return
     }
-
+    
     const profile = profiles[0]
     console.log('✅ [WEBHOOK] Profil trouvé:', profile.id)
-
-    // Mettre à jour les statuts (uniquement les champs existants dans le schéma)
+    
+    // Mettre à jour les statuts
     const updateData = {
       is_verified: true,
       is_subscribed: true
     }
     
-    console.log('🔄 [WEBHOOK] Mise à jour invoice avec:', updateData)
-
     const { error: updateError } = await supabase
       .from('pro_profiles')
       .update(updateData)
       .eq('id', profile.id)
-
+    
     if (updateError) {
-      console.error('❌ [WEBHOOK] Erreur mise à jour invoice:', updateError)
-      console.error('❌ [WEBHOOK] Code erreur:', updateError.code)
-      throw updateError
+      console.error('❌ [WEBHOOK] Erreur mise à jour invoice:', updateError.message)
+      return
     }
-
+    
     console.log('✅ [WEBHOOK] Statuts mis à jour via invoice')
     
   } catch (error: any) {
-    console.error('❌ [WEBHOOK] Erreur handleInvoicePaymentSucceeded:', error)
-    throw error
+    console.error('❌ [WEBHOOK] Erreur handleInvoicePaymentSucceeded:', error.message)
   }
 }
 
@@ -473,28 +288,20 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     const customerId = subscription.customer as string
     const status = subscription.status
     
-    console.log('👤 [WEBHOOK] Customer ID:', customerId)
-    console.log('📊 [WEBHOOK] Status:', status)
-
-    // Trouver le profil par customer_id Stripe (sans .single() pour éviter PGRST116)
+    // Trouver le profil par customer_id Stripe
     const { data: profiles, error: findError } = await supabase
       .from('pro_profiles')
       .select('*')
       .eq('stripe_customer_id', customerId)
-
-    if (findError) {
-      console.error('❌ [WEBHOOK] Erreur recherche profil:', findError)
-      return
-    }
-
-    if (!profiles || profiles.length === 0) {
+    
+    if (findError || !profiles || profiles.length === 0) {
       console.log('⚠️ [WEBHOOK] Profil non trouvé pour subscription:', customerId)
       return
     }
-
+    
     const profile = profiles[0]
     console.log('✅ [WEBHOOK] Profil trouvé:', profile.id)
-
+    
     // Mettre à jour selon le statut
     const isActive = ['active', 'trialing'].includes(status)
     
@@ -503,25 +310,20 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       is_subscribed: isActive
     }
     
-    console.log('🔄 [WEBHOOK] Mise à jour subscription avec:', updateData)
-    console.log('ℹ️ [WEBHOOK] Subscription ID non sauvegardé (colonne inexistante):', subscription.id)
-    
     const { error: updateError } = await supabase
       .from('pro_profiles')
       .update(updateData)
       .eq('id', profile.id)
-
+    
     if (updateError) {
-      console.error('❌ [WEBHOOK] Erreur mise à jour subscription:', updateError)
-      console.error('❌ [WEBHOOK] Code erreur:', updateError.code)
-      throw updateError
+      console.error('❌ [WEBHOOK] Erreur mise à jour subscription:', updateError.message)
+      return
     }
-
+    
     console.log(`✅ [WEBHOOK] Subscription ${status} - Profil mis à jour`)
     
   } catch (error: any) {
-    console.error('❌ [WEBHOOK] Erreur handleSubscriptionUpdated:', error)
-    throw error
+    console.error('❌ [WEBHOOK] Erreur handleSubscriptionUpdated:', error.message)
   }
 }
 
@@ -537,3 +339,4 @@ export async function PUT() {
 export async function DELETE() {
   return NextResponse.json({ error: 'Method not allowed' }, { status: 405 })
 }
+
