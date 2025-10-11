@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
+// CRITIQUE : Configuration pour webhooks Stripe
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 // Configuration Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil',
@@ -13,72 +17,90 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+// IMPORTANT : Désactiver le parsing automatique du body
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
 export async function POST(request: NextRequest) {
-  console.log('🔔 [WEBHOOK] === DÉBUT WEBHOOK STRIPE ===')
-  console.log('🔔 [WEBHOOK] Timestamp:', new Date().toISOString())
-  console.log('🔔 [WEBHOOK] Environment:', process.env.NODE_ENV)
+  // Vérifier que la requête vient bien de Stripe
+  const userAgent = request.headers.get('user-agent')
+  if (!userAgent?.includes('Stripe')) {
+    console.error('❌ [WEBHOOK] Requête non-Stripe reçue:', userAgent)
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  console.log('🔔 [WEBHOOK] Stripe webhook reçu')
+  console.log('🌐 [WEBHOOK] Environment:', process.env.NODE_ENV)
+  console.log('🌐 [WEBHOOK] Vercel URL:', process.env.VERCEL_URL)
+  console.log('🔑 [WEBHOOK] Webhook secret présent:', !!webhookSecret)
+  console.log('🔑 [WEBHOOK] Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...')
+  console.log('🔑 [WEBHOOK] Service Role Key présent:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
   
   try {
-    // Vérifier que la requête vient de Stripe
-    const userAgent = request.headers.get('user-agent')
-    if (!userAgent?.includes('Stripe')) {
-      console.error('❌ [WEBHOOK] Requête non-Stripe reçue:', userAgent)
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    // Récupérer le body brut
+    // Récupérer le body RAW sans parsing
     const body = await request.text()
     console.log('📦 [WEBHOOK] Body length:', body.length)
+    console.log('📦 [WEBHOOK] Body preview:', body.substring(0, 100))
     
+    // Vérifier que le body n'est pas vide
     if (!body || body.length === 0) {
-      console.error('❌ [WEBHOOK] Body vide')
+      console.error('❌ [WEBHOOK] Body vide ou null')
       return NextResponse.json({ error: 'Empty body' }, { status: 400 })
     }
-
-    // Récupérer la signature Stripe
+    
     const signature = request.headers.get('stripe-signature')
     console.log('✍️ [WEBHOOK] Signature présente:', !!signature)
-    
-    if (!signature) {
-      console.error('❌ [WEBHOOK] Signature manquante')
-      return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
-    }
 
     // DEBUG : Vérifier le secret
     console.log('🔍 [WEBHOOK] Secret length:', webhookSecret.length)
     console.log('🔍 [WEBHOOK] Secret starts with whsec_:', webhookSecret.startsWith('whsec_'))
     console.log('🔍 [WEBHOOK] Secret has spaces:', webhookSecret.includes(' '))
     console.log('🔍 [WEBHOOK] Secret has newlines:', webhookSecret.includes('\n'))
-
-    // Vérifier la signature et construire l'événement
+    
+    // Only verify the event if you have an endpoint secret defined.
+    // Otherwise use the basic event deserialized with JSON.parse
     let event: Stripe.Event
-    try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
-      console.log('✅ [WEBHOOK] Signature vérifiée - Événement:', event.type)
-    } catch (err: any) {
-      console.error('❌ [WEBHOOK] Signature invalide:', err.message)
-      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+    if (webhookSecret) {
+      // Get the signature sent by Stripe
+      try {
+        event = stripe.webhooks.constructEvent(body, signature!, webhookSecret)
+        console.log('✅ [WEBHOOK] Signature vérifiée - Événement:', event.type)
+      } catch (err: any) {
+        console.error('⚠️ [WEBHOOK] Webhook signature verification failed:', err.message)
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+      }
+    } else {
+      console.warn('⚠️ [WEBHOOK] No endpoint secret defined - using JSON.parse')
+      event = JSON.parse(body)
     }
 
-    // Traiter l'événement
-    console.log('🎯 [WEBHOOK] Traitement événement:', event.type)
-    
+    // Handle the event
     switch (event.type) {
       case 'checkout.session.completed':
+        console.log('💳 [WEBHOOK] Checkout session completed!')
         await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session)
         break
       
       case 'payment_intent.succeeded':
-        console.log('💰 [WEBHOOK] Payment intent succeeded - Pas d\'action requise')
+        const paymentIntent = event.data.object
+        console.log(`💰 [WEBHOOK] PaymentIntent for ${paymentIntent.amount} was successful!`)
+        // Then define and call a method to handle the successful payment intent.
+        // handlePaymentIntentSucceeded(paymentIntent);
+        break
+        
+      case 'payment_method.attached':
+        const paymentMethod = event.data.object
+        console.log('💳 [WEBHOOK] PaymentMethod attached:', paymentMethod.id)
+        // Then define and call a method to handle the successful attachment of a PaymentMethod.
+        // handlePaymentMethodAttached(paymentMethod);
         break
         
       default:
-        console.log('ℹ️ [WEBHOOK] Événement non traité:', event.type)
+        // Unexpected event type
+        console.log(`ℹ️ [WEBHOOK] Unhandled event type ${event.type}.`)
     }
 
-    console.log('✅ [WEBHOOK] Traitement terminé avec succès')
+    // Return a 200 response to acknowledge receipt of the event
+    console.log('✅ [WEBHOOK] Event processed successfully')
     return NextResponse.json({ received: true })
 
   } catch (error: any) {
