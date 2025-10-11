@@ -1,45 +1,37 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Optimisations de performance
   experimental: {
-    optimizeCss: true,
-    optimizePackageImports: ['lucide-react', '@heroicons/react'],
+    serverComponentsExternalPackages: ['stripe'],
   },
   
-  // Configuration des images
-  images: {
-    formats: ['image/webp', 'image/avif'],
-    minimumCacheTTL: 60,
+  // CRITIQUE : Désactiver le parsing automatique du body pour les webhooks
+  api: {
+    bodyParser: false,
   },
   
-  // Configuration de la compilation
-  compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
-  },
-  
-  // Configuration des headers pour le cache
+  // Configuration pour les webhooks Stripe
   async headers() {
     return [
       {
-        source: '/(.*)',
+        source: '/api/stripe/webhook',
         headers: [
           {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
           },
           {
-            key: 'X-Frame-Options',
-            value: 'DENY',
+            key: 'Access-Control-Allow-Methods',
+            value: 'POST',
           },
           {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block',
+            key: 'Access-Control-Allow-Headers',
+            value: 'stripe-signature, content-type',
           },
         ],
       },
-    ];
+    ]
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig
