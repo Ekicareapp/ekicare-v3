@@ -67,9 +67,9 @@ export default function LoginPage() {
           return
         }
 
-        // Si le professionnel n'est pas vérifié, redirection vers paiement
+        // Si le professionnel n'est pas vérifié, redirection vers signup
         if (!proProfile.is_verified || !proProfile.is_subscribed) {
-          window.location.href = '/paiement-requis'
+          window.location.href = '/signup'
           return
         }
       }

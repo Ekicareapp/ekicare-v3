@@ -197,11 +197,11 @@ export default function SuccessProPage() {
               }
             }
             
-            // En dernier recours, rediriger vers paiement-requis
+            // En dernier recours, rediriger vers signup
             console.error('❌ Impossible de vérifier le paiement')
-            setStatusMessage('Redirection vers le paiement...')
+            setStatusMessage('Redirection vers l\'inscription...')
             setTimeout(() => {
-              router.push('/paiement-requis?error=verification_failed')
+              router.push('/signup?error=verification_failed')
             }, 3000)
           }
         }
