@@ -28,10 +28,30 @@ export default function SignupPage() {
   const [villeLng, setVilleLng] = useState<number | null>(null)
   const [rayonKm, setRayonKm] = useState(30)
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showErrorPopup, setShowErrorPopup] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [roleError, setRoleError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({})
+
+  // Gérer les paramètres d'erreur dans l'URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const errorParam = urlParams.get('error')
+    
+    if (errorParam === 'payment_failed') {
+      setErrorMessage('Votre paiement a échoué. Merci de recommencer l\'inscription.')
+      setShowErrorPopup(true)
+      // Nettoyer l'URL
+      window.history.replaceState({}, '', '/signup')
+    } else if (errorParam === 'activation_failed') {
+      setErrorMessage('Erreur lors de l\'activation de votre compte. Merci de recommencer l\'inscription.')
+      setShowErrorPopup(true)
+      // Nettoyer l'URL
+      window.history.replaceState({}, '', '/signup')
+    }
+  }, [])
 
   // Fonction de validation des champs
   const isFormValid = (): boolean => {
@@ -501,6 +521,29 @@ export default function SignupPage() {
         </form>
         </div>
       </div>
+
+      {/* Popup d'erreur */}
+      {showErrorPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <div className="flex items-center mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
+                <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">Erreur de paiement</h3>
+            </div>
+            <p className="text-gray-600 mb-6">{errorMessage}</p>
+            <button
+              onClick={() => setShowErrorPopup(false)}
+              className="w-full bg-[#f86f4d] text-white py-2 px-4 rounded-lg font-medium hover:bg-[#fa8265] transition-colors"
+            >
+              Compris
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
