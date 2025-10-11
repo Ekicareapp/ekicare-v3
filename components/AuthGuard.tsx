@@ -80,6 +80,11 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     const timeoutId = setTimeout(checkAuth, 100)
 
     // Écouter les changements d'authentification
+    if (!supabase) {
+      setIsLoading(false)
+      return
+    }
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('🔄 Changement d\'authentification:', event, session?.user?.email)
       
