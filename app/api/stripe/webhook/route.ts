@@ -149,8 +149,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       .from('pro_profiles')
       .update({
         is_verified: true,
-        is_subscribed: true,
-        updated_at: new Date().toISOString()
+        is_subscribed: true
       })
       .eq('user_id', userId)
       .select('id, prenom, nom, email')
