@@ -153,29 +153,24 @@ export default function SignupPage() {
       } else if (role === 'PRO') {
         // Redirection vers Stripe Checkout
         console.log('💳 Redirection vers Stripe Checkout')
-        try {
-          const stripeResponse = await fetch('/api/checkout-session', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              user_id: signupData.user.id
-            })
+        const stripeResponse = await fetch('/api/checkout-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: signupData.user.id
           })
-          
-          const stripeData = await stripeResponse.json()
-          
-          if (stripeData.url) {
-            console.log('🔗 Redirection vers Stripe:', stripeData.url)
-            window.location.href = stripeData.url
-          } else {
-            console.error('❌ Erreur Stripe:', stripeData.error)
-            setError('Erreur lors de la redirection vers Stripe: ' + (stripeData.error || 'Erreur inconnue'))
-          }
-        } catch (stripeError: any) {
-          console.error('❌ Erreur lors de la création de la session Stripe:', stripeError)
-          setError('Erreur lors de la création de la session de paiement: ' + stripeError.message)
+        })
+        
+        const stripeData = await stripeResponse.json()
+        
+        if (stripeData.url) {
+          console.log('🔗 Redirection vers Stripe:', stripeData.url)
+          window.location.href = stripeData.url
+        } else {
+          console.error('❌ Erreur Stripe:', stripeData.error)
+          setError('Erreur lors de la redirection vers Stripe: ' + (stripeData.error || 'Erreur inconnue'))
         }
       }
       

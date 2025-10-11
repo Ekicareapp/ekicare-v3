@@ -332,3 +332,4 @@ COMMENT ON COLUMN appointments.address IS 'Adresse exacte où se déroule le ren
 **Statut** : ✅ Terminé et fonctionnel
 
 
+

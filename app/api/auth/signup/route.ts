@@ -1,11 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-// Créer un client Supabase avec le service role pour les opérations admin
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { supabase } from '@/lib/supabaseClient'
 
 export async function POST(request: Request) {
   if (!supabase) {
@@ -14,19 +8,19 @@ export async function POST(request: Request) {
   try {
     const form = await request.formData()
     // Extraction des champs texte
-    const email = form.get('email')?.toString() || ''
-    const password = form.get('password')?.toString() || ''
-    let role = form.get('role')?.toString() || '' // let car modifié après
-    const prenom = form.get('prenom')?.toString() || ''
-    const nom = form.get('nom')?.toString() || ''
-    const telephone = form.get('telephone')?.toString() || ''
-    const adresse = form.get('adresse')?.toString() || ''
-    const profession = form.get('profession')?.toString() || ''
-    const ville_nom = form.get('ville_nom')?.toString() || ''
-    const ville_lat = form.get('ville_lat')?.toString() || ''
-    const ville_lng = form.get('ville_lng')?.toString() || ''
-    const rayon_km = form.get('rayon_km')?.toString() || ''
-    const siret = form.get('siret')?.toString() || ''
+    let email = form.get('email')?.toString() || ''
+    let password = form.get('password')?.toString() || ''
+    let role = form.get('role')?.toString() || ''
+    let prenom = form.get('prenom')?.toString() || ''
+    let nom = form.get('nom')?.toString() || ''
+    let telephone = form.get('telephone')?.toString() || ''
+    let adresse = form.get('adresse')?.toString() || ''
+    let profession = form.get('profession')?.toString() || ''
+    let ville_nom = form.get('ville_nom')?.toString() || ''
+    let ville_lat = form.get('ville_lat')?.toString() || ''
+    let ville_lng = form.get('ville_lng')?.toString() || ''
+    let rayon_km = form.get('rayon_km')?.toString() || ''
+    let siret = form.get('siret')?.toString() || ''
     // Fichiers
     const photo = form.get('photo') as File | null
     const justificatif = form.get('justificatif') as File | null
@@ -91,10 +85,8 @@ export async function POST(request: Request) {
       if (!validProfessions.includes(profession)) {
         return NextResponse.json({ error: 'Profession invalide' }, { status: 400 })
       }
-      // Temporaire : permettre l'inscription sans fichiers pour les tests
       if (!photo || !justificatif) {
-        console.log('⚠️ Mode test : fichiers manquants, mais on continue...')
-        // return NextResponse.json({ error: 'Photo et justificatif obligatoires.' }, { status: 400 })
+        return NextResponse.json({ error: 'Photo et justificatif obligatoires.' }, { status: 400 })
       }
     }
 
@@ -151,37 +143,31 @@ export async function POST(request: Request) {
     // Upload fichiers dans Supabase Storage
     let photo_url = null
     let justificatif_url = null
-    if (role === 'PRO' && user.id && photo && justificatif) {
-      try {
-        // Photo
-        const photoPath = `pro_photo/${user.id}/profil.png`
-        const { data: photoData, error: photoError } = await supabase.storage
-          .from('pro_photo')
-          .upload(photoPath, photo as File, { upsert: true })
-        if (photoError) {
-          console.log('⚠️ Erreur upload photo:', photoError.message)
-          // Ne pas faire échouer l'inscription pour l'upload
-        } else {
-          photo_url = photoData?.path || null
-        }
-        
-        // Justificatif
-        const justificatifPath = `pro_justificatifs/${user.id}/justificatif.pdf`
-        const { data: justifData, error: justifError } = await supabase.storage
-          .from('pro_justificatifs')
-          .upload(justificatifPath, justificatif as File, { upsert: true })
-        if (justifError) {
-          console.log('⚠️ Erreur upload justificatif:', justifError.message)
-          // Ne pas faire échouer l'inscription pour l'upload
-        } else {
-          justificatif_url = justifData?.path || null
-        }
-      } catch (uploadError) {
-        console.log('⚠️ Erreur générale upload:', uploadError)
-        // Continuer sans les fichiers
+    if (role === 'PRO' && user.id) {
+      // Photo
+      const photoPath = `pro_photo/${user.id}/profil.png`
+      const { data: photoData, error: photoError } = await supabase.storage
+        .from('pro_photo')
+        .upload(photoPath, photo as File, { upsert: true })
+      if (photoError) {
+        return NextResponse.json(
+          { error: 'Erreur upload photo: ' + photoError.message },
+          { status: 500 }
+        )
       }
-    } else {
-      console.log('⚠️ Mode test : pas d\'upload de fichiers')
+      photo_url = photoData?.path || null
+      // Justificatif
+      const justificatifPath = `pro_justificatifs/${user.id}/justificatif.pdf`
+      const { data: justifData, error: justifError } = await supabase.storage
+        .from('pro_justificatifs')
+        .upload(justificatifPath, justificatif as File, { upsert: true })
+      if (justifError) {
+        return NextResponse.json(
+          { error: 'Erreur upload justificatif: ' + justifError.message },
+          { status: 500 }
+        )
+      }
+      justificatif_url = justifData?.path || null
     }
     // Insertion dans users
     console.log('👤 Création de la ligne users pour:', user.id, 'avec rôle:', role)
