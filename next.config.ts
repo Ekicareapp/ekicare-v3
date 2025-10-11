@@ -1,14 +1,8 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['stripe'],
-  },
-  
-  // CRITIQUE : Désactiver le parsing automatique du body pour les webhooks
-  api: {
-    bodyParser: false,
-  },
+  // Configuration moderne Next.js 15
+  serverExternalPackages: ['stripe'],
   
   // Configuration pour les webhooks Stripe
   async headers() {
