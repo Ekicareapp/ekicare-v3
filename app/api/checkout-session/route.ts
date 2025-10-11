@@ -33,11 +33,14 @@ export async function POST(request: NextRequest) {
     
     // Déterminer l'URL de base dynamiquement - PRIORITÉ AU HEADER HOST
     const requestHost = request.headers.get('host')
-    const baseUrl = requestHost ? `http://${requestHost}` : 
+    const isLocalhost = requestHost?.includes('localhost') || requestHost?.includes('127.0.0.1')
+    const protocol = isLocalhost ? 'http' : 'https'
+    const baseUrl = requestHost ? `${protocol}://${requestHost}` : 
                    (process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000')
     
     console.log('🌐 Base URL détectée:', baseUrl)
     console.log('🌐 Request Host:', requestHost)
+    console.log('🌐 Protocol:', protocol)
     
     // Créer une session de paiement en mode subscription
     const session = await stripe.checkout.sessions.create({

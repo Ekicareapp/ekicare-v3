@@ -7,10 +7,11 @@ import confetti from 'canvas-confetti'
 export default function SuccessProPage() {
   const [userInfo, setUserInfo] = useState<{ prenom?: string } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [statusMessage, setStatusMessage] = useState('Vérification de votre paiement...')
   const router = useRouter()
 
   useEffect(() => {
-    // Afficher la page de succès immédiatement après paiement
+    // Afficher la page de succès et vérifier que le webhook a bien mis à jour les données
     const showSuccessPage = async () => {
       try {
         // Vérifier que supabase est initialisé
@@ -29,9 +30,9 @@ export default function SuccessProPage() {
         }
 
         console.log('✅ Session active trouvée:', session.user.email)
-        console.log('🎉 Paiement validé par Stripe - Redirection immédiate vers succès')
+        console.log('🎉 Paiement validé par Stripe - Vérification du statut en cours')
 
-        // Récupérer les informations du profil (sans attendre la mise à jour DB)
+        // Récupérer les informations du profil
         const response = await fetch('/api/profile')
         const data = await response.json()
         
@@ -54,15 +55,162 @@ export default function SuccessProPage() {
           })
         }, 500)
 
-        // Redirection automatique vers le dashboard après 3 secondes
-        setTimeout(() => {
-          console.log('🔄 Redirection automatique vers le dashboard pro')
-          router.push('/dashboard/pro')
-        }, 3000)
+        // Récupérer le session_id de Stripe depuis l'URL
+        const urlParams = new URLSearchParams(window.location.search)
+        const stripeSessionId = urlParams.get('session_id')
+        console.log('📋 Stripe Session ID:', stripeSessionId)
+
+        // POLLING : Vérifier que le webhook a bien mis à jour is_verified et is_subscribed
+        const maxAttempts = 30 // 30 tentatives (30 secondes max)
+        let attempts = 0
+        let isSubscriptionActive = false
+
+        const checkSubscriptionStatus = async (): Promise<boolean> => {
+          try {
+            const { data: profile, error: profileError } = await supabase
+              .from('pro_profiles')
+              .select('is_verified, is_subscribed')
+              .eq('user_id', session.user.id)
+              .single()
+
+            if (profileError) {
+              console.error('❌ Erreur lors de la vérification du profil:', profileError)
+              return false
+            }
+
+            const isActive = profile.is_verified === true && profile.is_subscribed === true
+            console.log(`🔍 Tentative ${attempts + 1}/${maxAttempts} - is_verified: ${profile.is_verified}, is_subscribed: ${profile.is_subscribed}`)
+            
+            return isActive
+          } catch (error) {
+            console.error('❌ Erreur lors de la vérification:', error)
+            return false
+          }
+        }
+
+        // Fonction de secours : vérification manuelle via API
+        const manualVerification = async () => {
+          try {
+            console.log('🔧 [FALLBACK] Tentative de vérification manuelle...')
+            setStatusMessage('Vérification manuelle du paiement...')
+            
+            const response = await fetch('/api/auth/verify-payment', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                user_id: session.user.id,
+                session_id: stripeSessionId
+              })
+            })
+
+            const result = await response.json()
+            console.log('🔧 [FALLBACK] Résultat:', result)
+
+            if (result.verified && result.subscribed) {
+              console.log('✅ [FALLBACK] Abonnement vérifié manuellement !')
+              return true
+            }
+
+            return false
+          } catch (error) {
+            console.error('❌ [FALLBACK] Erreur vérification manuelle:', error)
+            return false
+          }
+        }
+
+        // Boucle de polling avec vérification manuelle en secours
+        const pollSubscriptionStatus = async () => {
+          while (attempts < maxAttempts && !isSubscriptionActive) {
+            isSubscriptionActive = await checkSubscriptionStatus()
+            
+            if (isSubscriptionActive) {
+              console.log('✅ Abonnement activé ! Redirection vers le dashboard...')
+              setStatusMessage('Abonnement activé ! Redirection en cours...')
+              setTimeout(() => {
+                router.push('/dashboard/pro')
+              }, 1000)
+              return
+            }
+
+            attempts++
+            
+            // Messages de statut progressifs
+            if (attempts === 5) {
+              setStatusMessage('Finalisation de votre abonnement...')
+            } else if (attempts === 10) {
+              setStatusMessage('Traitement du paiement en cours...')
+            } else if (attempts === 15) {
+              // Après 15 secondes, tenter une vérification manuelle
+              console.log('⏰ [FALLBACK] Webhook lent, tentative de vérification manuelle...')
+              setStatusMessage('Vérification directe avec Stripe...')
+              const manuallyVerified = await manualVerification()
+              
+              if (manuallyVerified) {
+                // Attendre 1 seconde puis vérifier à nouveau
+                await new Promise(resolve => setTimeout(resolve, 1000))
+                const recheckResult = await checkSubscriptionStatus()
+                if (recheckResult) {
+                  isSubscriptionActive = true
+                  console.log('✅ [FALLBACK] Abonnement activé manuellement !')
+                  setStatusMessage('Abonnement activé ! Redirection en cours...')
+                  setTimeout(() => {
+                    router.push('/dashboard/pro')
+                  }, 1000)
+                  return
+                }
+              }
+            } else if (attempts === 20) {
+              setStatusMessage('Dernières vérifications...')
+            }
+
+            // Attendre 1 seconde avant la prochaine tentative
+            await new Promise(resolve => setTimeout(resolve, 1000))
+          }
+
+          // Si on arrive ici, le timeout est dépassé
+          if (!isSubscriptionActive) {
+            console.warn('⚠️ Timeout dépassé après toutes les tentatives')
+            setStatusMessage('Problème de synchronisation détecté. Actualisation...')
+            
+            // Dernière tentative de vérification manuelle
+            const lastChance = await manualVerification()
+            
+            if (lastChance) {
+              // Attendre et vérifier une dernière fois
+              await new Promise(resolve => setTimeout(resolve, 2000))
+              const finalCheck = await checkSubscriptionStatus()
+              
+              if (finalCheck) {
+                console.log('✅ [FALLBACK] Abonnement finalement activé !')
+                setStatusMessage('Abonnement activé ! Redirection en cours...')
+                setTimeout(() => {
+                  router.push('/dashboard/pro')
+                }, 1000)
+                return
+              }
+            }
+            
+            // En dernier recours, rediriger vers paiement-requis avec un message
+            console.error('❌ Impossible de vérifier le paiement')
+            setStatusMessage('Erreur de synchronisation. Veuillez contacter le support.')
+            setTimeout(() => {
+              router.push('/paiement-requis?error=verification_failed')
+            }, 3000)
+          }
+        }
+
+        // Lancer le polling
+        pollSubscriptionStatus()
 
       } catch (error) {
         console.error('❌ Erreur lors de l\'affichage de la page de succès:', error)
         setLoading(false)
+        // En cas d'erreur, rediriger quand même après quelques secondes
+        setTimeout(() => {
+          router.push('/dashboard/pro')
+        }, 3000)
       }
     }
 
@@ -114,13 +262,16 @@ export default function SuccessProPage() {
             Accéder à mon tableau de bord Pro
           </button>
 
-          {/* Message d'information */}
+          {/* Message d'information avec statut dynamique */}
           <div className="mt-6 pt-6 border-t border-[#e5e7eb]">
-            <p className="text-xs text-[#9ca3af] mb-2">
-              Votre abonnement professionnel est maintenant actif. Vous pouvez commencer à utiliser toutes les fonctionnalités.
-            </p>
-            <p className="text-xs text-[#f86f4d] font-medium">
-              Redirection automatique vers votre tableau de bord dans 3 secondes...
+            <div className="flex items-center justify-center space-x-2 mb-3">
+              <div className="w-4 h-4 border-2 border-[#f86f4d] border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-sm text-[#f86f4d] font-medium">
+                {statusMessage}
+              </p>
+            </div>
+            <p className="text-xs text-[#9ca3af]">
+              Nous vérifions que votre paiement a bien été pris en compte. Vous serez redirigé automatiquement.
             </p>
           </div>
         </div>
