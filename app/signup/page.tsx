@@ -189,7 +189,7 @@ export default function SignupPage() {
   
   useEffect(() => {
     setFormValid(isFormValid())
-  }, [email, password, confirmPassword, role, fields, villeNom, villeLat, villeLng, photoFile, justifFile])
+  }, [email, password, confirmPassword, role, fields, villeNom, villeLat, villeLng, justifFile])
 
   // Google Maps API
   const { isLoaded } = useLoadScript({
