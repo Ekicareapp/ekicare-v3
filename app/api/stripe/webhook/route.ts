@@ -54,6 +54,25 @@ export async function POST(request: NextRequest) {
     const host = request.headers.get('host')
     const requestUrl = request.url
     
+    // 🔍 ANALYSE SIGNATURE DÉTAILLÉE
+    // Format Stripe: t=timestamp,v1=signature,v0=signature
+    let signatureTimestamp = 'N/A'
+    let signatureV1 = 'N/A'
+    let signatureV0 = 'N/A'
+    
+    if (signature) {
+      const parts = signature.split(',')
+      for (const part of parts) {
+        if (part.startsWith('t=')) {
+          signatureTimestamp = part.substring(2)
+        } else if (part.startsWith('v1=')) {
+          signatureV1 = part.substring(3, 13) + '...' // Tronqué pour sécurité
+        } else if (part.startsWith('v0=')) {
+          signatureV0 = part.substring(3, 13) + '...' // Tronqué pour sécurité
+        }
+      }
+    }
+    
     // 📊 LOGS DÉTAILLÉS POUR AUDIT
     console.log('━━━ REQUÊTE ━━━')
     console.log('📍 [WEBHOOK] URL complète:', requestUrl)
@@ -67,14 +86,18 @@ export async function POST(request: NextRequest) {
     console.log('📦 [WEBHOOK] Body length:', body.length, 'bytes')
     console.log('📦 [WEBHOOK] Body preview (50 chars):', body.toString('utf8').substring(0, 50))
     
-    console.log('━━━ SIGNATURE ━━━')
+    console.log('━━━ SIGNATURE STRIPE ━━━')
     console.log('🔐 [WEBHOOK] Signature présente:', !!signature)
-    console.log('🔐 [WEBHOOK] Signature tronquée:', signature ? `${signature.substring(0, 40)}...` : 'MANQUANTE')
+    console.log('🔐 [WEBHOOK] Signature complète (tronquée):', signature ? signature.substring(0, 60) + '...' : 'MANQUANTE')
+    console.log('🔐 [WEBHOOK] → Timestamp (t):', signatureTimestamp)
+    console.log('🔐 [WEBHOOK] → Signature v1 (tronquée):', signatureV1)
+    console.log('🔐 [WEBHOOK] → Signature v0 (tronquée):', signatureV0)
     
-    console.log('━━━ CONFIGURATION ━━━')
-    console.log('🔑 [WEBHOOK] Webhook Secret chargé:', webhookSecret ? `${webhookSecret.substring(0, 12)}...` : 'MANQUANT')
+    console.log('━━━ CONFIGURATION SERVEUR ━━━')
+    console.log('🔑 [WEBHOOK] Webhook Secret configuré:', webhookSecret ? `${webhookSecret.substring(0, 12)}...` : 'MANQUANT')
     console.log('🔑 [WEBHOOK] Secret valid (whsec_):', webhookSecret?.startsWith('whsec_'))
     console.log('🔑 [WEBHOOK] Stripe Key Mode:', stripeSecretKey?.startsWith('sk_test_') ? 'TEST' : 'LIVE')
+    console.log('🔑 [WEBHOOK] Environment:', process.env.VERCEL_ENV || 'local')
     
     if (!signature) {
       console.error('❌ [WEBHOOK] Signature Stripe manquante')
@@ -121,39 +144,68 @@ export async function POST(request: NextRequest) {
       console.log('✅ [WEBHOOK] Mode cohérent:', event.livemode ? 'LIVE' : 'TEST')
       
     } catch (err: any) {
-      console.error('━━━ ERREUR SIGNATURE ❌ ━━━')
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+      console.error('❌ ERREUR SIGNATURE STRIPE - MISMATCH DÉTECTÉ')
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+      
+      console.error('━━━ ERREUR ━━━')
       console.error('❌ [WEBHOOK] Échec vérification signature')
-      console.error('❌ [WEBHOOK] Erreur:', err.message)
+      console.error('❌ [WEBHOOK] Message:', err.message)
       console.error('❌ [WEBHOOK] Type:', err.type)
       console.error('❌ [WEBHOOK] Code:', err.code)
       
-      console.error('━━━ DIAGNOSTIC ━━━')
+      console.error('━━━ SIGNATURE REÇUE ━━━')
+      console.error('🔐 [WEBHOOK] Timestamp (t):', signatureTimestamp)
+      console.error('🔐 [WEBHOOK] Signature v1:', signatureV1)
+      console.error('🔐 [WEBHOOK] Signature v0:', signatureV0)
+      console.error('🔐 [WEBHOOK] Signature complète:', signature?.substring(0, 80) + '...')
+      
+      console.error('━━━ SECRET CONFIGURÉ ━━━')
+      console.error('🔑 [WEBHOOK] Secret tronqué:', webhookSecret?.substring(0, 12) + '...')
+      console.error('🔑 [WEBHOOK] Secret valide (whsec_):', webhookSecret?.startsWith('whsec_'))
+      console.error('🔑 [WEBHOOK] Environment:', process.env.VERCEL_ENV || 'local')
+      
+      console.error('━━━ DIAGNOSTIC COMPLET ━━━')
       console.error('🔍 [WEBHOOK] Timestamp:', new Date().toISOString())
       console.error('🔍 [WEBHOOK] Webhook ID:', webhookId)
       console.error('🔍 [WEBHOOK] Host:', host)
       console.error('🔍 [WEBHOOK] URL:', requestUrl)
       console.error('🔍 [WEBHOOK] Body Buffer:', body instanceof Buffer)
       console.error('🔍 [WEBHOOK] Body Length:', body.length, 'bytes')
-      console.error('🔍 [WEBHOOK] Signature tronquée:', signature?.substring(0, 40) + '...')
-      console.error('🔍 [WEBHOOK] Secret tronqué:', webhookSecret?.substring(0, 12) + '...')
-      console.error('🔍 [WEBHOOK] Secret valid (whsec_):', webhookSecret?.startsWith('whsec_'))
       console.error('🔍 [WEBHOOK] Stripe Key Mode:', stripeSecretKey?.startsWith('sk_test_') ? 'TEST' : 'LIVE')
       
-      console.error('━━━ ACTIONS RECOMMANDÉES ━━━')
-      console.error('1. Vérifier qu\'un seul endpoint est actif dans Stripe Dashboard')
-      console.error('2. Vérifier que STRIPE_WEBHOOK_SECRET correspond à cet endpoint')
-      console.error('3. Vérifier que le mode (Test/Live) est cohérent')
-      console.error('4. Régénérer le webhook secret si nécessaire')
+      console.error('━━━ CAUSE PROBABLE ━━━')
+      console.error('⚠️  Le secret configuré ne correspond PAS à celui de l\'endpoint Stripe')
+      console.error('⚠️  SOIT: Plusieurs endpoints actifs avec secrets différents')
+      console.error('⚠️  SOIT: Secret non mis à jour après régénération')
+      console.error('⚠️  SOIT: Secret en Preview au lieu de Production sur Vercel')
+      
+      console.error('━━━ ACTIONS REQUISES ━━━')
+      console.error('1. 🔍 Aller dans Stripe Dashboard → Webhooks')
+      console.error('2. ❌ SUPPRIMER tous les endpoints sauf UN')
+      console.error('3. 🔄 RÉGÉNÉRER le secret (Roll secret)')
+      console.error('4. 📋 COPIER le nouveau whsec_...')
+      console.error('5. ⚙️  METTRE À JOUR dans Vercel en PRODUCTION')
+      console.error('6. 🚀 REDÉPLOYER')
+      
+      console.error('━━━ COMPARAISON POUR DEBUG ━━━')
+      console.error('Pour identifier l\'endpoint problématique:')
+      console.error('1. Comparer le timestamp:', signatureTimestamp)
+      console.error('2. Chercher dans Stripe Dashboard → Webhooks → Event logs')
+      console.error('3. Trouver l\'event avec ce timestamp')
+      console.error('4. Voir quel endpoint l\'a envoyé')
       
       console.error('━━━ STACK TRACE ━━━')
       console.error(err.stack)
       console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
       
       return NextResponse.json({ 
-        error: `Signature invalide: ${err.message}`,
+        error: 'Signature mismatch: le secret ne correspond pas',
+        message: err.message,
         webhookId: webhookId,
         timestamp: new Date().toISOString(),
-        hint: 'Voir DIAGNOSTIC_WEBHOOK_SIGNATURE.md pour résoudre'
+        signatureTimestamp: signatureTimestamp,
+        hint: 'Un seul endpoint doit être actif avec le bon secret en Production'
       }, { status: 400 })
     }
 
