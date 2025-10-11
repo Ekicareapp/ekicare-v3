@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
-// IMPORTANT : Désactiver le bodyParser pour que Stripe puisse vérifier la signature
+// CRITIQUE : Configuration pour webhooks Stripe
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
@@ -18,7 +18,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
+// IMPORTANT : Désactiver le parsing automatique du body
 export async function POST(request: NextRequest) {
+  // Vérifier que la requête vient bien de Stripe
+  const userAgent = request.headers.get('user-agent')
+  if (!userAgent?.includes('Stripe')) {
+    console.error('❌ [WEBHOOK] Requête non-Stripe reçue:', userAgent)
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
   // Logs immédiats pour debug
   console.log('🚀 [WEBHOOK] === DÉBUT FONCTION WEBHOOK ===')
   console.log('🚀 [WEBHOOK] Timestamp:', new Date().toISOString())
@@ -35,8 +42,16 @@ export async function POST(request: NextRequest) {
     console.log('🔑 [WEBHOOK] Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...')
     console.log('🔑 [WEBHOOK] Service Role Key présent:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
     
+    // Récupérer le body RAW sans parsing
     const body = await request.text()
     console.log('📦 [WEBHOOK] Body length:', body.length)
+    console.log('📦 [WEBHOOK] Body preview:', body.substring(0, 100))
+    
+    // Vérifier que le body n'est pas vide
+    if (!body || body.length === 0) {
+      console.error('❌ [WEBHOOK] Body vide ou null')
+      return NextResponse.json({ error: 'Empty body' }, { status: 400 })
+    }
     
     const signature = request.headers.get('stripe-signature')
     console.log('✍️ [WEBHOOK] Signature présente:', !!signature)

@@ -40,7 +40,7 @@ export default function ProDashboardLayout({ children }: { children: React.React
         // Vérifier que supabase est initialisé
         if (!supabase) {
           setIsVerified(false)
-          router.push('/paiement-requis')
+          router.push('/activation-pro')
           return
         }
 
@@ -49,7 +49,7 @@ export default function ProDashboardLayout({ children }: { children: React.React
         
         if (sessionError || !session) {
           setIsVerified(false)
-          router.push('/paiement-requis')
+          router.push('/activation-pro')
           return
         }
 
@@ -62,7 +62,7 @@ export default function ProDashboardLayout({ children }: { children: React.React
         
         if (profileError || !profile) {
           setIsVerified(false)
-          router.push('/paiement-requis')
+          router.push('/activation-pro')
           return
         }
         
@@ -76,7 +76,7 @@ export default function ProDashboardLayout({ children }: { children: React.React
           setIsVerified(true)
         } else {
           setIsVerified(false)
-          router.push('/paiement-requis')
+          router.push('/activation-pro')
         }
       } catch (error) {
         console.error('Erreur lors de la vérification:', error)

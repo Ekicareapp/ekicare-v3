@@ -111,7 +111,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   }, [router, pathname])
 
   // Si on est sur une page publique, ne pas bloquer
-  if (pathname.includes('/login') || pathname.includes('/signup') || pathname.includes('/success') || pathname.includes('/paiement-requis')) {
+  if (pathname.includes('/login') || pathname.includes('/signup') || pathname.includes('/success') || pathname.includes('/activation-pro')) {
     return <>{children}</>
   }
 

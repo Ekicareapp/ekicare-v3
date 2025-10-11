@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
         },
       ],
       success_url: `${baseUrl}/success-pro?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/paiement-requis`,
+      cancel_url: `${baseUrl}/activation-pro`,
       client_reference_id: user_id,
       metadata: {
         source: 'signup_pro',

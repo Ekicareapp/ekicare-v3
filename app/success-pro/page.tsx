@@ -42,6 +42,12 @@ export default function SuccessProPage() {
           })
         }
 
+        // Rediriger immédiatement vers la page d'activation
+        console.log('🚀 Redirection vers la page d\'activation...')
+        router.push('/activation-pro')
+        return
+
+        // Code ci-dessous ne sera plus exécuté
         // Afficher immédiatement la page de succès
         setLoading(false)
 
@@ -197,11 +203,11 @@ export default function SuccessProPage() {
               }
             }
             
-            // En dernier recours, rediriger vers paiement-requis avec un message
+            // En dernier recours, rediriger vers activation-pro
             console.error('❌ Impossible de vérifier le paiement')
-            setStatusMessage('Erreur de synchronisation. Veuillez contacter le support.')
+            setStatusMessage('Redirection vers l\'activation...')
             setTimeout(() => {
-              router.push('/paiement-requis?error=verification_failed')
+              router.push('/activation-pro')
             }, 3000)
           }
         }
