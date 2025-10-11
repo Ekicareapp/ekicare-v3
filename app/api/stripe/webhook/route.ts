@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         console.log('🔐 [WEBHOOK] Signature header:', signature)
         console.log('🔐 [WEBHOOK] Secret utilisé:', webhookSecret.substring(0, 20) + '...')
         
-        event = stripe.webhooks.constructEvent(bodyBuffer, signature!, webhookSecret)
+        event = stripe.webhooks.constructEvent(Buffer.from(bodyBuffer), signature!, webhookSecret)
         console.log('✅ [WEBHOOK] Signature vérifiée - Événement:', event.type)
       } catch (err: any) {
         console.error('⚠️ [WEBHOOK] Webhook signature verification failed:', err.message)
