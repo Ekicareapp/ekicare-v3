@@ -34,8 +34,12 @@ export async function POST(request: NextRequest) {
   console.log('🕐 [WEBHOOK] Timestamp:', new Date().toISOString())
   
   try {
-    // 1. RÉCUPÉRATION DU RAW BODY (critique pour la signature)
-    const body = await request.text()
+    // 1. RÉCUPÉRATION DU RAW BODY EN ARRAYBUFFER (critique pour la signature)
+    // ⚡ IMPORTANT : Ne JAMAIS utiliser request.text() ou request.json()
+    // Stripe nécessite le buffer brut exact pour la vérification de signature
+    const arrayBuffer = await request.arrayBuffer()
+    const body = Buffer.from(arrayBuffer)
+    
     const signature = request.headers.get('stripe-signature')
     const webhookId = request.headers.get('stripe-webhook-id')
     const userAgent = request.headers.get('user-agent')
@@ -45,8 +49,10 @@ export async function POST(request: NextRequest) {
     console.log('📍 [WEBHOOK] URL appelée:', requestUrl)
     console.log('🔑 [WEBHOOK] Webhook ID:', webhookId)
     console.log('👤 [WEBHOOK] User-Agent:', userAgent)
+    console.log('📦 [WEBHOOK] Body type:', typeof body)
+    console.log('📦 [WEBHOOK] Body instanceof Buffer:', body instanceof Buffer)
     console.log('📦 [WEBHOOK] Body length:', body.length)
-    console.log('📦 [WEBHOOK] Body preview (50 chars):', body.substring(0, 50))
+    console.log('📦 [WEBHOOK] Body preview (50 chars):', body.toString('utf8').substring(0, 50))
     
     if (!signature) {
       console.error('❌ [WEBHOOK] Signature Stripe manquante')
@@ -68,10 +74,11 @@ export async function POST(request: NextRequest) {
     console.log('🔐 [WEBHOOK] Secret length:', webhookSecret.length)
     console.log('🔐 [WEBHOOK] Secret starts with whsec_:', webhookSecret.startsWith('whsec_'))
 
-    // 2. VÉRIFICATION DE LA SIGNATURE STRIPE
+    // 2. VÉRIFICATION DE LA SIGNATURE STRIPE avec le buffer brut
     let event: Stripe.Event
     
     try {
+      // ⚡ CRITIQUE : Passer le Buffer brut directement à Stripe
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
       console.log('✅ [WEBHOOK] Signature vérifiée avec succès')
       console.log('📋 [WEBHOOK] Event ID:', event.id)
@@ -80,6 +87,12 @@ export async function POST(request: NextRequest) {
       console.log('📋 [WEBHOOK] Event created:', new Date(event.created * 1000).toISOString())
     } catch (err: any) {
       console.error('❌ [WEBHOOK] Erreur vérification signature:', err.message)
+      console.error('❌ [WEBHOOK] Timestamp erreur:', new Date().toISOString())
+      console.error('❌ [WEBHOOK] Webhook ID:', webhookId)
+      console.error('❌ [WEBHOOK] Body reçu (Buffer):', body instanceof Buffer)
+      console.error('❌ [WEBHOOK] Body length:', body.length)
+      console.error('❌ [WEBHOOK] Signature header:', signature?.substring(0, 50) + '...')
+      console.error('❌ [WEBHOOK] Secret valid:', webhookSecret?.startsWith('whsec_'))
       console.error('❌ [WEBHOOK] Stack trace:', err.stack)
       console.error('❌ [WEBHOOK] Type erreur:', err.type)
       console.error('❌ [WEBHOOK] Code erreur:', err.code)
@@ -87,7 +100,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         error: `Signature invalide: ${err.message}`,
         webhookId: webhookId,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        hint: 'Vérifier que le secret Stripe correspond au bon endpoint'
       }, { status: 400 })
     }
 
