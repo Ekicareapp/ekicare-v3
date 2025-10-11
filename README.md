@@ -40,3 +40,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 # Trigger redeploy for webhook secret Sat Oct 11 12:54:01 CEST 2025
 # Updated webhook secret Sat Oct 11 14:13:00 CEST 2025
 # Trigger redeploy for env vars Sat Oct 11 14:14:56 CEST 2025
+# Added STRIPE_PRICE_ID Sat Oct 11 14:16:36 CEST 2025
