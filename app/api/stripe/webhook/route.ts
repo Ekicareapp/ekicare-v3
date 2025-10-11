@@ -170,17 +170,25 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
     console.log('  - is_verified:', profile.is_verified)
     console.log('  - is_subscribed:', profile.is_subscribed)
     
-    const updateData = {
+    // ⚡ MISE À JOUR ROBUSTE : Uniquement les champs qui existent dans le schéma
+    const updateData: any = {
       is_verified: true,
-      is_subscribed: true,
-      subscription_start: profile.subscription_start || new Date().toISOString(),
-      stripe_customer_id: session.customer as string,
-      stripe_subscription_id: session.subscription as string,
-      stripe_session_id: session.id,
-      updated_at: new Date().toISOString()
+      is_subscribed: true
     }
 
+    // Ajouter les champs Stripe seulement s'ils existent dans le schéma
+    // Note: Ces champs ne sont PAS dans le schéma actuel, donc on les sauvegarde dans metadata si nécessaire
+    console.log('💾 [WEBHOOK] Données Stripe reçues:')
+    console.log('  - Customer ID:', session.customer)
+    console.log('  - Subscription ID:', session.subscription)
+    console.log('  - Session ID:', session.id)
+    console.log('  - Email:', userEmail)
+    
     console.log('🔄 [WEBHOOK] Mise à jour avec:', updateData)
+    console.log('ℹ️ [WEBHOOK] Champs Stripe non sauvegardés (colonnes inexistantes dans le schéma):')
+    console.log('  - stripe_customer_id:', session.customer)
+    console.log('  - stripe_subscription_id:', session.subscription)
+    console.log('  - stripe_session_id:', session.id)
 
     const { data: updatedProfile, error: updateError } = await supabase
       .from('pro_profiles')
@@ -193,6 +201,26 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
       console.error('❌ [WEBHOOK] Code erreur:', updateError.code)
       console.error('❌ [WEBHOOK] Message:', updateError.message)
       console.error('❌ [WEBHOOK] Details:', updateError.details)
+      
+      // Si l'erreur est liée à une colonne manquante, on continue quand même
+      if (updateError.code === 'PGRST204') {
+        console.log('⚠️ [WEBHOOK] Colonne manquante détectée, mais is_verified et is_subscribed sont les seuls champs critiques')
+        // Réessayer avec uniquement les champs de base
+        const minimalUpdate = { is_verified: true, is_subscribed: true }
+        const { error: retryError } = await supabase
+          .from('pro_profiles')
+          .update(minimalUpdate)
+          .eq('user_id', userId)
+        
+        if (retryError) {
+          console.error('❌ [WEBHOOK] Échec de la mise à jour minimale:', retryError)
+          throw retryError
+        }
+        
+        console.log('✅ [WEBHOOK] Mise à jour minimale réussie (is_verified + is_subscribed)')
+        return
+      }
+      
       throw updateError
     }
 
@@ -240,18 +268,22 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     const profile = profiles[0]
     console.log('✅ [WEBHOOK] Profil trouvé:', profile.id)
 
-    // Mettre à jour les statuts
+    // Mettre à jour les statuts (uniquement les champs existants dans le schéma)
+    const updateData = {
+      is_verified: true,
+      is_subscribed: true
+    }
+    
+    console.log('🔄 [WEBHOOK] Mise à jour invoice avec:', updateData)
+
     const { error: updateError } = await supabase
       .from('pro_profiles')
-      .update({
-        is_verified: true,
-        is_subscribed: true,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', profile.id)
 
     if (updateError) {
       console.error('❌ [WEBHOOK] Erreur mise à jour invoice:', updateError)
+      console.error('❌ [WEBHOOK] Code erreur:', updateError.code)
       throw updateError
     }
 
@@ -298,18 +330,22 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     // Mettre à jour selon le statut
     const isActive = ['active', 'trialing'].includes(status)
     
+    const updateData = {
+      is_verified: isActive,
+      is_subscribed: isActive
+    }
+    
+    console.log('🔄 [WEBHOOK] Mise à jour subscription avec:', updateData)
+    console.log('ℹ️ [WEBHOOK] Subscription ID non sauvegardé (colonne inexistante):', subscription.id)
+    
     const { error: updateError } = await supabase
       .from('pro_profiles')
-      .update({
-        is_verified: isActive,
-        is_subscribed: isActive,
-        stripe_subscription_id: subscription.id,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', profile.id)
 
     if (updateError) {
       console.error('❌ [WEBHOOK] Erreur mise à jour subscription:', updateError)
+      console.error('❌ [WEBHOOK] Code erreur:', updateError.code)
       throw updateError
     }
 

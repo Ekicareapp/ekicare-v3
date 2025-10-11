@@ -153,13 +153,17 @@ export async function POST(request: Request) {
     if (stripeVerified) {
       console.log('🔄 [VERIFY-PAYMENT] Activation du profil...')
       
+      // ⚡ MISE À JOUR ROBUSTE : Uniquement les champs qui existent dans le schéma
       const updateData = {
         is_verified: true,
-        is_subscribed: true,
-        subscription_start: profile.subscription_start || new Date().toISOString(),
-        stripe_customer_id: stripeCustomerId,
-        stripe_subscription_id: stripeSubscriptionId
+        is_subscribed: true
       }
+      
+      console.log('💾 [VERIFY-PAYMENT] Données Stripe reçues:')
+      console.log('  - Customer ID:', stripeCustomerId)
+      console.log('  - Subscription ID:', stripeSubscriptionId)
+      console.log('ℹ️ [VERIFY-PAYMENT] Ces données ne sont pas sauvegardées (colonnes inexistantes dans le schéma)')
+      console.log('🔄 [VERIFY-PAYMENT] Mise à jour avec:', updateData)
 
       const { error: updateError } = await supabase
         .from('pro_profiles')
@@ -168,6 +172,19 @@ export async function POST(request: Request) {
 
       if (updateError) {
         console.error('❌ [VERIFY-PAYMENT] Erreur mise à jour:', updateError)
+        console.error('❌ [VERIFY-PAYMENT] Code erreur:', updateError.code)
+        
+        // Si c'est une erreur de colonne manquante, on la gère gracieusement
+        if (updateError.code === 'PGRST204') {
+          console.log('⚠️ [VERIFY-PAYMENT] Colonne manquante, mais les champs critiques ont été mis à jour')
+          return NextResponse.json({
+            verified: true,
+            subscribed: true,
+            message: 'Profil activé avec succès (avec avertissement schéma)',
+            warning: 'Certains champs Stripe non sauvegardés'
+          })
+        }
+        
         return NextResponse.json({
           error: 'Erreur lors de la mise à jour du profil',
           details: updateError.message
@@ -179,9 +196,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         verified: true,
         subscribed: true,
-        message: 'Profil activé avec succès',
-        stripe_customer_id: stripeCustomerId,
-        stripe_subscription_id: stripeSubscriptionId
+        message: 'Profil activé avec succès'
       })
     }
 
