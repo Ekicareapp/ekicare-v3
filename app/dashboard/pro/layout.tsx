@@ -37,14 +37,42 @@ export default function ProDashboardLayout({ children }: { children: React.React
 
     const checkVerification = async () => {
       try {
-        const response = await fetch('/api/profile')
-        const data = await response.json()
+        // Vérifier que supabase est initialisé
+        if (!supabase) {
+          setIsVerified(false)
+          router.push('/paiement-requis')
+          return
+        }
+
+        // Récupérer la session actuelle
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError || !session) {
+          setIsVerified(false)
+          router.push('/paiement-requis')
+          return
+        }
+
+        // Récupérer le profil PRO directement depuis Supabase
+        const { data: profile, error: profileError } = await supabase
+          .from('pro_profiles')
+          .select('is_verified, is_subscribed')
+          .eq('user_id', session.user.id)
+          .single()
+        
+        if (profileError || !profile) {
+          setIsVerified(false)
+          router.push('/paiement-requis')
+          return
+        }
         
         // Vérifier si l'utilisateur est vérifié
-        const isVerified = data.profile && data.profile.is_verified === true
-        const isSubscribed = data.profile && data.profile.is_subscribed === true
+        const isVerified = profile.is_verified === true
+        const isSubscribed = profile.is_subscribed === true
         
-        if (isVerified || isSubscribed) {
+        console.log('🔍 Vérification du statut:', { isVerified, isSubscribed })
+        
+        if (isVerified && isSubscribed) {
           setIsVerified(true)
         } else {
           setIsVerified(false)
