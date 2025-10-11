@@ -21,7 +21,6 @@ export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fields, setFields] = useState<any>({})
-  const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [justifFile, setJustifFile] = useState<File | null>(null)
   const [villeAutocomplete, setVilleAutocomplete] = useState<any>(null)
   const [villeNom, setVilleNom] = useState('')
@@ -50,7 +49,7 @@ export default function SignupPage() {
     if (role === 'PRO') {
       const requiredFields = ['prenom', 'nom', 'telephone', 'profession', 'siret']
       return requiredFields.every(field => fields[field] && fields[field].trim() !== '') && 
-             !!villeNom && !!villeLat && !!villeLng && !!photoFile && !!justifFile
+             !!villeNom && !!villeLat && !!villeLng && !!justifFile
     }
 
     if (role === 'PROPRIETAIRE') {
@@ -93,7 +92,6 @@ export default function SignupPage() {
         formData.append('rayon_km', rayonKm.toString())
       }
 
-      if (photoFile) formData.append('photo', photoFile)
       if (justifFile) formData.append('justificatif', justifFile)
 
       console.log('🚀 Création du compte utilisateur...')
@@ -460,16 +458,7 @@ export default function SignupPage() {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Photo de profil</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
-                  className="w-full px-4 py-3 border border-[#e5e7eb] rounded-lg focus:border-[#F86F4D] transition-all duration-150 text-[#111827] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#f86f4d] file:text-white hover:file:bg-[#fa8265]"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Justificatif (PDF ou image)</label>
+                <label className="block text-sm font-medium text-[#111827] mb-2 break-words">Justificatif professionnel (PDF ou image)</label>
                 <input
                   type="file"
                   accept=".pdf,image/*"

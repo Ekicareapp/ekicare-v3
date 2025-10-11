@@ -85,8 +85,8 @@ export async function POST(request: Request) {
       if (!validProfessions.includes(profession)) {
         return NextResponse.json({ error: 'Profession invalide' }, { status: 400 })
       }
-      if (!photo || !justificatif) {
-        return NextResponse.json({ error: 'Photo et justificatif obligatoires.' }, { status: 400 })
+      if (!justificatif) {
+        return NextResponse.json({ error: 'Justificatif professionnel obligatoire.' }, { status: 400 })
       }
     }
 
@@ -141,21 +141,8 @@ export async function POST(request: Request) {
     }
     const user = data.user
     // Upload fichiers dans Supabase Storage
-    let photo_url = null
     let justificatif_url = null
     if (role === 'PRO' && user.id) {
-      // Photo
-      const photoPath = `pro_photo/${user.id}/profil.png`
-      const { data: photoData, error: photoError } = await supabase.storage
-        .from('pro_photo')
-        .upload(photoPath, photo as File, { upsert: true })
-      if (photoError) {
-        return NextResponse.json(
-          { error: 'Erreur upload photo: ' + photoError.message },
-          { status: 500 }
-        )
-      }
-      photo_url = photoData?.path || null
       // Justificatif
       const justificatifPath = `pro_justificatifs/${user.id}/justificatif.pdf`
       const { data: justifData, error: justifError } = await supabase.storage
@@ -200,7 +187,7 @@ export async function POST(request: Request) {
           ville_lng: ville_lng ? parseFloat(ville_lng) : null,
           rayon_km: rayon_km ? parseInt(rayon_km) : null,
           siret,
-          photo_url,
+          photo_url: null,
           justificatif_url,
           is_verified: false,
           is_subscribed: false,
@@ -229,7 +216,7 @@ export async function POST(request: Request) {
               ville_nom,
               rayon_km,
               siret,
-              photo_url,
+              photo_url: null,
               justificatif_url,
             },
           },
