@@ -10,8 +10,8 @@ export default function SuccessProPage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Afficher la page de succès immédiatement après paiement
-    const showSuccessPage = async () => {
+    // Vérifier le statut de paiement et rediriger quand c'est prêt
+    const checkPaymentStatusAndRedirect = async () => {
       try {
         if (!supabase) {
           router.push('/login')
@@ -28,9 +28,9 @@ export default function SuccessProPage() {
         }
 
         console.log('✅ Session active trouvée:', session.user.email)
-        console.log('🎉 Paiement validé par Stripe - Redirection immédiate vers succès')
+        console.log('🎉 Paiement validé par Stripe - Vérification du statut en cours...')
 
-        // Récupérer les informations du profil (sans attendre la mise à jour DB)
+        // Récupérer les informations du profil
         const response = await fetch('/api/profile')
         const data = await response.json()
         
@@ -40,10 +40,10 @@ export default function SuccessProPage() {
           })
         }
 
-        // Afficher immédiatement la page de succès
+        // Afficher la page de succès
         setLoading(false)
 
-        // Déclencher les confettis immédiatement
+        // Déclencher les confettis
         setTimeout(() => {
           confetti({
             particleCount: 100,
@@ -53,19 +53,58 @@ export default function SuccessProPage() {
           })
         }, 500)
 
-        // Redirection automatique vers le dashboard après 3 secondes
-        setTimeout(() => {
-          console.log('🔄 Redirection automatique vers le dashboard pro')
-          router.push('/dashboard/pro')
-        }, 3000)
+        // Vérifier le statut de paiement avec retry
+        await waitForPaymentConfirmation()
 
       } catch (error) {
-        console.error('❌ Erreur lors de l\'affichage de la page de succès:', error)
+        console.error('❌ Erreur lors de la vérification du statut:', error)
         setLoading(false)
       }
     }
 
-    showSuccessPage()
+    // Fonction pour attendre la confirmation de paiement
+    const waitForPaymentConfirmation = async (retryCount = 0) => {
+      const maxRetries = 15 // 15 tentatives = 30 secondes max
+      
+      try {
+        console.log(`🔍 Vérification du statut de paiement (tentative ${retryCount + 1}/${maxRetries + 1})`)
+        
+        const response = await fetch('/api/profile')
+        const data = await response.json()
+        
+        if (data.profile) {
+          const isVerified = data.profile.is_verified === true
+          const isSubscribed = data.profile.is_subscribed === true
+          
+          console.log('📊 Statut actuel:', { isVerified, isSubscribed })
+          
+          if (isVerified && isSubscribed) {
+            console.log('✅ Paiement confirmé ! Redirection vers le dashboard')
+            router.push('/dashboard/pro')
+            return
+          }
+        }
+        
+        if (retryCount < maxRetries) {
+          console.log(`⏳ Paiement pas encore confirmé, retry dans 2 secondes... (${retryCount + 1}/${maxRetries})`)
+          setTimeout(() => waitForPaymentConfirmation(retryCount + 1), 2000)
+        } else {
+          console.log('❌ Timeout: Le paiement n\'a pas été confirmé dans les temps')
+          // Optionnel: rediriger vers le dashboard quand même, ou afficher un message d'erreur
+          console.log('🔄 Redirection vers le dashboard (le webhook pourrait être en retard)')
+          router.push('/dashboard/pro')
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors de la vérification:', error)
+        if (retryCount < maxRetries) {
+          setTimeout(() => waitForPaymentConfirmation(retryCount + 1), 2000)
+        } else {
+          router.push('/dashboard/pro')
+        }
+      }
+    }
+
+    checkPaymentStatusAndRedirect()
   }, [router])
 
   const handleGoToDashboard = () => {
@@ -116,10 +155,10 @@ export default function SuccessProPage() {
           {/* Message d'information */}
           <div className="mt-6 pt-6 border-t border-[#e5e7eb]">
             <p className="text-xs text-[#9ca3af] mb-2">
-              Votre abonnement professionnel est maintenant actif. Vous pouvez commencer à utiliser toutes les fonctionnalités.
+              Votre paiement a été validé par Stripe. Nous vérifions votre abonnement...
             </p>
             <p className="text-xs text-[#f86f4d] font-medium">
-              Redirection automatique vers votre tableau de bord dans 3 secondes...
+              Vérification en cours... Redirection automatique dès confirmation.
             </p>
           </div>
         </div>

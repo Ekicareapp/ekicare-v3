@@ -47,19 +47,19 @@ export default function ProDashboardLayout({ children }: { children: React.React
         
         if (isVerified || isSubscribed) {
           setIsVerified(true)
-        } else if (retryCount < 3) {
+        } else if (retryCount < 5) {
           // Retry après un délai si pas encore vérifié (pour laisser le temps au webhook)
-          console.log(`⏳ Statut non vérifié, retry ${retryCount + 1}/3 dans 2 secondes...`)
-          setTimeout(() => checkVerification(retryCount + 1), 2000)
+          console.log(`⏳ Statut non vérifié, retry ${retryCount + 1}/5 dans 3 secondes...`)
+          setTimeout(() => checkVerification(retryCount + 1), 3000)
         } else {
-          console.log('❌ Statut non vérifié après 3 tentatives')
+          console.log('❌ Statut non vérifié après 5 tentatives')
           setIsVerified(false)
           router.push('/paiement-requis')
         }
       } catch (error) {
         console.error('Erreur lors de la vérification:', error)
-        if (retryCount < 3) {
-          setTimeout(() => checkVerification(retryCount + 1), 2000)
+        if (retryCount < 5) {
+          setTimeout(() => checkVerification(retryCount + 1), 3000)
         } else {
           setIsVerified(false)
           router.push('/paiement-requis')
