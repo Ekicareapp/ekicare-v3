@@ -19,6 +19,12 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
     const checkAuth = async () => {
       try {
+        // Vérifier que supabase est initialisé
+        if (!supabase) {
+          setLoading(false)
+          return
+        }
+
         // Vérifier la session actuelle
         const { data: { session }, error } = await supabase.auth.getSession()
         
