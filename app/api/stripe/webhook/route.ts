@@ -19,6 +19,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
 export async function POST(request: NextRequest) {
+  // Logs immédiats pour debug
+  console.log('🚀 [WEBHOOK] === DÉBUT FONCTION WEBHOOK ===')
+  console.log('🚀 [WEBHOOK] Timestamp:', new Date().toISOString())
+  console.log('🚀 [WEBHOOK] Request method:', request.method)
+  console.log('🚀 [WEBHOOK] Request URL:', request.url)
+  
   const startTime = Date.now()
   
   try {
@@ -229,12 +235,14 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ [WEBHOOK] Webhook traité avec succès')
     console.log('⏱️ [WEBHOOK] Temps total:', Date.now() - startTime, 'ms')
+    console.log('🏁 [WEBHOOK] === FIN FONCTION WEBHOOK (SUCCÈS) ===')
     return NextResponse.json({ received: true, timestamp: new Date().toISOString() })
   } catch (error: any) {
     console.error('❌ [WEBHOOK] Webhook error')
     console.error('❌ [WEBHOOK] Error message:', error.message)
     console.error('❌ [WEBHOOK] Error stack:', error.stack)
     console.error('⏱️ [WEBHOOK] Time before error:', Date.now() - startTime, 'ms')
+    console.log('🏁 [WEBHOOK] === FIN FONCTION WEBHOOK (ERREUR) ===')
     return NextResponse.json({ 
       error: 'Webhook processing failed',
       message: error.message,
