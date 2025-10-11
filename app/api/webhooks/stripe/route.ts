@@ -47,6 +47,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
     }
 
+    // DEBUG : Vérifier le secret
+    console.log('🔍 [WEBHOOK] Secret length:', webhookSecret.length)
+    console.log('🔍 [WEBHOOK] Secret starts with whsec_:', webhookSecret.startsWith('whsec_'))
+    console.log('🔍 [WEBHOOK] Secret has spaces:', webhookSecret.includes(' '))
+    console.log('🔍 [WEBHOOK] Secret has newlines:', webhookSecret.includes('\n'))
+
     // Vérifier la signature et construire l'événement
     let event: Stripe.Event
     try {
