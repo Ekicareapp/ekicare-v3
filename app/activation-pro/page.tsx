@@ -76,6 +76,7 @@ export default function ActivationProPage() {
             }
             
             attempts++
+            console.log(`🔍 Tentative ${attempts}/${maxAttempts} - Compte pas encore activé`)
             await new Promise(resolve => setTimeout(resolve, 2000)) // 2s entre chaque tentative
           }
 

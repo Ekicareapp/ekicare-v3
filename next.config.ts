@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/api/stripe/webhook',
+        source: '/api/webhooks/stripe',
         headers: [
           {
             key: 'Access-Control-Allow-Origin',
