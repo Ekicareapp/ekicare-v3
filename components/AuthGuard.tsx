@@ -21,7 +21,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
       try {
         // Vérifier que supabase est initialisé
         if (!supabase) {
-          setLoading(false)
+          setIsLoading(false)
           return
         }
 
