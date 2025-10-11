@@ -52,83 +52,52 @@ export default function SuccessProPage() {
         const stripeSessionId = urlParams.get('session_id')
         console.log('📋 Stripe Session ID:', stripeSessionId)
 
-        // POLLING : Vérifier que le webhook a bien mis à jour is_verified et is_subscribed
-        const maxAttempts = 15 // 15 tentatives (15 secondes max)
-        let attempts = 0
-        let isSubscriptionActive = false
-
-        const checkSubscriptionStatus = async (): Promise<boolean> => {
+        // 🧭 SYSTÈME DE VÉRIFICATION HYBRIDE : WEBHOOK + FALLBACK
+        
+        // D'abord, vérifier si le webhook a déjà fait le travail
+        const checkWebhookStatus = async () => {
           try {
-            if (!supabase) {
-              console.error('❌ Supabase client not available')
-              return false
-            }
+            console.log('🛰️ [CHECK] Vérification si le webhook a déjà mis à jour le profil...')
             
-            const { data: profile, error: profileError } = await supabase
+            const { data: proProfile, error } = await supabase
               .from('pro_profiles')
               .select('is_verified, is_subscribed')
               .eq('user_id', session.user.id)
               .single()
-
-            if (profileError) {
-              console.error('❌ Erreur lors de la vérification du profil:', profileError)
-              return false
-            }
-
-            const isActive = profile.is_verified === true && profile.is_subscribed === true
-            console.log(`🔍 Tentative ${attempts + 1}/${maxAttempts} - is_verified: ${profile.is_verified}, is_subscribed: ${profile.is_subscribed}`)
             
-            return isActive
+            if (!error && proProfile) {
+              console.log('📊 [CHECK] Statut profil:', proProfile)
+              if (proProfile.is_verified && proProfile.is_subscribed) {
+                console.log('✅ [CHECK] Webhook a déjà activé le profil !')
+                return true
+              }
+            }
+            
+            return false
           } catch (error) {
-            console.error('❌ Erreur lors de la vérification:', error)
+            console.error('⚠️ [CHECK] Erreur vérification webhook:', error)
             return false
           }
         }
-
-        // Fonction de secours : vérification manuelle via API
-        const manualVerification = async () => {
-          try {
-            console.log('🔧 [FALLBACK] Tentative de vérification manuelle...')
-            setStatusMessage('Vérification manuelle du paiement...')
+        
+        // Fonction de polling intelligent (donne priorité au webhook)
+        const smartPolling = async () => {
+          const maxAttempts = 10 // 10 secondes max
+          let attempts = 0
+          
+          while (attempts < maxAttempts) {
+            attempts++
+            console.log(`🔄 [POLLING] Tentative ${attempts}/${maxAttempts}`)
             
-            const response = await fetch('/api/auth/verify-payment', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                user_id: session.user.id,
-                session_id: stripeSessionId
-              })
-            })
-
-            const result = await response.json()
-            console.log('🔧 [FALLBACK] Résultat:', result)
-
-            if (result.verified && result.subscribed) {
-              console.log('✅ [FALLBACK] Abonnement vérifié manuellement !')
-              return true
-            }
-
-            return false
-          } catch (error) {
-            console.error('❌ [FALLBACK] Erreur vérification manuelle:', error)
-            return false
-          }
-        }
-
-        // Boucle de polling avec vérification manuelle en secours
-        const pollSubscriptionStatus = async () => {
-          while (attempts < maxAttempts && !isSubscriptionActive) {
-            isSubscriptionActive = await checkSubscriptionStatus()
+            // Vérifier si le webhook a fait son travail
+            const webhookDone = await checkWebhookStatus()
             
-            if (isSubscriptionActive) {
-              console.log('✅ Abonnement activé ! Backend prêt !')
+            if (webhookDone) {
+              console.log('✅ [POLLING] Webhook a réussi ! Profil activé.')
               setStatusMessage('Abonnement activé ! Vous pouvez maintenant accéder à votre dashboard.')
               setIsBackendReady(true)
               setShowConfetti(true)
               
-              // Déclencher les confettis maintenant que tout est OK
               setTimeout(() => {
                 confetti({
                   particleCount: 100,
@@ -138,34 +107,35 @@ export default function SuccessProPage() {
                 })
               }, 200)
               
-              return
+              return true
             }
-
-            attempts++
             
-            // Messages de statut progressifs
-            if (attempts === 5) {
-              setStatusMessage('Finalisation de votre abonnement...')
-            } else if (attempts === 10) {
-              setStatusMessage('Traitement du paiement en cours...')
-            } else if (attempts === 2) {
-              // Après 2 secondes, tenter une vérification manuelle (encore plus rapide)
-              console.log('⏰ [FALLBACK] Webhook lent, tentative de vérification manuelle...')
+            // Après 3 secondes, activer le fallback manuel
+            if (attempts === 3) {
+              console.log('🧭 [FALLBACK] Webhook lent, activation du fallback manuel...')
               setStatusMessage('Vérification directe avec Stripe...')
-              const manuallyVerified = await manualVerification()
               
-              if (manuallyVerified) {
-                // Attendre 1 seconde puis vérifier à nouveau
-                await new Promise(resolve => setTimeout(resolve, 1000))
-                const recheckResult = await checkSubscriptionStatus()
-                if (recheckResult) {
-                  isSubscriptionActive = true
-                  console.log('✅ [FALLBACK] Abonnement activé manuellement !')
+              try {
+                const response = await fetch('/api/auth/verify-payment', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    user_id: session.user.id,
+                    session_id: stripeSessionId
+                  })
+                })
+
+                const result = await response.json()
+                console.log('🧭 [FALLBACK] Résultat:', result)
+
+                if (result.verified && result.subscribed) {
+                  console.log('✅ [FALLBACK] Profil activé via fallback !')
                   setStatusMessage('Abonnement activé ! Vous pouvez maintenant accéder à votre dashboard.')
                   setIsBackendReady(true)
                   setShowConfetti(true)
                   
-                  // Déclencher les confettis maintenant que tout est OK
                   setTimeout(() => {
                     confetti({
                       particleCount: 100,
@@ -175,61 +145,31 @@ export default function SuccessProPage() {
                     })
                   }, 200)
                   
-                  return
+                  return true
                 }
+              } catch (error) {
+                console.error('❌ [FALLBACK] Erreur fallback:', error)
               }
-            } else if (attempts === 20) {
-              setStatusMessage('Dernières vérifications...')
             }
-
+            
             // Attendre 1 seconde avant la prochaine tentative
             await new Promise(resolve => setTimeout(resolve, 1000))
           }
-
-          // Si on arrive ici, le timeout est dépassé
-          if (!isSubscriptionActive) {
-            console.warn('⚠️ Timeout dépassé après toutes les tentatives')
-            setStatusMessage('Problème de synchronisation détecté. Actualisation...')
-            
-            // Dernière tentative de vérification manuelle
-            const lastChance = await manualVerification()
-            
-            if (lastChance) {
-              // Attendre et vérifier une dernière fois
-              await new Promise(resolve => setTimeout(resolve, 2000))
-              const finalCheck = await checkSubscriptionStatus()
-              
-              if (finalCheck) {
-                console.log('✅ [FALLBACK] Abonnement finalement activé !')
-                setStatusMessage('Abonnement activé ! Vous pouvez maintenant accéder à votre dashboard.')
-                setIsBackendReady(true)
-                setShowConfetti(true)
-                
-                // Déclencher les confettis maintenant que tout est OK
-                setTimeout(() => {
-                  confetti({
-                    particleCount: 100,
-                    spread: 70,
-                    origin: { y: 0.6 },
-                    colors: ['#f86f4d', '#ff6b35', '#ffa726', '#66bb6a', '#42a5f5']
-                  })
-                }, 200)
-                
-                return
-              }
-            }
-            
-            // En dernier recours, rediriger vers signup
-            console.error('❌ Impossible de vérifier le paiement')
-            setStatusMessage('Redirection vers l\'inscription...')
-            setTimeout(() => {
-              router.push('/signup?error=verification_failed')
-            }, 3000)
-          }
+          
+          return false
         }
 
-        // Lancer le polling
-        pollSubscriptionStatus()
+        // Lancer le polling intelligent
+        const success = await smartPolling()
+        
+        if (!success) {
+          // En cas d'échec complet, rediriger vers signup
+          console.error('❌ Impossible de vérifier le paiement après toutes les tentatives')
+          setStatusMessage('Erreur lors de l\'activation...')
+          setTimeout(() => {
+            router.push('/signup?error=verification_failed')
+          }, 2000)
+        }
 
       } catch (error) {
         console.error('❌ Erreur lors de l\'affichage de la page de succès:', error)

@@ -2,16 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 
-// CRITIQUE : Configuration pour webhooks Stripe
+// 🛰️ WEBHOOK STRIPE ROBUSTE - SOURCE DE VÉRITÉ
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-
-// DÉSACTIVER le parsing automatique du body pour cette route
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-}
 
 // Configuration Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -24,174 +17,306 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// IMPORTANT : Désactiver le parsing automatique du body
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
+/**
+ * 🛰️ WEBHOOK STRIPE - SOURCE DE VÉRITÉ
+ * 
+ * Ce webhook est la source principale de mise à jour des statuts
+ * après un paiement réussi. Il doit être fiable et robuste.
+ */
 export async function POST(request: NextRequest) {
-  // Vérifier que la requête vient bien de Stripe
-  const userAgent = request.headers.get('user-agent')
-  if (!userAgent?.includes('Stripe')) {
-    console.error('❌ [WEBHOOK] Requête non-Stripe reçue:', userAgent)
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
-  console.log('🔔 [WEBHOOK] Stripe webhook reçu')
-  console.log('🌐 [WEBHOOK] Environment:', process.env.NODE_ENV)
-  console.log('🌐 [WEBHOOK] Vercel URL:', process.env.VERCEL_URL)
-  console.log('🔑 [WEBHOOK] Webhook secret présent:', !!webhookSecret)
-  console.log('🔑 [WEBHOOK] Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 30) + '...')
-  console.log('🔑 [WEBHOOK] Service Role Key présent:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
+  console.log('🛰️ [WEBHOOK] Webhook Stripe reçu')
   
   try {
-    // Récupérer le body RAW exactement comme envoyé par Stripe
-    const bodyBuffer = await request.arrayBuffer()
-    console.log('📦 [WEBHOOK] Body buffer length:', bodyBuffer.byteLength)
-    
-    // Vérifier que le body n'est pas vide
-    if (!bodyBuffer || bodyBuffer.byteLength === 0) {
-      console.error('❌ [WEBHOOK] Body vide ou null')
-      return NextResponse.json({ error: 'Empty body' }, { status: 400 })
-    }
-    
-    // Convertir en string seulement pour les logs (pas pour la vérification)
-    const bodyString = Buffer.from(bodyBuffer).toString('utf8')
-    console.log('📦 [WEBHOOK] Body preview:', bodyString.substring(0, 100))
-    
+    // 1. RÉCUPÉRATION DU RAW BODY (critique pour la signature)
+    const body = await request.text()
     const signature = request.headers.get('stripe-signature')
-    console.log('✍️ [WEBHOOK] Signature présente:', !!signature)
-
-    // DEBUG : Vérifier le secret
-    console.log('🔍 [WEBHOOK] Secret length:', webhookSecret.length)
-    console.log('🔍 [WEBHOOK] Secret starts with whsec_:', webhookSecret.startsWith('whsec_'))
-    console.log('🔍 [WEBHOOK] Secret has spaces:', webhookSecret.includes(' '))
-    console.log('🔍 [WEBHOOK] Secret has newlines:', webhookSecret.includes('\n'))
-    console.log('🔍 [WEBHOOK] Secret preview:', webhookSecret.substring(0, 20) + '...')
-    console.log('🔍 [WEBHOOK] Secret ends with:', webhookSecret.substring(webhookSecret.length - 10))
     
-    // Only verify the event if you have an endpoint secret defined.
-    // Otherwise use the basic event deserialized with JSON.parse
-    let event: Stripe.Event
-    if (webhookSecret) {
-      // Get the signature sent by Stripe
-      try {
-        console.log('🔐 [WEBHOOK] Tentative de vérification signature...')
-        console.log('🔐 [WEBHOOK] Body buffer length:', bodyBuffer.byteLength)
-        console.log('🔐 [WEBHOOK] Signature header:', signature)
-        console.log('🔐 [WEBHOOK] Secret utilisé:', webhookSecret.substring(0, 20) + '...')
-        
-        // CRITIQUE : Utiliser le buffer brut pour la vérification
-        event = stripe.webhooks.constructEvent(Buffer.from(bodyBuffer), signature!, webhookSecret)
-        console.log('✅ [WEBHOOK] Signature vérifiée - Événement:', event.type)
-      } catch (err: any) {
-        console.error('⚠️ [WEBHOOK] Webhook signature verification failed:', err.message)
-        console.error('⚠️ [WEBHOOK] Error details:', {
-          message: err.message,
-          type: err.type,
-          code: err.code
-        })
-        return NextResponse.json({ 
-          error: 'Invalid signature',
-          details: err.message 
-        }, { status: 400 })
-      }
-    } else {
-      console.warn('⚠️ [WEBHOOK] No endpoint secret defined - using JSON.parse')
-      event = JSON.parse(bodyString)
+    if (!signature) {
+      console.error('❌ [WEBHOOK] Signature Stripe manquante')
+      return NextResponse.json({ error: 'Signature manquante' }, { status: 400 })
     }
 
-    // Handle the event
+    if (!webhookSecret) {
+      console.error('❌ [WEBHOOK] STRIPE_WEBHOOK_SECRET non configuré')
+      return NextResponse.json({ error: 'Configuration manquante' }, { status: 500 })
+    }
+
+    console.log('🔍 [WEBHOOK] Body length:', body.length)
+    console.log('🔍 [WEBHOOK] Signature présentes:', signature ? 'Oui' : 'Non')
+    console.log('🔍 [WEBHOOK] Secret configuré:', webhookSecret ? 'Oui' : 'Non')
+
+    // 2. VÉRIFICATION DE LA SIGNATURE STRIPE
+    let event: Stripe.Event
+    
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
+      console.log('✅ [WEBHOOK] Signature vérifiée avec succès')
+      console.log('📋 [WEBHOOK] Événement type:', event.type)
+    } catch (err: any) {
+      console.error('❌ [WEBHOOK] Erreur vérification signature:', err.message)
+      return NextResponse.json({ error: `Signature invalide: ${err.message}` }, { status: 400 })
+    }
+
+    // 3. TRAITEMENT DES ÉVÉNEMENTS
     switch (event.type) {
       case 'checkout.session.completed':
-        console.log('💳 [WEBHOOK] Checkout session completed!')
         await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session)
         break
       
-      case 'payment_intent.succeeded':
-        const paymentIntent = event.data.object
-        console.log(`💰 [WEBHOOK] PaymentIntent for ${paymentIntent.amount} was successful!`)
-        // Then define and call a method to handle the successful payment intent.
-        // handlePaymentIntentSucceeded(paymentIntent);
+      case 'invoice.payment_succeeded':
+        await handleInvoicePaymentSucceeded(event.data.object as Stripe.Invoice)
         break
-        
-      case 'payment_method.attached':
-        const paymentMethod = event.data.object
-        console.log('💳 [WEBHOOK] PaymentMethod attached:', paymentMethod.id)
-        // Then define and call a method to handle the successful attachment of a PaymentMethod.
-        // handlePaymentMethodAttached(paymentMethod);
+      
+      case 'customer.subscription.updated':
+        await handleSubscriptionUpdated(event.data.object as Stripe.Subscription)
         break
-        
+      
       default:
-        // Unexpected event type
-        console.log(`ℹ️ [WEBHOOK] Unhandled event type ${event.type}.`)
+        console.log(`ℹ️ [WEBHOOK] Événement non géré: ${event.type}`)
     }
 
-    // Return a 200 response to acknowledge receipt of the event
-    console.log('✅ [WEBHOOK] Event processed successfully')
+    console.log('✅ [WEBHOOK] Événement traité avec succès')
     return NextResponse.json({ received: true })
 
   } catch (error: any) {
-    console.error('❌ [WEBHOOK] Erreur générale:', error.message)
-    return NextResponse.json({ 
-      error: 'Webhook error',
-      details: error.message 
-    }, { status: 500 })
+    console.error('❌ [WEBHOOK] Erreur générale:', error)
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
 
-// Fonction pour traiter checkout.session.completed
+/**
+ * 💳 GESTION CHECKOUT SESSION COMPLETED
+ */
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
-  console.log('💳 [WEBHOOK] Traitement checkout.session.completed')
-  console.log('📋 [WEBHOOK] Session ID:', session.id)
-  console.log('👤 [WEBHOOK] Client Reference ID:', session.client_reference_id)
+  console.log('💳 [WEBHOOK] Checkout session completed:', session.id)
   
   try {
-    // Récupérer l'user_id depuis client_reference_id
-    const userId = session.client_reference_id
+    // Récupérer l'ID utilisateur depuis plusieurs sources possibles
+    const userId = session.client_reference_id || session.metadata?.userId || session.metadata?.user_id
+    const userEmail = session.customer_email || session.customer_details?.email
+    
+    console.log('🔍 [WEBHOOK] Données de la session:')
+    console.log('  - client_reference_id:', session.client_reference_id)
+    console.log('  - metadata.userId:', session.metadata?.userId)
+    console.log('  - metadata.user_id:', session.metadata?.user_id)
+    console.log('  - user_id final:', userId)
+    
     if (!userId) {
-      console.error('❌ [WEBHOOK] client_reference_id manquant')
+      console.error('❌ [WEBHOOK] user_id manquant dans les métadonnées et client_reference_id')
       return
     }
 
-    console.log('🔍 [WEBHOOK] Recherche profil pour user_id:', userId)
+    console.log('👤 [WEBHOOK] User ID:', userId)
+    console.log('📧 [WEBHOOK] Email:', userEmail)
+    console.log('💰 [WEBHOOK] Payment status:', session.payment_status)
+    console.log('🔗 [WEBHOOK] Customer ID:', session.customer)
+    console.log('📋 [WEBHOOK] Subscription ID:', session.subscription)
 
-    // Mettre à jour le profil professionnel
+    // Vérifier que le paiement est bien confirmé
+    if (session.payment_status !== 'paid') {
+      console.log('⚠️ [WEBHOOK] Paiement non confirmé:', session.payment_status)
+      return
+    }
+
+    // 1. VÉRIFIER SI LE PROFIL EXISTE
+    console.log('🔍 [WEBHOOK] Recherche du profil pour user_id:', userId)
+    
+    const { data: existingProfile, error: findError } = await supabase
+      .from('pro_profiles')
+      .select('*')
+      .eq('user_id', userId)
+    
+    console.log('📊 [WEBHOOK] Résultat recherche profil:')
+    console.log('  - Profils trouvés:', existingProfile?.length || 0)
+    console.log('  - Erreur:', findError?.message || 'Aucune')
+    
+    if (findError) {
+      console.error('❌ [WEBHOOK] Erreur lors de la recherche du profil:', findError)
+      // Ne pas bloquer, continuer quand même
+    }
+
+    if (!existingProfile || existingProfile.length === 0) {
+      console.error('⚠️ [WEBHOOK] AUCUN PROFIL TROUVÉ pour user_id:', userId)
+      console.error('⚠️ [WEBHOOK] Le profil professionnel doit être créé AVANT le paiement')
+      console.error('⚠️ [WEBHOOK] Vérifier que le signup crée bien le profil dans pro_profiles')
+      
+      // Vérifier si l'utilisateur existe au moins dans la table users
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('id, email, role')
+        .eq('id', userId)
+        .single()
+      
+      if (userError || !user) {
+        console.error('❌ [WEBHOOK] Utilisateur inexistant dans la table users:', userError)
+        return
+      }
+      
+      console.log('✅ [WEBHOOK] Utilisateur trouvé:', user.email, '- Role:', user.role)
+      
+      // L'utilisateur existe mais pas son profil pro -> Cas anormal
+      console.error('❌ [WEBHOOK] ERREUR CRITIQUE: User existe mais pro_profile manquant')
+      console.error('❌ [WEBHOOK] Le paiement a été effectué mais le profil n\'a pas été créé lors du signup')
+      
+      return
+    }
+
+    // 2. METTRE À JOUR LE PROFIL
+    const profile = existingProfile[0]
+    console.log('✅ [WEBHOOK] Profil trouvé, ID:', profile.id)
+    console.log('📊 [WEBHOOK] État actuel:')
+    console.log('  - is_verified:', profile.is_verified)
+    console.log('  - is_subscribed:', profile.is_subscribed)
+    
+    const updateData = {
+      is_verified: true,
+      is_subscribed: true,
+      subscription_start: profile.subscription_start || new Date().toISOString(),
+      stripe_customer_id: session.customer as string,
+      stripe_subscription_id: session.subscription as string,
+      stripe_session_id: session.id,
+      updated_at: new Date().toISOString()
+    }
+
+    console.log('🔄 [WEBHOOK] Mise à jour avec:', updateData)
+
     const { data: updatedProfile, error: updateError } = await supabase
       .from('pro_profiles')
-      .update({
-        is_verified: true,
-        is_subscribed: true
-      })
+      .update(updateData)
       .eq('user_id', userId)
-      .select('id, prenom, nom')
-      .single()
+      .select()
 
     if (updateError) {
       console.error('❌ [WEBHOOK] Erreur mise à jour profil:', updateError)
+      console.error('❌ [WEBHOOK] Code erreur:', updateError.code)
+      console.error('❌ [WEBHOOK] Message:', updateError.message)
+      console.error('❌ [WEBHOOK] Details:', updateError.details)
       throw updateError
     }
 
-    if (!updatedProfile) {
-      console.error('❌ [WEBHOOK] Profil non trouvé pour user_id:', userId)
+    console.log('✅ [WEBHOOK] Profil mis à jour avec succès')
+    console.log('📊 [WEBHOOK] Données mises à jour:', updatedProfile)
+    
+  } catch (error: any) {
+    console.error('❌ [WEBHOOK] Erreur handleCheckoutSessionCompleted:', error)
+    throw error
+  }
+}
+
+/**
+ * 🧾 GESTION INVOICE PAYMENT SUCCEEDED
+ */
+async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
+  console.log('🧾 [WEBHOOK] Invoice payment succeeded:', invoice.id)
+  
+  try {
+    const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
+    
+    if (!customerId) {
+      console.log('⚠️ [WEBHOOK] Customer ID manquant')
       return
     }
 
-    console.log('✅ [WEBHOOK] Profil mis à jour avec succès:')
-    console.log('✅ [WEBHOOK] - ID:', updatedProfile.id)
-    console.log('✅ [WEBHOOK] - Nom:', updatedProfile.prenom, updatedProfile.nom)
-    console.log('✅ [WEBHOOK] - is_verified: true')
-    console.log('✅ [WEBHOOK] - is_subscribed: true')
+    console.log('👤 [WEBHOOK] Customer ID:', customerId)
 
-    // Optionnel : Log pour audit
-    console.log('📊 [WEBHOOK] Audit - Paiement validé:', {
-      session_id: session.id,
-      user_id: userId,
-      amount: session.amount_total,
-      currency: session.currency,
-      timestamp: new Date().toISOString()
-    })
+    // Trouver le profil par customer_id Stripe (sans .single() pour éviter PGRST116)
+    const { data: profiles, error: findError } = await supabase
+      .from('pro_profiles')
+      .select('*')
+      .eq('stripe_customer_id', customerId)
 
+    if (findError) {
+      console.error('❌ [WEBHOOK] Erreur recherche profil:', findError)
+      return
+    }
+
+    if (!profiles || profiles.length === 0) {
+      console.log('⚠️ [WEBHOOK] Profil non trouvé pour customer:', customerId)
+      return
+    }
+
+    const profile = profiles[0]
+    console.log('✅ [WEBHOOK] Profil trouvé:', profile.id)
+
+    // Mettre à jour les statuts
+    const { error: updateError } = await supabase
+      .from('pro_profiles')
+      .update({
+        is_verified: true,
+        is_subscribed: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', profile.id)
+
+    if (updateError) {
+      console.error('❌ [WEBHOOK] Erreur mise à jour invoice:', updateError)
+      throw updateError
+    }
+
+    console.log('✅ [WEBHOOK] Statuts mis à jour via invoice')
+    
   } catch (error: any) {
-    console.error('❌ [WEBHOOK] Erreur traitement session:', error.message)
+    console.error('❌ [WEBHOOK] Erreur handleInvoicePaymentSucceeded:', error)
+    throw error
+  }
+}
+
+/**
+ * 📋 GESTION SUBSCRIPTION UPDATED
+ */
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  console.log('📋 [WEBHOOK] Subscription updated:', subscription.id)
+  
+  try {
+    const customerId = subscription.customer as string
+    const status = subscription.status
+    
+    console.log('👤 [WEBHOOK] Customer ID:', customerId)
+    console.log('📊 [WEBHOOK] Status:', status)
+
+    // Trouver le profil par customer_id Stripe (sans .single() pour éviter PGRST116)
+    const { data: profiles, error: findError } = await supabase
+      .from('pro_profiles')
+      .select('*')
+      .eq('stripe_customer_id', customerId)
+
+    if (findError) {
+      console.error('❌ [WEBHOOK] Erreur recherche profil:', findError)
+      return
+    }
+
+    if (!profiles || profiles.length === 0) {
+      console.log('⚠️ [WEBHOOK] Profil non trouvé pour subscription:', customerId)
+      return
+    }
+
+    const profile = profiles[0]
+    console.log('✅ [WEBHOOK] Profil trouvé:', profile.id)
+
+    // Mettre à jour selon le statut
+    const isActive = ['active', 'trialing'].includes(status)
+    
+    const { error: updateError } = await supabase
+      .from('pro_profiles')
+      .update({
+        is_verified: isActive,
+        is_subscribed: isActive,
+        stripe_subscription_id: subscription.id,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', profile.id)
+
+    if (updateError) {
+      console.error('❌ [WEBHOOK] Erreur mise à jour subscription:', updateError)
+      throw updateError
+    }
+
+    console.log(`✅ [WEBHOOK] Subscription ${status} - Profil mis à jour`)
+    
+  } catch (error: any) {
+    console.error('❌ [WEBHOOK] Erreur handleSubscriptionUpdated:', error)
     throw error
   }
 }

@@ -46,17 +46,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Utilisateur n\'est pas un professionnel' }, { status: 400 })
     }
 
-    // Récupérer le profil pro
-    const { data: profile, error: profileError } = await supabase
+    // Récupérer le profil pro (sans .single() pour éviter PGRST116)
+    const { data: profiles, error: profileError } = await supabase
       .from('pro_profiles')
       .select('*')
       .eq('user_id', user_id)
-      .single()
 
-    if (profileError || !profile) {
-      console.error('❌ [VERIFY-PAYMENT] Profile not found:', profileError)
+    console.log('📊 [VERIFY-PAYMENT] Profils trouvés:', profiles?.length || 0)
+
+    if (profileError) {
+      console.error('❌ [VERIFY-PAYMENT] Erreur recherche profil:', profileError)
+      return NextResponse.json({ error: 'Erreur lors de la recherche du profil' }, { status: 500 })
+    }
+
+    if (!profiles || profiles.length === 0) {
+      console.error('❌ [VERIFY-PAYMENT] Aucun profil trouvé pour user_id:', user_id)
       return NextResponse.json({ error: 'Profil professionnel non trouvé' }, { status: 404 })
     }
+
+    const profile = profiles[0]
+    console.log('✅ [VERIFY-PAYMENT] Profil trouvé, ID:', profile.id)
 
     // Si déjà vérifié, retourner succès
     if (profile.is_verified && profile.is_subscribed) {
