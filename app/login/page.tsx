@@ -20,6 +20,12 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
+      // Vérifier que supabase est initialisé
+      if (!supabase) {
+        setError('Erreur de connexion')
+        return
+      }
+
       // Connexion directe avec Supabase côté client
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
