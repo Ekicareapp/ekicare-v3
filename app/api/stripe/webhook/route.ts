@@ -15,7 +15,6 @@ const supabase = createClient(
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
-// IMPORTANT : Pas de bodyParser - on lit le body brut
 export async function POST(request: NextRequest) {
   console.log('🔔 [WEBHOOK] === DÉBUT WEBHOOK STRIPE ===')
   console.log('🔔 [WEBHOOK] Timestamp:', new Date().toISOString())
