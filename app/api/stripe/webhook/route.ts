@@ -6,6 +6,13 @@ import { createClient } from '@supabase/supabase-js'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+// DÉSACTIVER le parsing automatique du body pour cette route
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+}
+
 // Configuration Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil',
@@ -36,16 +43,19 @@ export async function POST(request: NextRequest) {
   console.log('🔑 [WEBHOOK] Service Role Key présent:', !!process.env.SUPABASE_SERVICE_ROLE_KEY)
   
   try {
-    // Récupérer le body RAW sans parsing (méthode alternative)
-    const body = await request.text()
-    console.log('📦 [WEBHOOK] Body length:', body.length)
-    console.log('📦 [WEBHOOK] Body preview:', body.substring(0, 100))
+    // Récupérer le body RAW exactement comme envoyé par Stripe
+    const bodyBuffer = await request.arrayBuffer()
+    console.log('📦 [WEBHOOK] Body buffer length:', bodyBuffer.byteLength)
     
     // Vérifier que le body n'est pas vide
-    if (!body || body.length === 0) {
+    if (!bodyBuffer || bodyBuffer.byteLength === 0) {
       console.error('❌ [WEBHOOK] Body vide ou null')
       return NextResponse.json({ error: 'Empty body' }, { status: 400 })
     }
+    
+    // Convertir en string seulement pour les logs (pas pour la vérification)
+    const bodyString = Buffer.from(bodyBuffer).toString('utf8')
+    console.log('📦 [WEBHOOK] Body preview:', bodyString.substring(0, 100))
     
     const signature = request.headers.get('stripe-signature')
     console.log('✍️ [WEBHOOK] Signature présente:', !!signature)
@@ -65,11 +75,12 @@ export async function POST(request: NextRequest) {
       // Get the signature sent by Stripe
       try {
         console.log('🔐 [WEBHOOK] Tentative de vérification signature...')
-        console.log('🔐 [WEBHOOK] Body length:', body.length)
+        console.log('🔐 [WEBHOOK] Body buffer length:', bodyBuffer.byteLength)
         console.log('🔐 [WEBHOOK] Signature header:', signature)
         console.log('🔐 [WEBHOOK] Secret utilisé:', webhookSecret.substring(0, 20) + '...')
         
-        event = stripe.webhooks.constructEvent(body, signature!, webhookSecret)
+        // CRITIQUE : Utiliser le buffer brut pour la vérification
+        event = stripe.webhooks.constructEvent(bodyBuffer, signature!, webhookSecret)
         console.log('✅ [WEBHOOK] Signature vérifiée - Événement:', event.type)
       } catch (err: any) {
         console.error('⚠️ [WEBHOOK] Webhook signature verification failed:', err.message)
