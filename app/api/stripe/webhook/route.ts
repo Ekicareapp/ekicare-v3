@@ -10,10 +10,30 @@ export const dynamic = 'force-dynamic'
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY!
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
-if (!stripeSecretKey || !webhookSecret) {
-  console.error('❌ [WEBHOOK] Configuration Stripe manquante')
-  throw new Error('Configuration Stripe manquante')
+// Validation et debug de la configuration
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+console.log('🔧 [CONFIG] Vérification configuration Stripe')
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+if (!stripeSecretKey) {
+  console.error('❌ [CONFIG] STRIPE_SECRET_KEY manquante')
+  throw new Error('STRIPE_SECRET_KEY manquante')
 }
+
+if (!webhookSecret) {
+  console.error('❌ [CONFIG] STRIPE_WEBHOOK_SECRET manquante')
+  throw new Error('STRIPE_WEBHOOK_SECRET manquante')
+}
+
+// Debug de la clé webhook (sécurisé - on affiche juste le début et la fin)
+console.log('🔑 [CONFIG] Clé webhook chargée:')
+console.log('  Format whsec_:', webhookSecret.startsWith('whsec_'))
+console.log('  Longueur:', webhookSecret.length, 'caractères')
+console.log('  Début:', webhookSecret.substring(0, 12) + '...')
+console.log('  Fin:', '...' + webhookSecret.substring(webhookSecret.length - 8))
+console.log('  Environnement:', process.env.VERCEL_ENV || 'local')
+console.log('  Mode Stripe:', stripeSecretKey.startsWith('sk_test_') ? 'TEST' : 'LIVE')
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
 const stripe = new Stripe(stripeSecretKey, {
   apiVersion: '2025-08-27.basil',
@@ -25,7 +45,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-console.log('✅ [WEBHOOK] Configuration initialisée')
+// Configuration initialisée - voir logs détaillés ci-dessus
 
 /**
  * WEBHOOK STRIPE - VERSION OPTIMISÉE POUR VERCEL
@@ -66,7 +86,34 @@ export async function POST(request: NextRequest) {
     console.log('🔐 [WEBHOOK] Signature présente')
     
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    // ÉTAPE 3 : VÉRIFICATION SIGNATURE STRIPE
+    // ÉTAPE 3 : DEBUG DE LA SIGNATURE
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    console.log('🔍 [WEBHOOK] Debug signature:')
+    
+    // Extraction des composants de la signature pour debug
+    const sigParts = signature.split(',')
+    let sigTimestamp = 'N/A'
+    let sigV1 = 'N/A'
+    let sigEndpoint = 'N/A'
+    
+    for (const part of sigParts) {
+      if (part.startsWith('t=')) {
+        sigTimestamp = part.substring(2)
+      } else if (part.startsWith('v1=')) {
+        sigV1 = part.substring(3, 20) + '...'
+      }
+    }
+    
+    // Essayer d'extraire l'endpoint ID depuis les headers Stripe
+    const stripeEndpointId = request.headers.get('stripe-endpoint-id') || 'N/A'
+    
+    console.log('  Timestamp (t):', sigTimestamp)
+    console.log('  Signature v1:', sigV1)
+    console.log('  Endpoint ID:', stripeEndpointId)
+    console.log('  Secret utilisé (début):', webhookSecret.substring(0, 12) + '...')
+    
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // ÉTAPE 4 : VÉRIFICATION SIGNATURE STRIPE
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     let event: Stripe.Event
     
@@ -96,12 +143,17 @@ export async function POST(request: NextRequest) {
       console.error('')
       console.error('🔐 SIGNATURE REÇUE:')
       console.error('  Présent:', !!signature)
+      console.error('  Timestamp:', sigTimestamp)
+      console.error('  Signature v1:', sigV1)
+      console.error('  Endpoint ID:', stripeEndpointId)
       console.error('  Preview:', signature.substring(0, 60) + '...')
       console.error('')
       console.error('🔑 SECRET CONFIGURÉ:')
       console.error('  Présent:', !!webhookSecret)
       console.error('  Format whsec_:', webhookSecret?.startsWith('whsec_'))
-      console.error('  Length:', webhookSecret?.length)
+      console.error('  Longueur:', webhookSecret?.length)
+      console.error('  Début:', webhookSecret?.substring(0, 12) + '...')
+      console.error('  Fin:', '...' + webhookSecret?.substring((webhookSecret?.length || 0) - 8))
       console.error('')
       console.error('🌐 ENVIRONNEMENT:')
       console.error('  VERCEL_ENV:', process.env.VERCEL_ENV)
@@ -110,7 +162,7 @@ export async function POST(request: NextRequest) {
       console.error('━━━ 🎯 DIAGNOSTIC ━━━')
       console.error('')
       console.error('Le body brut est CORRECT (Buffer de', rawBody.length, 'bytes)')
-      console.error('La signature est PRÉSENTE')
+      console.error('La signature est PRÉSENTE avec timestamp:', sigTimestamp)
       console.error('Le secret est PRÉSENT et au bon format')
       console.error('')
       console.error('➡️  LE PROBLÈME EST LA CONFIGURATION:')
@@ -126,6 +178,16 @@ export async function POST(request: NextRequest) {
       console.error('CAUSE #3 (2%): Secret obsolète')
       console.error('  → Le secret a été régénéré côté Stripe')
       console.error('  → Solution: Régénérer et mettre à jour')
+      console.error('')
+      console.error('━━━ 🔍 IDENTIFIER L\'ENDPOINT ━━━')
+      console.error('')
+      console.error('1. Copier le timestamp:', sigTimestamp)
+      console.error('2. Aller sur: https://dashboard.stripe.com/webhooks')
+      console.error('3. Pour chaque endpoint → Event logs')
+      console.error('4. Chercher l\'event avec ce timestamp:', sigTimestamp)
+      console.error('5. Tu verras QUEL endpoint l\'a envoyé')
+      console.error('6. Vérifier que cet endpoint utilise le secret:', webhookSecret?.substring(0, 12) + '...')
+      console.error('7. Si différent → SUPPRIMER cet endpoint OU mettre à jour le secret')
       console.error('')
       console.error('━━━ ✅ SOLUTION EN 4 ÉTAPES ━━━')
       console.error('')
