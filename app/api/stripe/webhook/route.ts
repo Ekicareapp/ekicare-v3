@@ -59,8 +59,8 @@ export async function POST(req: Request) {
     let event: Stripe.Event
     
     try {
-      // CRITIQUE : Passer le body brut directement à Stripe
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
+      // CRITIQUE : Passer le body brut directement à Stripe (version async pour Edge Runtime)
+      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret)
       
       console.log('━━━ ✅ Webhook validé ✅ ━━━')
       console.log('✅ [WEBHOOK] Signature vérifiée avec succès')
