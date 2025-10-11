@@ -55,6 +55,8 @@ export async function POST(request: NextRequest) {
     console.log('🔍 [WEBHOOK] Secret starts with whsec_:', webhookSecret.startsWith('whsec_'))
     console.log('🔍 [WEBHOOK] Secret has spaces:', webhookSecret.includes(' '))
     console.log('🔍 [WEBHOOK] Secret has newlines:', webhookSecret.includes('\n'))
+    console.log('🔍 [WEBHOOK] Secret preview:', webhookSecret.substring(0, 20) + '...')
+    console.log('🔍 [WEBHOOK] Secret ends with:', webhookSecret.substring(webhookSecret.length - 10))
     
     // Only verify the event if you have an endpoint secret defined.
     // Otherwise use the basic event deserialized with JSON.parse
@@ -62,11 +64,24 @@ export async function POST(request: NextRequest) {
     if (webhookSecret) {
       // Get the signature sent by Stripe
       try {
+        console.log('🔐 [WEBHOOK] Tentative de vérification signature...')
+        console.log('🔐 [WEBHOOK] Body length:', body.length)
+        console.log('🔐 [WEBHOOK] Signature header:', signature)
+        console.log('🔐 [WEBHOOK] Secret utilisé:', webhookSecret.substring(0, 20) + '...')
+        
         event = stripe.webhooks.constructEvent(body, signature!, webhookSecret)
         console.log('✅ [WEBHOOK] Signature vérifiée - Événement:', event.type)
       } catch (err: any) {
         console.error('⚠️ [WEBHOOK] Webhook signature verification failed:', err.message)
-        return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+        console.error('⚠️ [WEBHOOK] Error details:', {
+          message: err.message,
+          type: err.type,
+          code: err.code
+        })
+        return NextResponse.json({ 
+          error: 'Invalid signature',
+          details: err.message 
+        }, { status: 400 })
       }
     } else {
       console.warn('⚠️ [WEBHOOK] No endpoint secret defined - using JSON.parse')

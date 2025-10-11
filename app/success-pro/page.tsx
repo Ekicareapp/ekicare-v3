@@ -8,6 +8,8 @@ export default function SuccessProPage() {
   const [userInfo, setUserInfo] = useState<{ prenom?: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [statusMessage, setStatusMessage] = useState('Vérification de votre paiement...')
+  const [isBackendReady, setIsBackendReady] = useState(false)
+  const [showConfetti, setShowConfetti] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -44,16 +46,6 @@ export default function SuccessProPage() {
 
         // Afficher immédiatement la page de succès
         setLoading(false)
-
-        // Déclencher les confettis immédiatement
-        setTimeout(() => {
-          confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ['#f86f4d', '#ff6b35', '#ffa726', '#66bb6a', '#42a5f5']
-          })
-        }, 500)
 
         // Récupérer le session_id de Stripe depuis l'URL
         const urlParams = new URLSearchParams(window.location.search)
@@ -131,11 +123,21 @@ export default function SuccessProPage() {
             isSubscriptionActive = await checkSubscriptionStatus()
             
             if (isSubscriptionActive) {
-              console.log('✅ Abonnement activé ! Redirection vers le dashboard...')
-              setStatusMessage('Abonnement activé ! Redirection en cours...')
+              console.log('✅ Abonnement activé ! Backend prêt !')
+              setStatusMessage('Abonnement activé ! Vous pouvez maintenant accéder à votre dashboard.')
+              setIsBackendReady(true)
+              setShowConfetti(true)
+              
+              // Déclencher les confettis maintenant que tout est OK
               setTimeout(() => {
-                router.push('/dashboard/pro')
-              }, 1000)
+                confetti({
+                  particleCount: 100,
+                  spread: 70,
+                  origin: { y: 0.6 },
+                  colors: ['#f86f4d', '#ff6b35', '#ffa726', '#66bb6a', '#42a5f5']
+                })
+              }, 200)
+              
               return
             }
 
@@ -159,10 +161,20 @@ export default function SuccessProPage() {
                 if (recheckResult) {
                   isSubscriptionActive = true
                   console.log('✅ [FALLBACK] Abonnement activé manuellement !')
-                  setStatusMessage('Abonnement activé ! Redirection en cours...')
+                  setStatusMessage('Abonnement activé ! Vous pouvez maintenant accéder à votre dashboard.')
+                  setIsBackendReady(true)
+                  setShowConfetti(true)
+                  
+                  // Déclencher les confettis maintenant que tout est OK
                   setTimeout(() => {
-                    router.push('/dashboard/pro')
-                  }, 1000)
+                    confetti({
+                      particleCount: 100,
+                      spread: 70,
+                      origin: { y: 0.6 },
+                      colors: ['#f86f4d', '#ff6b35', '#ffa726', '#66bb6a', '#42a5f5']
+                    })
+                  }, 200)
+                  
                   return
                 }
               }
@@ -189,10 +201,20 @@ export default function SuccessProPage() {
               
               if (finalCheck) {
                 console.log('✅ [FALLBACK] Abonnement finalement activé !')
-                setStatusMessage('Abonnement activé ! Redirection en cours...')
+                setStatusMessage('Abonnement activé ! Vous pouvez maintenant accéder à votre dashboard.')
+                setIsBackendReady(true)
+                setShowConfetti(true)
+                
+                // Déclencher les confettis maintenant que tout est OK
                 setTimeout(() => {
-                  router.push('/dashboard/pro')
-                }, 1000)
+                  confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#f86f4d', '#ff6b35', '#ffa726', '#66bb6a', '#42a5f5']
+                  })
+                }, 200)
+                
                 return
               }
             }
@@ -223,7 +245,9 @@ export default function SuccessProPage() {
   }, [router])
 
   const handleGoToDashboard = () => {
-    router.push('/dashboard/pro')
+    if (isBackendReady) {
+      router.push('/dashboard/pro')
+    }
   }
 
   if (loading) {
@@ -262,21 +286,37 @@ export default function SuccessProPage() {
           {/* Bouton CTA */}
           <button
             onClick={handleGoToDashboard}
-            className="w-full bg-[#f86f4d] text-white py-3 px-4 min-h-[44px] rounded-lg font-medium hover:bg-[#fa8265] focus:outline-none focus:ring-2 focus:ring-[#f86f4d] focus:ring-offset-2 transition-all duration-150 text-base"
+            disabled={!isBackendReady}
+            className={`w-full py-3 px-4 min-h-[44px] rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-150 text-base ${
+              isBackendReady
+                ? 'bg-[#f86f4d] text-white hover:bg-[#fa8265] focus:ring-[#f86f4d] cursor-pointer'
+                : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+            }`}
           >
-            Accéder à mon tableau de bord Pro
+            {isBackendReady ? 'Accéder à mon tableau de bord Pro' : 'Vérification en cours...'}
           </button>
 
           {/* Message d'information avec statut dynamique */}
           <div className="mt-6 pt-6 border-t border-[#e5e7eb]">
             <div className="flex items-center justify-center space-x-2 mb-3">
-              <div className="w-4 h-4 border-2 border-[#f86f4d] border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-sm text-[#f86f4d] font-medium">
+              {!isBackendReady ? (
+                <div className="w-4 h-4 border-2 border-[#f86f4d] border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              )}
+              <p className={`text-sm font-medium ${isBackendReady ? 'text-green-600' : 'text-[#f86f4d]'}`}>
                 {statusMessage}
               </p>
             </div>
             <p className="text-xs text-[#9ca3af]">
-              Nous vérifions que votre paiement a bien été pris en compte. Vous serez redirigé automatiquement.
+              {isBackendReady 
+                ? 'Tout est prêt ! Vous pouvez maintenant accéder à votre dashboard.'
+                : 'Nous vérifions que votre paiement a bien été pris en compte.'
+              }
             </p>
           </div>
         </div>
