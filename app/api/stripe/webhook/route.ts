@@ -66,10 +66,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Signature manquante' }, { status: 400 })
     }
     
-    // Logs de diagnostic
+    // Logs de diagnostic détaillés
     console.log('✅ [WEBHOOK] Body récupéré:', rawBody.length, 'bytes')
     console.log('✅ [WEBHOOK] Signature présente')
     console.log('🔍 [WEBHOOK] Environment:', process.env.VERCEL_ENV || 'local')
+    console.log('🔍 [WEBHOOK] Body est un Buffer:', rawBody instanceof Buffer)
+    console.log('🔍 [WEBHOOK] Webhook Secret présent:', !!webhookSecret)
+    console.log('🔍 [WEBHOOK] Secret commence par whsec_:', webhookSecret?.startsWith('whsec_'))
+    
+    // Extraire le timestamp de la signature pour tracer l'endpoint
+    const sigParts = signature.split(',')
+    let sigTimestamp = 'N/A'
+    for (const part of sigParts) {
+      if (part.startsWith('t=')) {
+        sigTimestamp = part.substring(2)
+        break
+      }
+    }
+    console.log('🔍 [WEBHOOK] Signature timestamp:', sigTimestamp)
+    console.log('💡 [WEBHOOK] Pour identifier l\'endpoint: chercher ce timestamp dans Stripe Dashboard → Webhooks → Event logs')
     
     // ⚡ ÉTAPE 3 : VÉRIFICATION DE LA SIGNATURE STRIPE
     let event: Stripe.Event
