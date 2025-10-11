@@ -59,6 +59,11 @@ export default function SuccessProPage() {
           try {
             console.log('🛰️ [CHECK] Vérification si le webhook a déjà mis à jour le profil...')
             
+            if (!supabase) {
+              console.error('❌ [CHECK] Supabase client non initialisé')
+              return false
+            }
+            
             const { data: proProfile, error } = await supabase
               .from('pro_profiles')
               .select('is_verified, is_subscribed')
