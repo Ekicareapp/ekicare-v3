@@ -141,7 +141,7 @@ export default function LoginPage() {
 
             <div className="flex items-center justify-between">
               <Link
-                href="#"
+                href="/forgot-password"
                 className="text-sm text-[#6b7280] hover:text-[#111827] hover:underline transition-colors duration-150"
               >
                 Mot de passe oublié ?
