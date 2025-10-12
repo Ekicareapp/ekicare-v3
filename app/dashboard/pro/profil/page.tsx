@@ -6,6 +6,7 @@ import Button from '@/app/dashboard/pro/components/Button';
 import Input from '@/app/dashboard/pro/components/Input';
 import { User, Save, AlertTriangle, Upload, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import SubscriptionManagement from './SubscriptionManagement';
 
 const professions = [
   'Ostéopathe',
@@ -960,6 +961,9 @@ export default function ProfilPage() {
           </div>
         </div>
       </Card>
+
+      {/* Subscription Management */}
+      <SubscriptionManagement />
 
       {/* Password Change */}
       <Card variant="elevated">
