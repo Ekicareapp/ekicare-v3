@@ -155,27 +155,12 @@ export default function ResetPasswordPage() {
 
           {/* Message de succès */}
           {success && (
-            <div className="mb-6 p-4 bg-[#d1fae5] border border-[#6ee7b7] rounded-lg">
-              <div className="flex items-start">
-                <svg
-                  className="w-5 h-5 text-[#059669] mr-3 flex-shrink-0 mt-0.5"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <div>
-                  <p className="text-sm font-medium text-[#065f46]">
-                    Mot de passe mis à jour avec succès !
-                  </p>
-                  <p className="text-sm text-[#047857] mt-1">
-                    Redirection vers la page de connexion...
-                  </p>
-                </div>
+            <div className="mb-6 p-3 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg">
+              <div className="flex items-center">
+                <div className="w-2 h-2 bg-[#10b981] rounded-full mr-3 flex-shrink-0"></div>
+                <p className="text-sm text-[#374151]">
+                  Mot de passe mis à jour. Redirection...
+                </p>
               </div>
             </div>
           )}
