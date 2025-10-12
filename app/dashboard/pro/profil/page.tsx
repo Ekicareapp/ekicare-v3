@@ -6,7 +6,7 @@ import Button from '@/app/dashboard/pro/components/Button';
 import Input from '@/app/dashboard/pro/components/Input';
 import { User, Save, AlertTriangle, Upload, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
-import ManageSubscriptionLink from './ManageSubscriptionLink';
+import SubscriptionCard from './SubscriptionCard';
 
 const professions = [
   'Ostéopathe',
@@ -960,12 +960,10 @@ export default function ProfilPage() {
             </div>
           </div>
         </div>
-        
-        {/* Gestion d'abonnement */}
-        <div className="flex justify-end mt-4">
-          <ManageSubscriptionLink />
-        </div>
       </Card>
+
+      {/* Abonnement */}
+      <SubscriptionCard />
 
       {/* Password Change */}
       <Card variant="elevated">
