@@ -150,6 +150,23 @@ export default function Home() {
             <p className="text-gray-400">
               © 2025 Ekicare. Tous droits réservés.
             </p>
+            <div className="flex flex-wrap justify-center gap-4 mt-2 text-sm text-neutral-400">
+              <Link href="/legal/mentions-legales" className="hover:underline hover:text-neutral-300">
+                Mentions légales
+              </Link>
+              <Link href="/legal/confidentialite" className="hover:underline hover:text-neutral-300">
+                Confidentialité
+              </Link>
+              <Link href="/legal/cookies" className="hover:underline hover:text-neutral-300">
+                Cookies
+              </Link>
+              <Link href="/legal/cgu" className="hover:underline hover:text-neutral-300">
+                CGU
+              </Link>
+              <Link href="/legal/cgv" className="hover:underline hover:text-neutral-300">
+                CGV
+              </Link>
+            </div>
           </div>
         </div>
       </footer>
