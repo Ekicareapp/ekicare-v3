@@ -78,12 +78,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { pro_id, equide_ids, main_slot, alternative_slots, comment, address, address_lat, address_lng, duration_minutes } = await request.json();
+    const { pro_id, equide_ids, main_slot, alternative_slots, comment, horse_motifs, address, address_lat, address_lng, duration_minutes } = await request.json();
 
-    // Validation des champs obligatoires
-    if (!pro_id || !equide_ids || equide_ids.length === 0 || !main_slot || !comment || !address) {
+    // Validation des champs obligatoires (comment n'est plus obligatoire, motifs par cheval via horse_motifs)
+    if (!pro_id || !equide_ids || equide_ids.length === 0 || !main_slot || !address) {
       return NextResponse.json({ 
-        error: 'Missing required fields: pro_id, equide_ids, main_slot, comment, address' 
+        error: 'Missing required fields: pro_id, equide_ids, main_slot, address' 
       }, { status: 400 });
     }
 
@@ -127,10 +127,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Only owners can create appointments' }, { status: 403 });
     }
 
-    // Récupérer l'ID du profil pro avec le user_id
+    // Récupérer l'ID du profil pro et la durée moyenne
     const { data: proProfile, error: proProfileError } = await supabaseAdmin
       .from('pro_profiles')
-      .select('id')
+      .select('id, average_consultation_duration')
       .eq('user_id', pro_id)
       .single();
     
@@ -204,26 +204,72 @@ export async function POST(request: Request) {
     
     console.log('✅ Créneau libre, création autorisée');
 
-    // Créer le rendez-vous avec les bons IDs
+    // Empilement sans changer le schéma: vérifier tous les créneaux, puis créer une ligne par cheval
+    const baseStart = new Date(main_slot);
+    const slotDuration = Number(duration_minutes) || Number(proProfile.average_consultation_duration) || 30; // minutes
+
+    // 1) Vérifier disponibilité de tous les créneaux empilés
+    for (let i = 0; i < equide_ids.length; i++) {
+      const slotStart = new Date(baseStart.getTime() + i * slotDuration * 60 * 1000);
+      const slotDate = slotStart.toISOString().split('T')[0];
+      const slotTime = `${slotStart.getUTCHours().toString().padStart(2, '0')}:${slotStart.getUTCMinutes().toString().padStart(2, '0')}`;
+
+      // Rechercher RDV existants du pro sur cette date
+      const { data: checkAppointments, error: checkErr } = await supabaseAdmin
+        .from('appointments')
+        .select('main_slot, alternative_slots, status')
+        .eq('pro_id', proProfile.id)
+        .in('status', ['confirmed', 'pending', 'rescheduled']);
+
+      if (checkErr) {
+        console.error('❌ Erreur vérification disponibilité empilée:', checkErr);
+        return NextResponse.json({ error: 'Erreur lors de la vérification' }, { status: 500 });
+      }
+
+      const sameDay = (checkAppointments || []).filter(a => new Date(a.main_slot).toISOString().split('T')[0] === slotDate);
+      let taken = false;
+      sameDay.forEach(a => {
+        const t = new Date(a.main_slot);
+        const tStr = `${t.getUTCHours().toString().padStart(2,'0')}:${t.getUTCMinutes().toString().padStart(2,'0')}`;
+        if (tStr === slotTime) taken = true;
+        if (a.alternative_slots && Array.isArray(a.alternative_slots)) {
+          a.alternative_slots.forEach((alt: string) => {
+            const at = new Date(alt);
+            const atStr = `${at.getUTCHours().toString().padStart(2,'0')}:${at.getUTCMinutes().toString().padStart(2,'0')}`;
+            if (atStr === slotTime) taken = true;
+          });
+        }
+      });
+
+      if (taken) {
+        return NextResponse.json({
+          error: "Impossible de réserver tous les créneaux — un rendez-vous existe déjà sur cette plage horaire."
+        }, { status: 409 });
+      }
+    }
+
+    // 2) Tous les créneaux sont libres → créer les lignes (une par cheval) avec main_slot décalé
+    const rows = equide_ids.map((horseId: string, index: number) => {
+      const slotStart = new Date(baseStart.getTime() + index * slotDuration * 60 * 1000);
+      return {
+        proprio_id: user.id,
+        pro_id: proProfile.id,
+        equide_ids: [horseId],
+        main_slot: slotStart.toISOString(),
+        alternative_slots: alternative_slots || [],
+        comment: (horse_motifs && typeof horse_motifs === 'object' && horse_motifs[horseId]) ? horse_motifs[horseId] : (comment || ''),
+        address,
+        address_lat: address_lat || null,
+        address_lng: address_lng || null,
+        duration_minutes: slotDuration,
+        status: 'pending',
+      };
+    });
+
     const { data, error } = await supabaseAdmin
       .from('appointments')
-      .insert([
-        {
-          proprio_id: user.id, // ID de l'utilisateur connecté
-          pro_id: proProfile.id, // ID du profil pro
-          equide_ids,
-          main_slot,
-          alternative_slots: alternative_slots || [],
-          comment,
-          address,
-          address_lat: address_lat || null, // Coordonnées GPS exactes de l'établissement
-          address_lng: address_lng || null, // Coordonnées GPS exactes de l'établissement
-          duration_minutes: duration_minutes || null,
-          status: 'pending', // Statut initial
-        },
-      ])
-      .select()
-      .single();
+      .insert(rows)
+      .select();
 
     if (error) {
       console.error('Error creating appointment:', error);

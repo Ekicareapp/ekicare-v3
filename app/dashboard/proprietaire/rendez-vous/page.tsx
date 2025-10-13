@@ -883,7 +883,6 @@ export default function RendezVousPage() {
             const { newDate, newTime, showRescheduled } = formatRescheduledDateTime(appointment);
             const isActionLoading = actionLoading === appointment.id;
             const statusBadge = getStatusBadge(appointment);
-            
             return (
               <div key={appointment.id} className="relative">
               <Card variant="elevated" hover={false} className="min-h-[120px] group relative z-0">

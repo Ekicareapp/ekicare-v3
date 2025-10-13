@@ -1,7 +1,9 @@
+'use client';
 import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useState } from "react";
 
 // Importer la police DM Sans
 import { DM_Sans } from 'next/font/google';
@@ -12,6 +14,8 @@ const dmSans = DM_Sans({
 });
 
 export default function Home() {
+  const [testToast, setTestToast] = useState<null>(null);
+
   return (
     <div className={`flex flex-col min-h-screen ${dmSans.className}`} style={{ backgroundColor: 'white' }}>
       <Navbar />

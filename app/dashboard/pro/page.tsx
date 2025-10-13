@@ -17,6 +17,7 @@ interface Appointment {
     prenom: string;
     nom: string;
   };
+  // legacy fields only
 }
 
 interface Tour {
@@ -35,6 +36,8 @@ export default function ProDashboardPage() {
   const [prochainesTournees, setProchainesTournees] = useState<Tour[]>([]);
   const [rendezVousAujourdhui, setRendezVousAujourdhui] = useState<Appointment[]>([]);
   const [prochainsRendezVous, setProchainsRendezVous] = useState<Appointment[]>([]);
+  // no grouping logic; display as before
+
   const [loading, setLoading] = useState(true);
 
   // Vérifier l'état d'onboarding au chargement
@@ -466,7 +469,6 @@ export default function ProDashboardPage() {
                 const ownerName = rdv.proprio_profiles?.prenom && rdv.proprio_profiles?.nom
                   ? `${rdv.proprio_profiles.prenom} ${rdv.proprio_profiles.nom}`
                   : 'Propriétaire inconnu';
-                
                 return (
                   <div key={rdv.id} className="flex items-center justify-between p-4 bg-[#f9fafb] rounded-lg">
                     <div className="flex items-center space-x-3">
@@ -474,12 +476,8 @@ export default function ProDashboardPage() {
                         <Calendar className="w-5 h-5 text-[#f86f4d]" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-[#111827]">
-                          {rdv.comment || equidesNames}
-                        </p>
-                        <p className="text-sm text-[#6b7280]">
-                          {ownerName} • {rdv.comment ? rdv.comment.substring(0, 30) + (rdv.comment.length > 30 ? '...' : '') : equidesNames}
-                        </p>
+                        <p className="font-medium text-[#111827]">{rdv.comment || equidesNames}</p>
+                        <p className="text-sm text-[#6b7280]">{ownerName} • {equidesNames}</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -518,7 +516,6 @@ export default function ProDashboardPage() {
                 const ownerName = rdv.proprio_profiles?.prenom && rdv.proprio_profiles?.nom
                   ? `${rdv.proprio_profiles.prenom} ${rdv.proprio_profiles.nom}`
                   : 'Propriétaire inconnu';
-                
                 return (
                   <div key={rdv.id} className="flex items-center justify-between p-4 bg-[#f9fafb] rounded-lg">
                     <div className="flex items-center space-x-3">
@@ -526,12 +523,8 @@ export default function ProDashboardPage() {
                         <Calendar className="w-5 h-5 text-[#f86f4d]" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-[#111827]">
-                          {rdv.comment || equidesNames}
-                        </p>
-                        <p className="text-sm text-[#6b7280]">
-                          {date} à {time} • {ownerName}
-                        </p>
+                        <p className="font-medium text-[#111827]">{rdv.comment || equidesNames}</p>
+                        <p className="text-sm text-[#6b7280]">{date} à {time} • {ownerName}</p>
                       </div>
                     </div>
                   </div>

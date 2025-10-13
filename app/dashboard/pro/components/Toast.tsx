@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CheckCircle, X } from 'lucide-react';
+import { CheckCircle, X, Info } from 'lucide-react';
 
 interface ToastProps {
   message: string;
@@ -34,38 +34,38 @@ export default function Toast({
       case 'error':
         return <X className="w-5 h-5 text-red-500" />;
       default:
-        return <CheckCircle className="w-5 h-5 text-blue-500" />;
+        return <Info className="w-5 h-5 text-blue-500" />;
     }
   };
 
-  const getBackgroundColor = () => {
-    switch (type) {
-      case 'success':
-        return 'bg-green-50 border-green-200';
-      case 'error':
-        return 'bg-red-50 border-red-200';
-      default:
-        return 'bg-blue-50 border-blue-200';
-    }
-  };
+  // Toujours fond clair neutre
+  const containerClasses = 'bg-white border border-gray-200 shadow-lg rounded-lg';
 
   return (
     <div
-      className={`fixed top-4 right-4 z-50 transform transition-all duration-300 ease-in-out ${
-        isVisible 
-          ? 'translate-x-0 opacity-100' 
-          : 'translate-x-full opacity-0'
+      className={`fixed z-50 transform transition-all duration-300 ease-out ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+      } ${
+        // Position responsive: mobile top-centered (90% width), desktop top-right
+        'top-8 left-1/2 -translate-x-1/2 w-[90%] sm:left-auto sm:translate-x-0 sm:right-4 sm:w-auto sm:top-8'
       }`}
+      role="status"
+      aria-live="polite"
     >
-      <div className={`flex items-center space-x-3 px-4 py-3 rounded-lg border shadow-lg ${getBackgroundColor()}`}>
-        {getIcon()}
-        <span className="text-sm font-medium text-[#111827]">{message}</span>
+      <div className={`flex items-center justify-between gap-3 px-4 py-3 w-full ${containerClasses}`}>
+        <div className="flex items-center gap-3 min-w-0">
+          {getIcon()}
+          <span className="text-sm font-medium text-gray-800 break-words">
+            {message}
+          </span>
+        </div>
         <button
           onClick={() => {
             setIsVisible(false);
             setTimeout(onClose, 300);
           }}
-          className="text-[#6b7280] hover:text-[#111827] transition-colors"
+          className="ml-4 flex-shrink-0 text-gray-500 hover:text-gray-700 transition-colors"
+          aria-label="Fermer la notification"
         >
           <X className="w-4 h-4" />
         </button>

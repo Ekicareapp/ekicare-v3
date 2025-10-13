@@ -66,7 +66,7 @@ export default function RechercheProPage() {
   
   const [rdvFormData, setRdvFormData] = useState({
     equides: [] as string[],
-    motif: '',
+    horseMotifs: {} as Record<string, string>,
     adresse: '',
     adresse_lat: null as number | null, // Coordonnées GPS de l'adresse
     adresse_lng: null as number | null, // Coordonnées GPS de l'adresse
@@ -76,6 +76,7 @@ export default function RechercheProPage() {
   const [availableTimes, setAvailableTimes] = useState<{time: string, isBooked: boolean}[]>([]);
   const [loadingTimes, setLoadingTimes] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [blockedStackSlot, setBlockedStackSlot] = useState<string | null>(null);
 
   // Fonction pour afficher les toasts
   const showToast = (message: string, type: 'success' | 'error') => {
@@ -429,7 +430,16 @@ export default function RechercheProPage() {
       ...prev,
       equides: checked 
         ? [...prev.equides, equideId]
-        : prev.equides.filter(id => id !== equideId)
+        : prev.equides.filter(id => id !== equideId),
+      // si décoché, on retire le motif spécifique associé
+      horseMotifs: checked ? prev.horseMotifs : Object.fromEntries(Object.entries(prev.horseMotifs).filter(([id]) => id !== equideId))
+    }));
+  };
+
+  const handleHorseMotifChange = (equideId: string, value: string) => {
+    setRdvFormData(prev => ({
+      ...prev,
+      horseMotifs: { ...prev.horseMotifs, [equideId]: value }
     }));
   };
 
@@ -466,8 +476,20 @@ export default function RechercheProPage() {
     e.preventDefault();
 
     // Validation des champs obligatoires
-    if (!selectedProfessionnel || !selectedDate || !selectedTime || rdvFormData.equides.length === 0) {
-      showToast('Veuillez remplir tous les champs obligatoires et sélectionner au moins un cheval', 'error');
+    if (!selectedProfessionnel) {
+      showToast('Veuillez sélectionner un professionnel.', 'error');
+      return;
+    }
+    if (!selectedDate) {
+      showToast('Veuillez choisir une date.', 'error');
+      return;
+    }
+    if (!selectedTime) {
+      showToast('Veuillez choisir une heure.', 'error');
+      return;
+    }
+    if (rdvFormData.equides.length === 0) {
+      showToast('Veuillez sélectionner au moins un cheval.', 'error');
       return;
     }
 
@@ -490,10 +512,19 @@ export default function RechercheProPage() {
       return;
     }
 
-    // Validation du motif (obligatoire)
-    if (!rdvFormData.motif || rdvFormData.motif.trim() === '') {
-      showToast('Le motif de consultation est obligatoire. Veuillez décrire la raison de votre rendez-vous.', 'error');
-      return;
+    // Validation motifs par cheval (obligatoire pour chaque cheval sélectionné)
+    if (rdvFormData.equides.length > 0) {
+      const missing: string[] = [];
+      equides.forEach(eq => {
+        if (rdvFormData.equides.includes(eq.id)) {
+          const m = (rdvFormData.horseMotifs[eq.id] || '').trim();
+          if (!m) missing.push(eq.nom);
+        }
+      });
+      if (missing.length > 0) {
+        showToast(`Veuillez renseigner un motif pour: ${missing.join(', ')}`, 'error');
+        return;
+      }
     }
 
     // Validation de la distance si l'adresse a des coordonnées GPS
@@ -512,8 +543,39 @@ export default function RechercheProPage() {
       }
     }
 
-    // La vérification des créneaux disponibles se fait maintenant côté serveur dans l'API
-    // Plus besoin de vérification côté client car l'API empêche les doubles réservations
+    // Vérification client: empilement multi-chevaux
+    // Si plusieurs chevaux sélectionnés, vérifier tous les créneaux consécutifs avant envoi
+    if (rdvFormData.equides.length > 0) {
+      const horsesCount = rdvFormData.equides.length;
+      const consultationDuration = selectedProfessionnel?.average_consultation_duration || 30;
+      // availableTimes est déjà généré avec ce pas; vérif par index consécutifs
+      const startIndex = availableTimes.findIndex(s => s.time === selectedTime);
+      if (startIndex === -1) {
+        showToast('Veuillez sélectionner une heure valide et recharger les créneaux si nécessaire.', 'error');
+        return;
+      }
+      // Vérifier que suffisamment de créneaux existent jusqu'à la fin de journée
+      if (startIndex + (horsesCount - 1) >= availableTimes.length) {
+        setBlockedStackSlot(availableTimes[availableTimes.length - 1]?.time || selectedTime);
+        showToast('Impossible de réserver. Un ou plusieurs créneaux sont déjà occupés à cet horaire.', 'error');
+        return;
+      }
+      let localBlocked: string | null = null;
+      for (let i = 0; i < horsesCount; i++) {
+        const slot = availableTimes[startIndex + i];
+        if (!slot || slot.isBooked) {
+          localBlocked = slot?.time || selectedTime;
+          break;
+        }
+      }
+      if (localBlocked) {
+        setBlockedStackSlot(localBlocked);
+        showToast('Impossible de réserver. Un ou plusieurs créneaux sont déjà occupés à cet horaire.', 'error');
+        return; // Ne pas appeler l'API
+      }
+      // Tous les créneaux sont libres
+      setBlockedStackSlot(null);
+    }
 
     try {
       // DEBUG: Vérifier l'état de l'authentification
@@ -562,7 +624,8 @@ export default function RechercheProPage() {
         equide_ids: rdvFormData.equides,
         main_slot: mainSlot,
         alternative_slots: alternativeSlots,
-        comment: rdvFormData.motif.trim(),
+        comment: '',
+        horse_motifs: rdvFormData.horseMotifs,
         address: rdvFormData.adresse.trim(),
         address_lat: rdvFormData.adresse_lat, // Coordonnées GPS exactes de l'établissement
         address_lng: rdvFormData.adresse_lng, // Coordonnées GPS exactes de l'établissement
@@ -612,7 +675,7 @@ export default function RechercheProPage() {
       // Réinitialiser le formulaire
       setRdvFormData({
         equides: [],
-        motif: '',
+        horseMotifs: {},
         adresse: '',
         adresse_lat: null, // Réinitialiser les coordonnées GPS
         adresse_lng: null, // Réinitialiser les coordonnées GPS
@@ -1146,6 +1209,11 @@ export default function RechercheProPage() {
                       Tous les créneaux sont réservés pour cette date
                     </p>
                   )}
+                  {blockedStackSlot && (
+                    <p className="text-xs text-red-600 mt-2">
+                      Créneau problématique: {blockedStackSlot} déjà réservé.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1193,22 +1261,27 @@ export default function RechercheProPage() {
               )}
             </div>
 
-            {/* Motif de consultation */}
-            <div className="space-y-4">
-              <h4 className="text-base font-medium text-[#111827]">
-                Motif de consultation <span className="text-[#ef4444]">*</span>
-              </h4>
-              
-              <textarea
-                name="motif"
-                value={rdvFormData.motif}
-                onChange={handleRdvFormChange}
-                placeholder="Décrivez le motif de votre rendez-vous (ex : Mon cheval est sensible aux postérieurs...)"
-                rows={3}
-                required
-                className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-sm focus:outline-none focus:border-[#ff6b35] transition-all duration-150 placeholder-[#9ca3af]"
-              />
-            </div>
+            {/* Motifs par cheval (obligatoires quand sélectionnés) */}
+            {rdvFormData.equides.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-base font-medium text-[#111827]">Motifs par cheval</h4>
+                {equides.filter(e => rdvFormData.equides.includes(e.id)).map(equide => (
+                  <div key={equide.id} className="space-y-1">
+                    <label className="block text-sm font-medium text-[#111827]">
+                      Motif pour {equide.nom} <span className="text-[#ef4444]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={rdvFormData.horseMotifs[equide.id] || ''}
+                      onChange={(ev) => handleHorseMotifChange(equide.id, ev.target.value)}
+                      placeholder={`Ex: soins spécifiques pour ${equide.nom}`}
+                      className="w-full px-3 py-2.5 border border-[#e5e7eb] rounded-lg text-sm focus:outline-none focus:border-[#ff6b35] transition-all duration-150 placeholder-[#9ca3af]"
+                      required
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Adresse du rendez-vous */}
             <div className="space-y-4">
