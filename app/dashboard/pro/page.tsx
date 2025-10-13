@@ -173,11 +173,12 @@ export default function ProDashboardPage() {
         console.log('- Aujourd\'hui fin:', todayEnd);
         console.log('- Demain:', tomorrow);
 
-        // 1. Récupérer les rendez-vous d'aujourd'hui (tous statuts d'abord)
+        // 1. Récupérer les rendez-vous d'aujourd'hui (uniquement statut "confirmed")
         const { data: todayAppointments, error: todayError } = await supabase!
           .from('appointments')
           .select('id, main_slot, comment, status, equide_ids, proprio_id')
           .eq('pro_id', proId)
+          .eq('status', 'confirmed')
           .gte('main_slot', todayStart)
           .lte('main_slot', todayEnd)
           .order('main_slot', { ascending: true });
@@ -231,11 +232,12 @@ export default function ProDashboardPage() {
           setRendezVousAujourdhui(enrichedToday);
         }
 
-        // 2. Récupérer les prochains rendez-vous (tous statuts d'abord)
+        // 2. Récupérer les prochains rendez-vous (uniquement statut "confirmed")
         const { data: upcomingAppointments, error: upcomingError } = await supabase!
           .from('appointments')
           .select('id, main_slot, comment, status, equide_ids, proprio_id')
           .eq('pro_id', proId)
+          .eq('status', 'confirmed')
           .gte('main_slot', tomorrow)
           .order('main_slot', { ascending: true })
           .limit(5);
@@ -457,34 +459,41 @@ export default function ProDashboardPage() {
           
           <div className="space-y-3">
             {rendezVousAujourdhui.length > 0 ? (
-              rendezVousAujourdhui.map((rdv) => (
-                <div key={rdv.id} className="flex items-center justify-between p-4 bg-[#f9fafb] rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-[#f86f4d10] rounded-lg flex items-center justify-center">
-                      <Calendar className="w-5 h-5 text-[#f86f4d]" />
+              rendezVousAujourdhui.map((rdv) => {
+                const equidesNames = rdv.equides && rdv.equides.length > 0 
+                  ? rdv.equides.map(e => e.nom).join(', ')
+                  : 'Consultation';
+                const ownerName = rdv.proprio_profiles?.prenom && rdv.proprio_profiles?.nom
+                  ? `${rdv.proprio_profiles.prenom} ${rdv.proprio_profiles.nom}`
+                  : 'Propriétaire inconnu';
+                
+                return (
+                  <div key={rdv.id} className="flex items-center justify-between p-4 bg-[#f9fafb] rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-[#f86f4d10] rounded-lg flex items-center justify-center">
+                        <Calendar className="w-5 h-5 text-[#f86f4d]" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-[#111827]">
+                          {rdv.comment || equidesNames}
+                        </p>
+                        <p className="text-sm text-[#6b7280]">
+                          {ownerName} • {rdv.comment ? rdv.comment.substring(0, 30) + (rdv.comment.length > 30 ? '...' : '') : equidesNames}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-[#111827]">
-                        {rdv.proprio_profiles?.prenom} {rdv.proprio_profiles?.nom}
-                      </p>
-                      <p className="text-sm text-[#6b7280]">
-                        {rdv.equides && rdv.equides.length > 0 
-                          ? rdv.equides.map(e => e.nom).join(', ') 
-                          : 'Consultation'} • {rdv.comment.substring(0, 30)}{rdv.comment.length > 30 ? '...' : ''}
-                      </p>
+                    <div className="text-right">
+                      <p className="font-medium text-[#111827]">{formatTime(rdv.main_slot)}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium text-[#111827]">{formatTime(rdv.main_slot)}</p>
-                  </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-[#f3f4f6] rounded-full flex items-center justify-center mx-auto mb-4">
                   <Calendar className="w-8 h-8 text-[#9ca3af]" />
                 </div>
-                <h3 className="text-lg font-medium text-[#111827] mb-2">Aucun rendez-vous aujourd'hui</h3>
+                <h3 className="text-lg font-medium text-[#111827] mb-2">Aucun rendez-vous confirmé aujourd'hui</h3>
                 <p className="text-[#6b7280] text-sm">Vos rendez-vous confirmés pour aujourd'hui apparaîtront ici</p>
               </div>
             )}
@@ -503,23 +512,25 @@ export default function ProDashboardPage() {
             {prochainsRendezVous.length > 0 ? (
               prochainsRendezVous.map((rdv) => {
                 const { date, time } = formatDateTimeForDisplay(rdv.main_slot);
+                const equidesNames = rdv.equides && rdv.equides.length > 0 
+                  ? rdv.equides.map(e => e.nom).join(', ')
+                  : 'Consultation';
+                const ownerName = rdv.proprio_profiles?.prenom && rdv.proprio_profiles?.nom
+                  ? `${rdv.proprio_profiles.prenom} ${rdv.proprio_profiles.nom}`
+                  : 'Propriétaire inconnu';
+                
                 return (
                   <div key={rdv.id} className="flex items-center justify-between p-4 bg-[#f9fafb] rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-[#f86f4d10] rounded-lg flex items-center justify-center">
                         <Calendar className="w-5 h-5 text-[#f86f4d]" />
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium text-[#111827]">
-                          {rdv.comment || 'Consultation'}
-                          {rdv.proprio_profiles?.prenom && rdv.proprio_profiles?.nom && (
-                            <span className="ml-2 text-sm font-normal text-[#6b7280]">
-                              • {rdv.proprio_profiles.prenom} {rdv.proprio_profiles.nom}
-                            </span>
-                          )}
+                          {rdv.comment || equidesNames}
                         </p>
                         <p className="text-sm text-[#6b7280]">
-                          {date} à {time}
+                          {date} à {time} • {ownerName}
                         </p>
                       </div>
                     </div>
@@ -531,7 +542,7 @@ export default function ProDashboardPage() {
                 <div className="w-16 h-16 bg-[#f3f4f6] rounded-full flex items-center justify-center mx-auto mb-4">
                   <Clock className="w-8 h-8 text-[#9ca3af]" />
                 </div>
-                <h3 className="text-lg font-medium text-[#111827] mb-2">Aucun rendez-vous à venir</h3>
+                <h3 className="text-lg font-medium text-[#111827] mb-2">Aucun rendez-vous confirmé à venir</h3>
                 <p className="text-[#6b7280] text-sm">Vos prochains rendez-vous confirmés apparaîtront ici</p>
               </div>
             )}
