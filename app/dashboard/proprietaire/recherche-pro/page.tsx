@@ -480,7 +480,7 @@ export default function RechercheProPage() {
     today.setHours(0, 0, 0, 0);
     
     if (selectedDateObj.getTime() === today.getTime()) {
-      showToast('Les rendez-vous doivent être pris au moins 1 jour à l\'avance. Veuillez sélectionner une date à partir de demain.', 'error');
+      // Règle J+1 silencieuse: échec sans message visible
       return;
     }
 

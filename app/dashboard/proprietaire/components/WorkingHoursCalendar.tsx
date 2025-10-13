@@ -172,9 +172,9 @@ export default function WorkingHoursCalendar({
               return 'text-neutral-400 cursor-not-allowed bg-neutral-100 line-through opacity-60';
             }
             
-            // Jour actuel DÉSACTIVÉ (règle J+1 minimum)
+            // Jour actuel DÉSACTIVÉ (règle J+1 minimum) — même style que jours fermés
             if (day.isToday) {
-              return 'text-neutral-400 cursor-not-allowed bg-neutral-50 opacity-70';
+              return 'text-neutral-400 cursor-not-allowed bg-neutral-100 line-through opacity-60';
             }
             
             // Jour normal disponible
@@ -195,20 +195,10 @@ export default function WorkingHoursCalendar({
               <span className={day.isToday ? 'font-medium' : ''}>
                 {day.date.getDate()}
               </span>
-              {/* Petit point gris sous le jour actuel (désactivé) */}
-              {day.isToday && (
-                <div className="mt-0.5 h-1.5 w-1.5 rounded-full bg-neutral-400 opacity-50"></div>
-              )}
+              {/* Pas d'indication textuelle ou supplémentaire pour J+1 */}
             </button>
           );
         })}
-      </div>
-
-      {/* Message d'information */}
-      <div className="mt-3 pt-3 border-t border-neutral-200">
-        <p className="text-xs text-neutral-500 text-center">
-          Les rendez-vous doivent être pris au moins 1 jour à l'avance
-        </p>
       </div>
     </div>
   );
