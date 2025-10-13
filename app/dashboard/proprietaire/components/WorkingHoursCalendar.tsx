@@ -171,9 +171,9 @@ export default function WorkingHoursCalendar({
               return 'text-neutral-400 cursor-not-allowed bg-neutral-100 line-through opacity-60';
             }
             
-            // Jour actuel disponible (style Linear-like)
+            // Jour actuel disponible (pas de style particulier, juste le point orange)
             if (day.isToday) {
-              return 'bg-neutral-100 text-neutral-800 font-medium border border-neutral-300 hover:bg-neutral-200 cursor-pointer';
+              return 'text-neutral-700 hover:bg-neutral-100 cursor-pointer';
             }
             
             // Jour normal disponible
@@ -187,11 +187,17 @@ export default function WorkingHoursCalendar({
               onClick={() => handleDateClick(day)}
               disabled={!day.isWorkingDay || day.isPast || !day.isCurrentMonth}
               className={`
-                h-10 w-10 text-sm rounded-lg transition-all duration-200 flex items-center justify-center relative
+                h-10 w-10 text-sm rounded-lg transition-all duration-200 flex flex-col items-center justify-center relative
                 ${getButtonClasses()}
               `}
             >
-              {day.date.getDate()}
+              <span className={day.isToday && !day.isSelected ? 'font-medium' : ''}>
+                {day.date.getDate()}
+              </span>
+              {/* Petit point orange sous le jour actuel */}
+              {day.isToday && (
+                <div className="mt-0.5 h-1.5 w-1.5 rounded-full bg-[#FF5757]"></div>
+              )}
             </button>
           );
         })}
