@@ -152,32 +152,49 @@ export default function WorkingHoursCalendar({
 
       {/* Grille des jours */}
       <div className="grid grid-cols-7 gap-1" style={{ paddingLeft: '8px', paddingRight: '8px' }}>
-        {days.map((day, index) => (
-          <button
-            key={index}
-            type="button"
-            onClick={() => handleDateClick(day)}
-            disabled={!day.isWorkingDay || day.isPast || !day.isCurrentMonth}
-            className={`
-              h-10 w-10 text-sm rounded-lg transition-all duration-200 flex items-center justify-center relative
-              ${!day.isCurrentMonth 
-                ? 'text-neutral-300' 
-                : day.isPast 
-                  ? 'text-neutral-300 cursor-not-allowed opacity-50' 
-                  : !day.isWorkingDay
-                    ? 'text-neutral-400 cursor-not-allowed bg-neutral-100 line-through opacity-60'
-                    : 'text-neutral-700 hover:bg-neutral-100 cursor-pointer'
-              }
-              ${day.isToday && day.isWorkingDay && !day.isPast ? 'font-semibold ring-2 ring-[#ff6b35] ring-opacity-50' : ''}
-              ${day.isSelected ? 'bg-[#ff6b35] text-white hover:bg-[#e55a2b] shadow-sm' : ''}
-            `}
-          >
-            {day.date.getDate()}
-            {day.isToday && !day.isSelected && (
-              <div className="absolute bottom-1 w-1 h-1 bg-[#ff6b35] rounded-full"></div>
-            )}
-          </button>
-        ))}
+        {days.map((day, index) => {
+          // Déterminer les classes selon la priorité : sélectionné > aujourd'hui > normal
+          const getButtonClasses = () => {
+            // Jour sélectionné (priorité max)
+            if (day.isSelected) {
+              return 'bg-[#ff6b35] text-white hover:bg-[#e55a2b] shadow-sm font-medium';
+            }
+            
+            // Jour non disponible (désactivé, hors mois, passé)
+            if (!day.isCurrentMonth) {
+              return 'text-neutral-300';
+            }
+            if (day.isPast) {
+              return 'text-neutral-300 cursor-not-allowed opacity-50';
+            }
+            if (!day.isWorkingDay) {
+              return 'text-neutral-400 cursor-not-allowed bg-neutral-100 line-through opacity-60';
+            }
+            
+            // Jour actuel disponible (style Linear-like)
+            if (day.isToday) {
+              return 'bg-neutral-100 text-neutral-800 font-medium border border-neutral-300 hover:bg-neutral-200 cursor-pointer';
+            }
+            
+            // Jour normal disponible
+            return 'text-neutral-700 hover:bg-neutral-100 cursor-pointer';
+          };
+
+          return (
+            <button
+              key={index}
+              type="button"
+              onClick={() => handleDateClick(day)}
+              disabled={!day.isWorkingDay || day.isPast || !day.isCurrentMonth}
+              className={`
+                h-10 w-10 text-sm rounded-lg transition-all duration-200 flex items-center justify-center relative
+                ${getButtonClasses()}
+              `}
+            >
+              {day.date.getDate()}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

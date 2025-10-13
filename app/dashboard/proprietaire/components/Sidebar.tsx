@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { LayoutDashboard, Heart, CalendarDays, Search, User } from 'lucide-react';
 import LogoutButton from '@/components/LogoutButton';
 
 interface SidebarProps {
@@ -10,11 +11,11 @@ interface SidebarProps {
 }
 
 const navigation = [
-  { name: 'Tableau de bord', href: '/dashboard/proprietaire' },
-  { name: 'Mes équidés', href: '/dashboard/proprietaire/equides' },
-  { name: 'Mes rendez-vous', href: '/dashboard/proprietaire/rendez-vous' },
-  { name: 'Recherche pro', href: '/dashboard/proprietaire/recherche-pro' },
-  { name: 'Mon profil', href: '/dashboard/proprietaire/profil' },
+  { name: 'Tableau de bord', href: '/dashboard/proprietaire', icon: LayoutDashboard },
+  { name: 'Mes équidés', href: '/dashboard/proprietaire/equides', icon: Heart },
+  { name: 'Mes rendez-vous', href: '/dashboard/proprietaire/rendez-vous', icon: CalendarDays },
+  { name: 'Recherche pro', href: '/dashboard/proprietaire/recherche-pro', icon: Search },
+  { name: 'Mon profil', href: '/dashboard/proprietaire/profil', icon: User },
 ];
 
 export default function Sidebar({ onClose, isDesktop }: SidebarProps) {
@@ -49,18 +50,20 @@ export default function Sidebar({ onClose, isDesktop }: SidebarProps) {
       <nav className="flex-1 px-4 py-6 space-y-1">
         {navigation.map((item) => {
           const isActive = pathname === item.href;
+          const Icon = item.icon;
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={`block px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
+              className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
                 isActive 
                   ? 'bg-[#f86f4d] text-white' 
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
               }`}
               onClick={!isDesktop ? onClose : undefined}
             >
-              {item.name}
+              <Icon className="h-4 w-4" />
+              <span>{item.name}</span>
             </Link>
           );
         })}
