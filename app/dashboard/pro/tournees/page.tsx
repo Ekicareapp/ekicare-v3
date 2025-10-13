@@ -593,12 +593,12 @@ export default function TourneesPage() {
             </div>
 
               {/* Contenu du dropdown */}
-            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+            <div className={`transition-all duration-300 ease-in-out ${
+                isOpen ? 'max-h-96 opacity-100 overflow-visible' : 'max-h-0 opacity-0 overflow-hidden'
               }`}>
                 <div className="border-t border-neutral-200">
                   <div className={`p-4 space-y-3 ${
-                    tournee.appointments.length > 4 ? 'max-h-60 overflow-y-auto' : ''
+                    tournee.appointments.length > 4 ? 'max-h-60 overflow-visible' : ''
                   }`}>
                     {tournee.appointments.map((rdv, index) => (
                   <div 
