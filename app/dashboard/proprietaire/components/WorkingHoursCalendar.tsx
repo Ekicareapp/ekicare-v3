@@ -37,17 +37,34 @@ export default function WorkingHoursCalendar({
     
     const days = [];
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time for comparison
     const minDateObj = new Date(minDate);
+    minDateObj.setHours(0, 0, 0, 0);
     
     for (let i = 0; i < 42; i++) {
       const date = new Date(startDate);
       date.setDate(startDate.getDate() + i);
+      date.setHours(0, 0, 0, 0); // Reset time
       
       const isCurrentMonth = date.getMonth() === month;
       const isToday = date.toDateString() === today.toDateString();
       const isPast = date < minDateObj;
-      // Si workingHours est null, tous les jours sont désactivés par défaut (sécurité)
-      const isWorkingDay = workingHours ? isDateWorkingDay(workingHours, date) : false;
+      
+      // Vérifier si c'est un jour de travail en utilisant getDay() (0=dimanche, 1=lundi, ...)
+      let isWorkingDay = false;
+      if (workingHours) {
+        const dayOfWeekIndex = date.getDay(); // 0=dimanche, 1=lundi, 2=mardi, etc.
+        const dayNames = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+        const dayName = dayNames[dayOfWeekIndex];
+        const dayHours = workingHours[dayName];
+        isWorkingDay = dayHours?.active === true;
+        
+        // Debug log pour le premier jour du mois uniquement
+        if (i === 0 || (isCurrentMonth && date.getDate() === 1)) {
+          console.log(`📅 Calendrier - Premier jour: ${dayName} (index ${dayOfWeekIndex}), active: ${dayHours?.active}`);
+        }
+      }
+      
       // Créer la dateString en utilisant les composants locaux pour éviter les décalages de fuseau horaire
       const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
       const isSelected = value && dateString === value;
@@ -162,26 +179,6 @@ export default function WorkingHoursCalendar({
           </button>
         ))}
       </div>
-
-      {/* Légende */}
-      {workingHours && (
-        <div className="mt-4 pt-3 border-t border-neutral-200">
-          <div className="flex flex-wrap gap-3 text-xs text-neutral-600">
-            <div className="flex items-center gap-1">
-              <div className="w-6 h-6 rounded bg-[#ff6b35] flex items-center justify-center text-white">15</div>
-              <span>Sélectionné</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-6 h-6 rounded bg-neutral-100 flex items-center justify-center text-neutral-400 line-through">15</div>
-              <span>Fermé</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-6 h-6 rounded flex items-center justify-center text-neutral-300 opacity-50">15</div>
-              <span>Passé</span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

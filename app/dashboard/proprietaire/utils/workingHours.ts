@@ -35,15 +35,20 @@ export const getProfessionalWorkingHours = async (userId: string): Promise<Worki
 
 /**
  * Vérifie si un jour de la semaine est un jour de travail
+ * @param workingHours - Les horaires de travail du professionnel
+ * @param dayOfWeek - Index du jour (0 = dimanche, 1 = lundi, ..., 6 = samedi)
  */
 export const isWorkingDay = (workingHours: WorkingHours | null, dayOfWeek: number): boolean => {
   if (!workingHours) {
     return false; // Si pas d'horaires définis, on considère que tous les jours sont NON travaillés (sécurité)
   }
 
+  // Mapping JS standard : 0=dimanche, 1=lundi, 2=mardi, 3=mercredi, 4=jeudi, 5=vendredi, 6=samedi
   const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
   const dayName = days[dayOfWeek];
   const dayHours = workingHours[dayName];
+  
+  console.log(`🔍 isWorkingDay: dayOfWeek=${dayOfWeek}, dayName=${dayName}, active=${dayHours?.active}`);
   
   return dayHours?.active === true;
 };
@@ -52,7 +57,7 @@ export const isWorkingDay = (workingHours: WorkingHours | null, dayOfWeek: numbe
  * Vérifie si une date est un jour de travail
  */
 export const isDateWorkingDay = (workingHours: WorkingHours | null, date: Date): boolean => {
-  const dayOfWeek = date.getUTCDay(); // Utiliser UTC pour éviter les décalages
+  const dayOfWeek = date.getDay(); // 0=dimanche, 1=lundi, 2=mardi, etc.
   return isWorkingDay(workingHours, dayOfWeek);
 };
 
@@ -126,7 +131,7 @@ export const generateAvailableTimeSlots = async (
   proId: string,
   consultationDuration: number = 30
 ): Promise<string[]> => {
-  const dayOfWeek = date.getUTCDay();
+  const dayOfWeek = date.getDay(); // 0=dimanche, 1=lundi, etc.
   const dayHours = getWorkingHoursForDay(workingHours, dayOfWeek);
   
   if (!dayHours) return [];

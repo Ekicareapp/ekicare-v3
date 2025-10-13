@@ -622,9 +622,10 @@ export default function RechercheProPage() {
       return false; // Si pas d'horaires définis, on considère que tous les jours sont NON travaillés (sécurité)
     }
     
-    // Corriger le problème de fuseau horaire en créant la date en UTC
+    // Créer la date locale (pas UTC) pour correspondre au calendrier
     const [year, month, day] = dateString.split('-').map(Number);
-    const date = new Date(Date.UTC(year, month - 1, day)); // Créer la date en UTC
+    const date = new Date(year, month - 1, day);
+    date.setHours(0, 0, 0, 0);
     
     return isDateWorkingDay(selectedProfWorkingHours, date);
   };
@@ -640,16 +641,17 @@ export default function RechercheProPage() {
       }
 
       const [year, month, day] = date.split('-').map(Number);
-      const dateObj = new Date(Date.UTC(year, month - 1, day));
+      const dateObj = new Date(year, month - 1, day);
+      dateObj.setHours(0, 0, 0, 0);
       const consultationDuration = selectedProfessionnel?.average_consultation_duration || 30;
       
-      // Récupérer les horaires du jour
-      const dayOfWeek = dateObj.getUTCDay();
+      // Récupérer les horaires du jour en utilisant getDay() (0=dimanche, 1=lundi, etc.)
+      const dayOfWeek = dateObj.getDay();
       const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
       const dayName = days[dayOfWeek];
       const dayHours = selectedProfWorkingHours?.[dayName];
       
-      console.log('🔍 Jour:', dayName, 'Horaires:', dayHours);
+      console.log('🔍 Jour:', dayName, '(index:', dayOfWeek, '), Horaires:', dayHours);
       
       // Si pas d'horaires ou jour non actif, pas de créneaux
       if (!dayHours || !dayHours.active) {
