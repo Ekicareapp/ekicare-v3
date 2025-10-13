@@ -84,7 +84,8 @@ export default function WorkingHoursCalendar({
   };
 
   const handleDateClick = (day: any) => {
-    if (!day.isWorkingDay || day.isPast || !day.isCurrentMonth) return;
+    // Empêcher la sélection du jour actuel, des jours passés, des jours non travaillés et des jours hors du mois
+    if (!day.isWorkingDay || day.isPast || !day.isCurrentMonth || day.isToday) return;
     
     setSelectedDate(day.dateString);
     onChange(day.dateString);
@@ -160,7 +161,7 @@ export default function WorkingHoursCalendar({
               return 'bg-[#ff6b35] text-white hover:bg-[#e55a2b] shadow-sm font-medium';
             }
             
-            // Jour non disponible (désactivé, hors mois, passé)
+            // Jour non disponible (désactivé, hors mois, passé, aujourd'hui)
             if (!day.isCurrentMonth) {
               return 'text-neutral-300';
             }
@@ -171,9 +172,9 @@ export default function WorkingHoursCalendar({
               return 'text-neutral-400 cursor-not-allowed bg-neutral-100 line-through opacity-60';
             }
             
-            // Jour actuel disponible (pas de style particulier, juste le point orange)
+            // Jour actuel DÉSACTIVÉ (règle J+1 minimum)
             if (day.isToday) {
-              return 'text-neutral-700 hover:bg-neutral-100 cursor-pointer';
+              return 'text-neutral-400 cursor-not-allowed bg-neutral-50 opacity-70';
             }
             
             // Jour normal disponible
@@ -185,22 +186,29 @@ export default function WorkingHoursCalendar({
               key={index}
               type="button"
               onClick={() => handleDateClick(day)}
-              disabled={!day.isWorkingDay || day.isPast || !day.isCurrentMonth}
+              disabled={!day.isWorkingDay || day.isPast || !day.isCurrentMonth || day.isToday}
               className={`
                 h-10 w-10 text-sm rounded-lg transition-all duration-200 flex flex-col items-center justify-center relative
                 ${getButtonClasses()}
               `}
             >
-              <span className={day.isToday && !day.isSelected ? 'font-medium' : ''}>
+              <span className={day.isToday ? 'font-medium' : ''}>
                 {day.date.getDate()}
               </span>
-              {/* Petit point orange sous le jour actuel */}
+              {/* Petit point gris sous le jour actuel (désactivé) */}
               {day.isToday && (
-                <div className="mt-0.5 h-1.5 w-1.5 rounded-full bg-[#FF5757]"></div>
+                <div className="mt-0.5 h-1.5 w-1.5 rounded-full bg-neutral-400 opacity-50"></div>
               )}
             </button>
           );
         })}
+      </div>
+
+      {/* Message d'information */}
+      <div className="mt-3 pt-3 border-t border-neutral-200">
+        <p className="text-xs text-neutral-500 text-center">
+          Les rendez-vous doivent être pris au moins 1 jour à l'avance
+        </p>
       </div>
     </div>
   );

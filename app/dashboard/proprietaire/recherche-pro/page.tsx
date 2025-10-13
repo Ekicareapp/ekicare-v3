@@ -471,6 +471,19 @@ export default function RechercheProPage() {
       return;
     }
 
+    // Validation de la règle J+1 (pas de réservation pour le jour même)
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    const selectedDateObj = new Date(year, month - 1, day);
+    selectedDateObj.setHours(0, 0, 0, 0);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (selectedDateObj.getTime() === today.getTime()) {
+      showToast('Les rendez-vous doivent être pris au moins 1 jour à l\'avance. Veuillez sélectionner une date à partir de demain.', 'error');
+      return;
+    }
+
     // Validation de l'adresse (obligatoire)
     if (!rdvFormData.adresse || rdvFormData.adresse.trim() === '') {
       showToast('L\'adresse du rendez-vous est obligatoire. Veuillez indiquer où se déroulera la consultation.', 'error');
@@ -643,6 +656,17 @@ export default function RechercheProPage() {
       const [year, month, day] = date.split('-').map(Number);
       const dateObj = new Date(year, month - 1, day);
       dateObj.setHours(0, 0, 0, 0);
+      
+      // Vérifier si la date est aujourd'hui (règle J+1 minimum)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (dateObj.getTime() === today.getTime()) {
+        console.log('❌ Réservation impossible pour le jour même (règle J+1)');
+        setAvailableTimes([]);
+        return;
+      }
+      
       const consultationDuration = selectedProfessionnel?.average_consultation_duration || 30;
       
       // Récupérer les horaires du jour en utilisant getDay() (0=dimanche, 1=lundi, etc.)
@@ -1077,7 +1101,11 @@ export default function RechercheProPage() {
                       console.log('✅ CALENDRIER: loadAvailableTimes terminé');
                     }}
                     workingHours={selectedProfWorkingHours}
-                    minDate={new Date().toISOString().split('T')[0]}
+                    minDate={(() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() + 1); // J+1 minimum
+                      return d.toISOString().split('T')[0];
+                    })()}
                     className="w-full"
                   />
                 </div>

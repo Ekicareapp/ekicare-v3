@@ -87,6 +87,33 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
+    // Règle J+1: interdire toute réservation pour le jour même (indépendant du fuseau horaire)
+    try {
+      const mainSlotDate = new Date(main_slot);
+      if (isNaN(mainSlotDate.getTime())) {
+        return NextResponse.json({ error: 'main_slot invalide' }, { status: 400 });
+      }
+      // Compare en UTC en supprimant l'heure
+      const requestedUTCDate = new Date(Date.UTC(
+        mainSlotDate.getUTCFullYear(),
+        mainSlotDate.getUTCMonth(),
+        mainSlotDate.getUTCDate()
+      ));
+      const todayUTC = new Date();
+      const todayUTCDateOnly = new Date(Date.UTC(
+        todayUTC.getUTCFullYear(),
+        todayUTC.getUTCMonth(),
+        todayUTC.getUTCDate()
+      ));
+      if (requestedUTCDate.getTime() === todayUTCDateOnly.getTime()) {
+        return NextResponse.json({
+          error: 'Les rendez-vous doivent être pris au moins 1 jour à l\'avance.'
+        }, { status: 400 });
+      }
+    } catch (e) {
+      return NextResponse.json({ error: 'Erreur de validation de la date' }, { status: 400 });
+    }
+
     // Vérifier que l'utilisateur est un propriétaire
     const { data: userData, error: userRoleError } = await supabaseAdmin
       .from('users')
