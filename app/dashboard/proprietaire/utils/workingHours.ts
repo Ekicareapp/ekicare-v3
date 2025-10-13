@@ -38,7 +38,7 @@ export const getProfessionalWorkingHours = async (userId: string): Promise<Worki
  */
 export const isWorkingDay = (workingHours: WorkingHours | null, dayOfWeek: number): boolean => {
   if (!workingHours) {
-    return true; // Si pas d'horaires définis, on considère que tous les jours sont travaillés
+    return false; // Si pas d'horaires définis, on considère que tous les jours sont NON travaillés (sécurité)
   }
 
   const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];

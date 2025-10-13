@@ -389,6 +389,19 @@ export default function RechercheProPage() {
     console.log('🔍 Chargement des horaires pour user_id:', professionnel.user_id);
     const workingHours = await getProfessionalWorkingHours(professionnel.user_id);
     console.log('📅 Horaires récupérés:', workingHours);
+    
+    // Debug: Vérifier le statut de chaque jour
+    if (workingHours) {
+      console.log('📋 Détail des horaires par jour:');
+      const days = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
+      days.forEach((day, index) => {
+        const dayHours = workingHours[day];
+        console.log(`  ${day} (${index}):`, dayHours?.active ? `✅ ${dayHours.start}-${dayHours.end}` : '❌ fermé');
+      });
+    } else {
+      console.warn('⚠️ Aucun horaire défini pour ce professionnel');
+    }
+    
     setSelectedProfWorkingHours(workingHours);
     
     // Réinitialiser les créneaux disponibles
@@ -606,7 +619,7 @@ export default function RechercheProPage() {
   // Vérifier si une date est un jour de travail
   const isWorkingDate = (dateString: string): boolean => {
     if (!selectedProfWorkingHours) {
-      return true; // Si pas d'horaires définis, on considère que tous les jours sont travaillés
+      return false; // Si pas d'horaires définis, on considère que tous les jours sont NON travaillés (sécurité)
     }
     
     // Corriger le problème de fuseau horaire en créant la date en UTC

@@ -46,7 +46,8 @@ export default function WorkingHoursCalendar({
       const isCurrentMonth = date.getMonth() === month;
       const isToday = date.toDateString() === today.toDateString();
       const isPast = date < minDateObj;
-      const isWorkingDay = isDateWorkingDay(workingHours, date);
+      // Si workingHours est null, tous les jours sont désactivés par défaut (sécurité)
+      const isWorkingDay = workingHours ? isDateWorkingDay(workingHours, date) : false;
       // Créer la dateString en utilisant les composants locaux pour éviter les décalages de fuseau horaire
       const dateString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
       const isSelected = value && dateString === value;
@@ -145,12 +146,12 @@ export default function WorkingHoursCalendar({
               ${!day.isCurrentMonth 
                 ? 'text-neutral-300' 
                 : day.isPast 
-                  ? 'text-neutral-300 cursor-not-allowed' 
+                  ? 'text-neutral-300 cursor-not-allowed opacity-50' 
                   : !day.isWorkingDay
-                    ? 'text-neutral-300 cursor-not-allowed bg-neutral-50'
+                    ? 'text-neutral-400 cursor-not-allowed bg-neutral-100 line-through opacity-60'
                     : 'text-neutral-700 hover:bg-neutral-100 cursor-pointer'
               }
-              ${day.isToday ? 'font-semibold' : ''}
+              ${day.isToday && day.isWorkingDay && !day.isPast ? 'font-semibold ring-2 ring-[#ff6b35] ring-opacity-50' : ''}
               ${day.isSelected ? 'bg-[#ff6b35] text-white hover:bg-[#e55a2b] shadow-sm' : ''}
             `}
           >
@@ -161,6 +162,26 @@ export default function WorkingHoursCalendar({
           </button>
         ))}
       </div>
+
+      {/* Légende */}
+      {workingHours && (
+        <div className="mt-4 pt-3 border-t border-neutral-200">
+          <div className="flex flex-wrap gap-3 text-xs text-neutral-600">
+            <div className="flex items-center gap-1">
+              <div className="w-6 h-6 rounded bg-[#ff6b35] flex items-center justify-center text-white">15</div>
+              <span>Sélectionné</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-6 h-6 rounded bg-neutral-100 flex items-center justify-center text-neutral-400 line-through">15</div>
+              <span>Fermé</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-6 h-6 rounded flex items-center justify-center text-neutral-300 opacity-50">15</div>
+              <span>Passé</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
