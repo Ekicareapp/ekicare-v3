@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 // Importer la police DM Sans
 import { DM_Sans } from 'next/font/google';
@@ -11,41 +13,11 @@ const dmSans = DM_Sans({
 
 export default function Home() {
   return (
-    <div className={`min-h-screen ${dmSans.className}`} style={{ backgroundColor: 'white' }}>
-      {/* Header */}
-      <header className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-        <Image
-                src="/logo-ekicare.png"
-                alt="Ekicare"
-                width={120}
-                height={40}
-                className="h-10 w-auto"
-              />
-            </div>
-            <div className="flex space-x-4">
-              <Link
-                href="/login"
-                className="text-gray-700 px-4 py-2 text-sm font-medium transition-colors hover:text-[#F86F4D]"
-              >
-                Se connecter
-              </Link>
-              <Link
-                href="/signup"
-                className="text-white px-4 py-2 text-sm font-medium transition-colors hover:opacity-90 border border-[#F86F4D] rounded-sm"
-                style={{ backgroundColor: '#F86F4D' }}
-              >
-                S'inscrire
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className={`flex flex-col min-h-screen ${dmSans.className}`} style={{ backgroundColor: 'white' }}>
+      <Navbar />
 
       {/* Hero Section */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
         <div className="text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
             La prise de rendez-vous équine,<br />
@@ -57,20 +29,15 @@ export default function Home() {
             gérez vos rendez-vous et développez votre activité équestre en toute simplicité.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <Link
-              href="/signup"
-              className="text-white px-6 py-3 text-base font-medium transition-colors hover:opacity-90 border border-[#F86F4D] rounded-sm"
-              style={{ backgroundColor: '#F86F4D' }}
+          <div className="flex justify-center mb-16">
+            <a
+              href="https://cal.com/ekicare/demo"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-8 py-4 rounded-lg font-semibold text-white transition-colors bg-[#FF6B4A] hover:bg-[#e75c3b]"
             >
-              Je suis propriétaire
-            </Link>
-            <Link
-              href="/signup"
-              className="bg-white text-gray-700 px-6 py-3 text-base font-medium transition-colors hover:bg-gray-50 border border-gray-200 rounded-sm"
-            >
-              Je suis professionnel
-            </Link>
+              Demander une démo
+            </a>
           </div>
 
           {/* Features Grid */}
@@ -136,40 +103,7 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8 border-t border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <Image
-              src="/logo-ekicare.png"
-              alt="Ekicare"
-              width={120}
-              height={40}
-              className="h-10 w-auto mx-auto mb-4 brightness-0 invert"
-            />
-            <p className="text-gray-400">
-              © 2025 Ekicare. Tous droits réservés.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4 mt-2 text-sm text-neutral-400">
-              <Link href="/legal/mentions-legales" className="hover:underline hover:text-neutral-300">
-                Mentions légales
-              </Link>
-              <Link href="/legal/confidentialite" className="hover:underline hover:text-neutral-300">
-                Confidentialité
-              </Link>
-              <Link href="/legal/cookies" className="hover:underline hover:text-neutral-300">
-                Cookies
-              </Link>
-              <Link href="/legal/cgu" className="hover:underline hover:text-neutral-300">
-                CGU
-              </Link>
-              <Link href="/legal/cgv" className="hover:underline hover:text-neutral-300">
-                CGV
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

@@ -333,3 +333,5 @@ COMMENT ON COLUMN appointments.address IS 'Adresse exacte où se déroule le ren
 
 
 
+
+

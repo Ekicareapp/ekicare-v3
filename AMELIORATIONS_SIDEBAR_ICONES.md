@@ -358,3 +358,4 @@ Sidebar
 **Version** : 1.0  
 **Status** : ✅ Implémenté et testé
 
+
