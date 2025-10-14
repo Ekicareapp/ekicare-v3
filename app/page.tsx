@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import FAQSection from "@/components/FAQSection";
 import { useState } from "react";
 
 // Importer la police DM Sans
@@ -107,6 +108,44 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      {/* FAQ Section - between CTA and Footer */}
+      <FAQSection
+        items={[
+          {
+            question: 'Combien coûte l’utilisation d’Ekicare pour les propriétaires ?',
+            answer: 'L’utilisation d’Ekicare est gratuite pour les propriétaires. Vous pouvez rechercher des professionnels et prendre rendez-vous sans frais.'
+          },
+          {
+            question: 'Quel est le prix pour les professionnels ?',
+            answer: 'Les professionnels bénéficient d’un abonnement mensuel simple et transparent. Contactez-nous pour les tarifs actuels et les fonctionnalités incluses.'
+          },
+          {
+            question: 'Y a-t-il une période d’essai gratuite pour les pros ?',
+            answer: 'Oui, une période d’essai est proposée pour découvrir la plateforme et valider qu’elle convient à votre activité avant de vous engager.'
+          },
+          {
+            question: 'Puis-je résilier mon abonnement à tout moment ?',
+            answer: 'Oui, vous pouvez résilier directement depuis votre espace professionnel, sans frais cachés. L’accès reste actif jusqu’à la fin de la période en cours.'
+          },
+          {
+            question: 'Les paiements sont-ils sécurisés ?',
+            answer: 'Oui. Les paiements sont traités via un prestataire certifié et conforme aux standards de sécurité. Vos données sensibles ne sont jamais stockées par Ekicare.'
+          },
+          {
+            question: 'Est-ce que les rendez-vous sont confirmés automatiquement ?',
+            answer: 'Vous recevez une confirmation par email et dans votre espace une fois que le professionnel valide la demande. Certaines réservations peuvent aussi être confirmées instantanément selon les paramètres du pro.'
+          },
+          {
+            question: 'Est-ce que je peux gérer mes tournées directement depuis Ekicare ?',
+            answer: 'Oui, les professionnels peuvent planifier leurs tournées, visualiser leurs créneaux et optimiser leurs déplacements depuis l’interface Ekicare.'
+          },
+          {
+            question: 'Dois-je installer une application ?',
+            answer: 'Non, Ekicare fonctionne directement dans votre navigateur, sur ordinateur, tablette et mobile. Aucune installation n’est requise.'
+          }
+        ]}
+      />
 
       <Footer />
     </div>
