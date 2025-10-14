@@ -33,15 +33,20 @@ export default function Home() {
             gérez vos rendez-vous et développez votre activité équestre en toute simplicité.
           </p>
 
-          <div className="flex justify-center mb-16">
-            <a
-              href="https://cal.com/ekicare/demo"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-8 py-4 rounded-lg font-semibold text-white transition-colors bg-[#FF6B4A] hover:bg-[#e75c3b]"
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+            <Link
+              href="/signup"
+              className="text-white px-6 py-3 text-base font-medium transition-colors hover:opacity-90 border border-[#F86F4D] rounded-sm"
+              style={{ backgroundColor: '#F86F4D' }}
             >
-              Demander une démo
-            </a>
+              Je suis propriétaire
+            </Link>
+            <Link
+              href="/signup"
+              className="bg-white text-gray-700 px-6 py-3 text-base font-medium transition-colors hover:bg-gray-50 border border-gray-200 rounded-sm"
+            >
+              Je suis professionnel
+            </Link>
           </div>
 
           {/* Features Grid */}
@@ -85,23 +90,19 @@ export default function Home() {
 
           {/* CTA Section */}
           <div className="p-8 text-white border border-gray-800 rounded-sm" style={{ background: 'linear-gradient(90deg, #1B263B 0%, #415A77 100%)' }}>
-            <h2 className="text-2xl font-medium mb-3">Prêt à commencer ?</h2>
+            <h2 className="text-2xl font-medium mb-3">Vous êtes professionnel ?</h2>
             <p className="text-base mb-6 opacity-90">
-              Rejoignez la communauté Ekicare et transformez votre expérience équestre.
+              Réservez une démonstration personnalisée pour découvrir comment Ekicare peut simplifier votre activité au quotidien.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                href="/signup"
+            <div className="flex justify-center">
+              <a
+                href="https://cal.com/ekicare/demo"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="bg-white text-gray-900 px-6 py-3 text-base font-medium transition-colors hover:bg-gray-100 border border-white rounded-sm"
               >
-                Créer mon compte
-              </Link>
-              <Link
-                href="/login"
-                className="border border-white text-white px-6 py-3 text-base font-medium transition-colors hover:bg-white hover:text-gray-900 rounded-sm"
-              >
-                J'ai déjà un compte
-              </Link>
+                Réserver une démo
+              </a>
             </div>
           </div>
         </div>
