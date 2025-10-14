@@ -6,6 +6,7 @@ import Button from '@/app/dashboard/pro/components/Button';
 import Input from '@/app/dashboard/pro/components/Input';
 import { User, Save, AlertTriangle, Upload, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import { useDeleteAccount, DeleteConfirmModal } from '@/components/DeleteAccount';
 import SubscriptionCard from './SubscriptionCard';
  
 
@@ -78,6 +79,7 @@ export default function ProfilPage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const { isOpen, open, close, confirm } = useDeleteAccount();
   const [loading, setLoading] = useState(true);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -1032,7 +1034,7 @@ export default function ProfilPage() {
             </p>
             <Button
               variant="danger"
-              onClick={() => setShowDeleteConfirm(true)}
+              onClick={open}
               className="bg-[#fee2e2] text-[#b91c1c] border-[#fecaca] hover:bg-[#fecaca]"
             >
               Supprimer mon compte
@@ -1041,37 +1043,7 @@ export default function ProfilPage() {
         </div>
       </Card>
 
-      {/* Confirmation de suppression */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowDeleteConfirm(false)} />
-          <div className="flex min-h-full items-center justify-center p-4">
-            <div className="relative bg-white rounded-lg border border-[#e5e7eb] shadow-lg w-full max-w-md">
-              <div className="p-6">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-10 h-10 bg-[#fee2e2] rounded-lg flex items-center justify-center">
-                    <AlertTriangle className="w-5 h-5 text-[#ef4444]" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-[#111827]">Confirmer la suppression</h3>
-                </div>
-                
-                <p className="text-[#6b7280] mb-6">
-                  Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et toutes vos données seront perdues.
-                </p>
-                
-                <div className="flex items-center justify-end space-x-3">
-                  <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
-                    Annuler
-                  </Button>
-                  <Button variant="danger" onClick={handleDeleteAccount}>
-                    Confirmer la suppression
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmModal isOpen={isOpen} onCancel={close} onConfirm={confirm} />
 
       {/* Toast notification */}
       {toast && (
