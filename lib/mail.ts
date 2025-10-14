@@ -15,9 +15,32 @@ export async function sendWelcomeEmail(email: string): Promise<void> {
     const from = 'Ekicare <no-reply@ekicare.com>'
     const subject = 'Bienvenue sur Ekicare 🐴'
     const html = `
-      <h1>Bienvenue sur Ekicare !</h1>
-      <p>Merci d’avoir rejoint la plateforme. Vous pouvez dès maintenant accéder à votre espace et simplifier votre quotidien équestre.</p>
-      <a href="https://ekicare.com" style="color:#FF5757;">Accéder à Ekicare</a>
+      <div style="background-color:#ffffff;padding:24px 16px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" width="100%" style="max-width:600px;margin:0 auto;background-color:#ffffff;">
+          <tr>
+            <td align="center" style="padding:8px 24px 4px 24px;">
+              <img src="https://ekicare.com/logo-principal.png" alt="Ekicare" style="max-width:180px;width:100%;height:auto;display:block;margin:0 auto 16px auto;" />
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:8px 24px 0 24px;">
+              <h1 style="margin:0;font-size:24px;line-height:32px;color:#111827;font-weight:700;font-family:Arial,Helvetica,sans-serif;">Bienvenue sur Ekicare !</h1>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:12px 24px 0 24px;">
+              <p style="margin:0;color:#374151;font-size:14px;line-height:22px;font-family:Arial,Helvetica,sans-serif;">
+                Merci d’avoir rejoint la plateforme. Vous pouvez dès maintenant accéder à votre espace et simplifier votre quotidien équestre.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:20px 24px 24px 24px;">
+              <a href="https://ekicare.com" style="background-color:#FF5757;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:6px;display:inline-block;font-weight:600;font-size:14px;font-family:Arial,Helvetica,sans-serif;">Accéder à Ekicare</a>
+            </td>
+          </tr>
+        </table>
+      </div>
     `
 
     const { error } = await resend.emails.send({
