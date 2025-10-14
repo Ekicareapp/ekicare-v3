@@ -485,8 +485,18 @@ export default function SignupPage() {
                 : 'bg-[#f86f4d] text-white hover:bg-[#fa8265]'
             }`}
           >
-            {loading ? 'Chargement...' : "S'inscrire"}
+            {loading
+              ? 'Chargement...'
+              : role === 'PRO'
+                ? 'Démarrer mon essai gratuit'
+                : "S'inscrire"}
           </button>
+
+          {role === 'PRO' && (
+            <p className="mt-2 text-center text-[#6b7280] text-sm">
+              Gratuit pendant 7 jours puis 45,95€ par mois.
+            </p>
+          )}
 
           <div className="text-center mt-6">
             <p className="text-[#6b7280] text-sm sm:text-base">
