@@ -64,7 +64,6 @@ export async function POST(request: NextRequest) {
       custom_text: {
         submit: {
           message: 'Essai gratuit de 7 jours puis 45,95€ par mois.',
-          submit_button: 'Démarrer mon essai',
         },
       },
       // Assurer l'UI en français
