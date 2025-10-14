@@ -32,6 +32,10 @@ export async function POST(request: NextRequest) {
       ],
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/success-pro?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/paiement-requis`,
+      payment_method_collection: 'always',
+      subscription_data: {
+        trial_period_days: 7,
+      },
       ...(userId ? { client_reference_id: userId } : {}),
       metadata: {
         ...(userId ? { user_id: userId } : {}),
