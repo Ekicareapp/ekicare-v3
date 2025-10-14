@@ -290,36 +290,10 @@ export default function ProfilPage() {
     setShowDeleteModal(true);
   };
 
-  const handleConfirmDelete = async () => {
-    try {
-      const { data: { session } } = await supabase!.auth.getSession();
-      if (!session) {
-        alert('Utilisateur non authentifié');
-        return;
-      }
-      const res = await fetch('/api/auth/delete-account', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
-      if (!res.ok) {
-        let message = 'Erreur lors de la suppression du compte';
-        try {
-          const body = await res.json();
-          if (body && body.error) message = body.error;
-        } catch {}
-        alert(message);
-        return;
-      }
-      await supabase!.auth.signOut();
-      window.location.href = '/';
-    } catch (e) {
-      console.error('Erreur suppression compte:', e);
-      alert('Erreur inattendue lors de la suppression du compte');
-    } finally {
-      setShowDeleteModal(false);
-    }
+  const handleConfirmDelete = () => {
+    // TODO: Implement account deletion logic
+    console.log('Suppression du compte confirmée');
+    setShowDeleteModal(false);
   };
 
   const handleCancelDelete = () => {
