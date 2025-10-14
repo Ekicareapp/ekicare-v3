@@ -19,7 +19,7 @@ export default function FAQSection({ items }: FAQSectionProps) {
   }
 
   return (
-    <section className="py-16 md:py-20 bg-[#F9FAFB]">
+    <section className="pt-10 md:pt-12 pb-16 md:pb-20 bg-[#F9FAFB]">
       <div className="max-w-[720px] mx-auto px-4">
         <h2 className="text-2xl md:text-3xl font-semibold text-[#1B263B] text-center mb-8 md:mb-12">
           Questions fréquentes

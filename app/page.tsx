@@ -117,12 +117,12 @@ export default function Home() {
             answer: 'L’utilisation d’Ekicare est gratuite pour les propriétaires. Vous pouvez rechercher des professionnels et prendre rendez-vous sans frais.'
           },
           {
-            question: 'Quel est le prix pour les professionnels ?',
-            answer: 'Les professionnels bénéficient d’un abonnement mensuel simple et transparent. Contactez-nous pour les tarifs actuels et les fonctionnalités incluses.'
+            question: 'Quel est le tarif pour les professionnels ?',
+            answer: 'L’abonnement est à 45,95€/mois pour les professionnels, résiliable à tout moment.'
           },
           {
             question: 'Y a-t-il une période d’essai gratuite pour les pros ?',
-            answer: 'Oui, une période d’essai est proposée pour découvrir la plateforme et valider qu’elle convient à votre activité avant de vous engager.'
+            answer: 'Oui, tous les professionnels bénéficient automatiquement d’une période d’essai gratuite de 7 jours.'
           },
           {
             question: 'Puis-je résilier mon abonnement à tout moment ?',
@@ -130,11 +130,7 @@ export default function Home() {
           },
           {
             question: 'Les paiements sont-ils sécurisés ?',
-            answer: 'Oui. Les paiements sont traités via un prestataire certifié et conforme aux standards de sécurité. Vos données sensibles ne sont jamais stockées par Ekicare.'
-          },
-          {
-            question: 'Est-ce que les rendez-vous sont confirmés automatiquement ?',
-            answer: 'Vous recevez une confirmation par email et dans votre espace une fois que le professionnel valide la demande. Certaines réservations peuvent aussi être confirmées instantanément selon les paramètres du pro.'
+            answer: 'Oui. Ekicare est partenaire officiel de Stripe, l’un des prestataires de paiement les plus fiables et sécurisés au monde.'
           },
           {
             question: 'Est-ce que je peux gérer mes tournées directement depuis Ekicare ?',
