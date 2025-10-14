@@ -1,30 +1,17 @@
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@supabase/ssr'
-
-function getServerSupabase() {
-  const cookieStore = cookies()
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        },
-        set(name: string, value: string, options: any) {
-          cookieStore.set(name, value, options)
-        },
-        remove(name: string, options: any) {
-          cookieStore.set(name, '', { ...options, maxAge: 0 })
-        },
-      },
-    }
-  )
-}
+import { createClient } from '@supabase/supabase-js'
 
 export async function GET(request: Request) {
-  const supabase = getServerSupabase()
+  const authHeader = request.headers.get('Authorization') || ''
+  const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : ''
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { global: { headers: { Authorization: `Bearer ${token}` } } }
+  )
   const {
     data: { user },
     error: userError,
@@ -73,7 +60,16 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const supabase = getServerSupabase()
+  const authHeader = request.headers.get('Authorization') || ''
+  const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : ''
+  if (!token) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { global: { headers: { Authorization: `Bearer ${token}` } } }
+  )
   const {
     data: { user },
     error: userError,

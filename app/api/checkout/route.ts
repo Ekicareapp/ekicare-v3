@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil',
@@ -11,34 +9,17 @@ export async function POST(request: NextRequest) {
   try {
     console.log('💳 Création d\'une session de paiement Stripe')
     
-    // Authentification via Supabase server client (cookies)
-    const cookieStore = cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-          set(name: string, value: string, options: any) {
-            cookieStore.set(name, value, options)
-          },
-          remove(name: string, options: any) {
-            cookieStore.set(name, '', { ...options, maxAge: 0 })
-          },
-        },
+    // Contexte sans cookies: accepter un userId optionnel dans le corps de la requête
+    // pour lier la session à un utilisateur; sinon continuer sans metadata bloquante
+    let userId: string | undefined
+    try {
+      const body = await request.json().catch(() => null)
+      if (body && typeof body.userId === 'string') {
+        userId = body.userId
+      } else if (body && typeof body.user_id === 'string') {
+        userId = body.user_id
       }
-    )
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-    if (!user) {
-      console.error('❌ Unauthorized user')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    console.log('👤 Utilisateur authentifié:', user.id, user.email)
+    } catch {}
 
     // Créer une session de paiement en mode subscription
     const session = await stripe.checkout.sessions.create({
@@ -51,9 +32,9 @@ export async function POST(request: NextRequest) {
       ],
       success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/success-pro?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/paiement-requis`,
-      client_reference_id: user.id, // Ajouter l'user_id comme référence client
+      ...(userId ? { client_reference_id: userId } : {}),
       metadata: {
-        user_id: user.id,
+        ...(userId ? { user_id: userId } : {}),
         source: 'signup_pro'
       }
     });
