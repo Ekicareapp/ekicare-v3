@@ -105,6 +105,9 @@ export default function Home() {
                 Réserver une démo
               </a>
             </div>
+            <p className="mt-3 text-center text-white text-sm opacity-90">
+              Gratuit pendant 7 jours puis 45,95€ par mois.
+            </p>
           </div>
         </div>
       </main>
