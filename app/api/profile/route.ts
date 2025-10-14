@@ -5,7 +5,7 @@ export async function GET(request: Request) {
   const authHeader = request.headers.get('Authorization') || ''
   const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : ''
   if (!token) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: 'Utilisateur non authentifié' }, { status: 401 })
   }
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     error: userError,
   } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: 'Utilisateur non authentifié' }, { status: 401 })
   }
   // Récupérer le user dans la table users
   const { data: users, error: usersError } = await supabase
@@ -63,7 +63,7 @@ export async function PATCH(request: Request) {
   const authHeader = request.headers.get('Authorization') || ''
   const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : ''
   if (!token) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: 'Utilisateur non authentifié' }, { status: 401 })
   }
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -75,7 +75,7 @@ export async function PATCH(request: Request) {
     error: userError,
   } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: 'Utilisateur non authentifié' }, { status: 401 })
   }
   // Récupérer le user dans la table users
   const { data: users, error: usersError } = await supabase

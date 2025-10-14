@@ -53,8 +53,25 @@ export function useUser(): UseUserReturn {
 
       setUser(user)
 
-      // Récupérer le profil complet via l'API
-      const response = await fetch('/api/profile')
+      // Récupérer le profil complet via l'API (éviter l'appel si pas de session)
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData.session?.access_token) {
+        // Pas de session → pas d'appel API
+        setProfile(null)
+        return
+      }
+
+      const response = await fetch('/api/profile', {
+        headers: {
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+      })
+
+      if (response.status === 401) {
+        // Utilisateur non authentifié: garder un état neutre sans toast
+        setProfile(null)
+        return
+      }
       if (!response.ok) {
         throw new Error('Failed to fetch profile')
       }
