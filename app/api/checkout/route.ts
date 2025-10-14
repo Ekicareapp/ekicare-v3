@@ -36,6 +36,11 @@ export async function POST(request: NextRequest) {
       subscription_data: {
         trial_period_days: 7,
       },
+      custom_text: {
+        submit: {
+          message: 'Gratuit pendant 7 jours puis 45,95€ par mois.',
+        },
+      },
       ...(userId ? { client_reference_id: userId } : {}),
       metadata: {
         ...(userId ? { user_id: userId } : {}),
