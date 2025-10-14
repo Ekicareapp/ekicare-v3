@@ -120,7 +120,7 @@ export async function POST(request: Request) {
     if (error) {
       // Gestion explicite des erreurs connues
       if (error.message && error.message.toLowerCase().includes('already registered')) {
-        return NextResponse.json({ error: 'User already registered' }, { status: 409 })
+        return NextResponse.json({ error: 'Cette adresse e-mail est déjà utilisée. Veuillez en choisir une autre ou vous connecter.' }, { status: 400 })
       }
       if (error.message && error.message.toLowerCase().includes('at least 6 characters')) {
         return NextResponse.json(
@@ -163,7 +163,16 @@ export async function POST(request: Request) {
       .insert([{ id: user.id, email, role }])
     if (userInsertError) {
       console.error('❌ Erreur lors de la création du profil utilisateur:', userInsertError)
-      // Rollback: supprimer l'utilisateur auth créé
+      const msg = userInsertError.message || ''
+      const isDuplicateEmail =
+        msg.toLowerCase().includes('duplicate key value') && msg.includes('users_email_key')
+      // Si contrainte d'unicité email, renvoyer un message clair sans rollback manuel
+      if (isDuplicateEmail || (userInsertError as any).code === '23505') {
+        return NextResponse.json({
+          error: 'Cette adresse e-mail est déjà utilisée. Veuillez en choisir une autre ou vous connecter.'
+        }, { status: 400 })
+      }
+      // Autres erreurs: rollback et 500
       console.log('🔄 Rollback: suppression de l\'utilisateur auth...')
       await supabase.auth.admin.deleteUser(user.id)
       console.log('✅ Rollback terminé')
