@@ -5,6 +5,7 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import Input from '../components/Input';
 import Modal from '../components/Modal';
+import { useDeleteAccount, DeleteConfirmModal } from '@/components/DeleteAccount';
 import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -26,6 +27,7 @@ export default function ProfilPage() {
     confirmPassword: ''
   });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const { isOpen, open, close, confirm } = useDeleteAccount();
   
   const [saveStatus, setSaveStatus] = useState<{
     type: 'success' | 'error' | null;
@@ -287,18 +289,11 @@ export default function ProfilPage() {
   };
 
   const handleDeleteAccount = () => {
-    setShowDeleteModal(true);
+    open();
   };
 
-  const handleConfirmDelete = () => {
-    // TODO: Implement account deletion logic
-    console.log('Suppression du compte confirmée');
-    setShowDeleteModal(false);
-  };
-
-  const handleCancelDelete = () => {
-    setShowDeleteModal(false);
-  };
+  const handleConfirmDelete = () => {};
+  const handleCancelDelete = () => {};
 
   if (loading) {
     return (
@@ -518,41 +513,8 @@ export default function ProfilPage() {
           </Card>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={showDeleteModal}
-        onClose={handleCancelDelete}
-        title="Confirmer la suppression"
-        size="sm"
-      >
-        <div className="space-y-6">
-          <div className="flex items-start space-x-3">
-            <AlertTriangle className="w-6 h-6 text-[#f86f4d] mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-sm text-gray-600">
-                Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible et toutes vos données seront définitivement perdues.
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex justify-end space-x-3">
-            <Button
-              variant="secondary"
-              onClick={handleCancelDelete}
-              className="bg-gray-100 text-gray-700 border-gray-300"
-            >
-              Annuler
-            </Button>
-                <Button
-                  variant="primary"
-                  onClick={handleConfirmDelete}
-                  className="bg-[#f86f4d] text-white border-[#f86f4d]"
-                >
-              Confirmer la suppression
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      {/* Delete Confirmation Modal (shared) */}
+      <DeleteConfirmModal isOpen={isOpen} onCancel={close} onConfirm={confirm} />
     </div>
   );
 }
