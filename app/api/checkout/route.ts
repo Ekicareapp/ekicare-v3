@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { supabase } from '@/lib/supabaseClient';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil',
@@ -10,16 +11,27 @@ export async function POST(request: NextRequest) {
   try {
     console.log('💳 Création d\'une session de paiement Stripe')
     
-    // Authentification
-    if (!supabase) {
-      console.error('❌ Database connection error')
-      return NextResponse.json({ error: 'Database connection error' }, { status: 500 });
-    }
+    // Authentification via Supabase server client (cookies)
+    const cookieStore = cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set(name, value, options)
+          },
+          remove(name: string, options: any) {
+            cookieStore.set(name, '', { ...options, maxAge: 0 })
+          },
+        },
+      }
+    )
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
 
     if (!user) {
       console.error('❌ Unauthorized user')

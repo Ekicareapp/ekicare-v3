@@ -38,6 +38,10 @@ export function useUser(): UseUserReturn {
       const { data: { user }, error: userError } = await supabase.auth.getUser()
       
       if (userError) {
+        // Gestion d'un refresh token invalide: nettoyer la session locale
+        if (typeof userError.message === 'string' && userError.message.toLowerCase().includes('refresh token')) {
+          try { await supabase.auth.signOut() } catch {}
+        }
         throw userError
       }
 
