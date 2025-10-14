@@ -55,6 +55,20 @@ export async function POST(request: NextRequest) {
       success_url: `${baseUrl}/success-pro?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/signup`,
       client_reference_id: user_id,
+      // Essai gratuit de 7 jours avec collecte CB
+      payment_method_collection: 'always',
+      subscription_data: {
+        trial_period_days: 7,
+      },
+      // Texte personnalisé visible sur la page Checkout
+      custom_text: {
+        submit: {
+          message: 'Essai gratuit de 7 jours puis 45,95€ par mois.',
+          submit_button: 'Démarrer mon essai',
+        },
+      },
+      // Assurer l'UI en français
+      locale: 'fr',
       metadata: {
         source: 'signup_pro',
         user_type: 'professional',
