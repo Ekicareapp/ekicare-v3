@@ -493,7 +493,7 @@ export default function SignupPage() {
           </button>
 
           {role === 'PRO' && (
-            <p className="mt-1 text-center text-[#6b7280] text-sm">
+            <p className="mt-0.5 text-center text-[#6b7280] text-sm">
               Gratuit pendant 7 jours puis 45,95€ par mois.
             </p>
           )}
