@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabaseClient'
+import { sendWelcomeEmail } from '@/lib/mail'
 
 export async function POST(request: Request) {
   if (!supabase) {
@@ -203,6 +204,9 @@ export async function POST(request: Request) {
           }, { status: 500 })
         }
         
+        // Email de bienvenue (non bloquant)
+        try { await sendWelcomeEmail(email) } catch (e) { console.error('[signup] welcome email error (PRO):', e) }
+
         return NextResponse.json({
           user: {
             id: user.id,
@@ -252,6 +256,9 @@ export async function POST(request: Request) {
         console.log('✅ Profil propriétaire créé avec succès')
         console.log('🎯 Redirection vers /success-proprio')
         
+        // Email de bienvenue (non bloquant)
+        try { await sendWelcomeEmail(email) } catch (e) { console.error('[signup] welcome email error (PROPRIETAIRE):', e) }
+
         return NextResponse.json({ 
           user: { 
             id: user.id, 
