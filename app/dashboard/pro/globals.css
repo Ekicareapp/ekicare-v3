@@ -168,6 +168,18 @@ textarea:focus {
   box-shadow: var(--shadow-md);
 }
 
+/* Modal styles (align with proprietaire) */
+.modal-backdrop {
+  backdrop-filter: blur(8px);
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-xl);
+}
+
 /* Button styles */
 .btn-primary {
   background-color: var(--color-primary);

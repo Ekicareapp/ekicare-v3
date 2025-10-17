@@ -99,7 +99,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   }
 
   const modal = (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-[1000] overflow-y-auto">
       {/* Backdrop */}
       <div 
         className="fixed inset-0 modal-backdrop transition-opacity"
