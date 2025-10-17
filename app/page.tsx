@@ -23,7 +23,7 @@ export default function Home() {
     <div className={`flex flex-col min-h-screen ${dmSans.className}`} style={{ backgroundColor: 'white' }}>
       {isBeta && (
         <div
-          className="w-full text-center text-white px-4 py-2 text-sm"
+          className="w-full text-center text-white px-4 py-2 text-sm font-semibold"
           style={{ backgroundColor: "#F86F4D" }}
         >
           Ekicare est actuellement en bêta — accès 100% gratuit pour les pros
