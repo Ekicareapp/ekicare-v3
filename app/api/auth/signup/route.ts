@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabaseClient'
+import { checkBetaMode, logBetaStatus } from '@/lib/featureFlags'
+import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: Request) {
   if (!supabase) {
@@ -211,26 +213,71 @@ export async function POST(request: Request) {
             error: `Erreur lors de la création du profil professionnel: ${proError.message}` 
           }, { status: 500 })
         }
-        
-        return NextResponse.json({
-          user: {
-            id: user.id,
-            email,
-            role,
-            profile: {
-              prenom,
-              nom,
-              telephone,
-              profession,
-              ville_nom,
-              rayon_km,
-              siret,
-              photo_url: null,
-              justificatif_url,
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // STRIPE FLOW TOGGLE — CENTRAL ENTRY POINT
+        // If BETA_MODE is enabled, bypass Stripe and activate pro immediately.
+        // Otherwise, keep the existing Stripe flow (redirectToStripe=true).
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+        const betaEnabled = checkBetaMode()
+        logBetaStatus('signup:POST')
+
+        if (betaEnabled) {
+          // Use service role client to bypass RLS for system updates
+          const serviceUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+          const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+          const adminClient = createClient(serviceUrl, serviceKey)
+
+          // Update pro profile to active/verified + beta flags
+          const { error: updateError } = await adminClient
+            .from('pro_profiles')
+            .update({
+              is_verified: true,
+              is_active: true,
+              beta_access: true,
+              beta_start_date: new Date().toISOString(),
+              is_subscribed: true, // allow dashboard access in beta
+            })
+            .eq('user_id', user.id)
+
+          if (updateError) {
+            console.error('❌ Erreur activation beta:', updateError)
+            // We still return success to allow login; client can handle access checks
+          } else {
+            console.log('✅ Profil pro activé en BETA pour', user.id)
+          }
+
+          return NextResponse.json({
+            user: {
+              id: user.id,
+              email,
+              role,
             },
-          },
-          redirectToStripe: true // Indicateur pour rediriger vers Stripe
-        })
+            betaBypass: true, // Client should redirect to dashboard directly
+            redirectToStripe: false,
+          })
+        } else {
+          // Default: Stripe flow intact
+          return NextResponse.json({
+            user: {
+              id: user.id,
+              email,
+              role,
+              profile: {
+                prenom,
+                nom,
+                telephone,
+                profession,
+                ville_nom,
+                rayon_km,
+                siret,
+                photo_url: null,
+                justificatif_url,
+              },
+            },
+            redirectToStripe: true // Indicateur pour rediriger vers Stripe
+          })
+        }
       }
 
       if (role === 'PROPRIETAIRE') {

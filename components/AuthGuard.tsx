@@ -110,6 +110,17 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     }
   }, [router, pathname])
 
+  // Effect to handle navigation outside of render to avoid setState-in-render errors
+  useEffect(() => {
+    // Do not guard public pages
+    const isPublicPage = pathname.includes('/login') || pathname.includes('/signup') || pathname.includes('/success')
+    if (isPublicPage) return
+
+    if (!isLoading && !isAuthenticated && pathname !== '/login') {
+      router.replace('/login')
+    }
+  }, [isLoading, isAuthenticated, pathname, router])
+
   // Si on est sur une page publique, ne pas bloquer
   if (pathname.includes('/login') || pathname.includes('/signup') || pathname.includes('/success')) {
     return <>{children}</>
@@ -126,13 +137,8 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     )
   }
 
-  // Si l'utilisateur n'est pas authentifié, rediriger vers login
+  // Si l'utilisateur n'est pas authentifié, ne pas rendre le contenu (la redirection est gérée dans useEffect)
   if (!isAuthenticated && !isLoading) {
-    console.log('🔒 Utilisateur non authentifié, redirection vers /login')
-    // Éviter les redirections multiples
-    if (pathname !== '/login') {
-      router.push('/login')
-    }
     return null
   }
 

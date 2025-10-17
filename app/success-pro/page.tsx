@@ -3,11 +3,13 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import confetti from 'canvas-confetti'
+import { checkBetaMode, logBetaStatus } from '@/lib/featureFlags'
 
 export default function SuccessProPage() {
   const [userInfo, setUserInfo] = useState<{ prenom?: string } | null>(null)
   const [loading, setLoading] = useState(true)
-  const [statusMessage, setStatusMessage] = useState('Vérification de votre paiement...')
+  const betaEnabled = checkBetaMode()
+  const [statusMessage, setStatusMessage] = useState(betaEnabled ? 'Finalisation de votre activation...' : 'Vérification de votre paiement...')
   const [isBackendReady, setIsBackendReady] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
   const router = useRouter()
@@ -32,7 +34,11 @@ export default function SuccessProPage() {
         }
 
         console.log('✅ Session active trouvée:', session.user.email)
-        console.log('🎉 Paiement validé par Stripe - Vérification du statut en cours')
+        if (!betaEnabled) {
+          console.log('🎉 Paiement validé par Stripe - Vérification du statut en cours')
+        } else {
+          logBetaStatus('success-pro')
+        }
 
         // Récupérer les informations du profil
         const response = await fetch('/api/profile')
@@ -46,6 +52,24 @@ export default function SuccessProPage() {
 
         // Afficher immédiatement la page de succès
         setLoading(false)
+
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        // BETA MODE: bypass all Stripe checks/polling and enable CTA
+        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        if (betaEnabled) {
+          setStatusMessage('Compte activé ! Vous pouvez maintenant accéder à votre dashboard.')
+          setIsBackendReady(true)
+          setShowConfetti(true)
+          setTimeout(() => {
+            confetti({
+              particleCount: 100,
+              spread: 70,
+              origin: { y: 0.6 },
+              colors: ['#f86f4d', '#ff6b35', '#ffa726', '#66bb6a', '#42a5f5']
+            })
+          }, 200)
+          return
+        }
 
         // Récupérer le session_id de Stripe depuis l'URL
         const urlParams = new URLSearchParams(window.location.search)
@@ -118,7 +142,7 @@ export default function SuccessProPage() {
             // Après 3 secondes, activer le fallback manuel
             if (attempts === 3) {
               console.log('🧭 [FALLBACK] Webhook lent, activation du fallback manuel...')
-              setStatusMessage('Vérification directe avec Stripe...')
+              setStatusMessage('Vérification directe...')
               
               try {
                 const response = await fetch('/api/auth/verify-payment', {
@@ -169,7 +193,7 @@ export default function SuccessProPage() {
         
         if (!success) {
           // En cas d'échec complet, rediriger vers signup
-          console.error('❌ Impossible de vérifier le paiement après toutes les tentatives')
+          console.error('❌ Impossible de vérifier l\'activation après toutes les tentatives')
           setStatusMessage('Erreur lors de l\'activation...')
           setTimeout(() => {
             router.push('/signup?error=verification_failed')
@@ -190,7 +214,7 @@ export default function SuccessProPage() {
   }, [router])
 
   const handleGoToDashboard = () => {
-    if (isBackendReady) {
+    if (isBackendReady || betaEnabled) {
       router.push('/dashboard/pro')
     }
   }
@@ -231,20 +255,20 @@ export default function SuccessProPage() {
           {/* Bouton CTA */}
           <button
             onClick={handleGoToDashboard}
-            disabled={!isBackendReady}
+            disabled={!isBackendReady && !betaEnabled}
             className={`w-full py-3 px-4 min-h-[44px] rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-150 text-base ${
-              isBackendReady
+              isBackendReady || betaEnabled
                 ? 'bg-[#f86f4d] text-white hover:bg-[#fa8265] focus:ring-[#f86f4d] cursor-pointer'
                 : 'bg-gray-400 text-gray-200 cursor-not-allowed'
             }`}
           >
-            {isBackendReady ? 'Accéder à mon tableau de bord Pro' : 'Vérification en cours...'}
+            {isBackendReady || betaEnabled ? 'Accéder à mon tableau de bord Pro' : 'Vérification en cours...'}
           </button>
 
           {/* Message d'information avec statut dynamique */}
           <div className="mt-6 pt-6 border-t border-[#e5e7eb]">
             <div className="flex items-center justify-center space-x-2 mb-3">
-              {!isBackendReady ? (
+              {!isBackendReady && !betaEnabled ? (
                 <div className="w-4 h-4 border-2 border-[#f86f4d] border-t-transparent rounded-full animate-spin"></div>
               ) : (
                 <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
@@ -253,12 +277,12 @@ export default function SuccessProPage() {
                   </svg>
                 </div>
               )}
-              <p className={`text-sm font-medium ${isBackendReady ? 'text-green-600' : 'text-[#f86f4d]'}`}>
+              <p className={`text-sm font-medium ${(isBackendReady || betaEnabled) ? 'text-green-600' : 'text-[#f86f4d]'}`}>
                 {statusMessage}
               </p>
             </div>
             <p className="text-xs text-[#9ca3af]">
-              {isBackendReady 
+              {(isBackendReady || betaEnabled)
                 ? 'Tout est prêt ! Vous pouvez maintenant accéder à votre dashboard.'
                 : 'Nous vérifions que votre paiement a bien été pris en compte.'
               }

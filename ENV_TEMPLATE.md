@@ -21,6 +21,11 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 # Google Maps (optionnel)
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=votre_clé_google_maps
+
+# Beta toggle (bypass Stripe pour l'inscription pro)
+# Mettre à true pour activer l'accès direct au dashboard pro et marquer les profils comme actifs/vérifiés (bêta)
+BETA_MODE=true
+NEXT_PUBLIC_BETA_MODE=true
 ```
 
 ## 🚨 Problème Actuel

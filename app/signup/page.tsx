@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 import Link from 'next/link'
+import { checkBetaMode, logBetaStatus } from '@/lib/featureFlags'
 
 const professions = [
   'Vétérinaire équin',
@@ -150,26 +151,35 @@ export default function SignupPage() {
         console.log('🏠 Redirection vers page de succès propriétaire')
         window.location.href = '/success-proprio'
       } else if (role === 'PRO') {
-        // Redirection vers Stripe Checkout
-        console.log('💳 Redirection vers Stripe Checkout')
-        const stripeResponse = await fetch('/api/checkout-session', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: signupData.user.id
+        // Flow toggle: if beta is enabled or API signals bypass, go directly to dashboard
+        const betaEnabled = checkBetaMode()
+        logBetaStatus('signup:client')
+
+        if (betaEnabled || signupData.betaBypass) {
+          console.log('🚧 BETA_MODE: bypass Stripe → redirection success pro')
+          window.location.href = '/success-pro'
+          } else {
+            // Redirection vers Stripe Checkout (flow Stripe conservé)
+          console.log('💳 Redirection vers Stripe Checkout')
+          const stripeResponse = await fetch('/api/checkout-session', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              user_id: signupData.user.id
+            })
           })
-        })
-        
-        const stripeData = await stripeResponse.json()
-        
-        if (stripeData.url) {
-          console.log('🔗 Redirection vers Stripe:', stripeData.url)
-          window.location.href = stripeData.url
-        } else {
-          console.error('❌ Erreur Stripe:', stripeData.error)
-          setError('Erreur lors de la redirection vers Stripe: ' + (stripeData.error || 'Erreur inconnue'))
+          
+          const stripeData = await stripeResponse.json()
+          
+          if (stripeData.url) {
+            console.log('🔗 Redirection vers Stripe:', stripeData.url)
+            window.location.href = stripeData.url
+          } else {
+            console.error('❌ Erreur Stripe:', stripeData.error)
+            setError('Erreur lors de la redirection vers Stripe: ' + (stripeData.error || 'Erreur inconnue'))
+          }
         }
       }
       
@@ -488,15 +498,10 @@ export default function SignupPage() {
             {loading
               ? 'Chargement...'
               : role === 'PRO'
-                ? 'Démarrer mon essai gratuit'
+                ? 'Démarrer gratuitement'
                 : "S'inscrire"}
           </button>
 
-          {role === 'PRO' && (
-            <p className="mt-0.5 text-center text-[#6b7280] text-sm">
-              Gratuit pendant 7 jours puis 45,95€ par mois.
-            </p>
-          )}
 
           <div className="text-center mt-6">
             <p className="text-[#6b7280] text-sm sm:text-base">

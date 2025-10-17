@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FAQSection from "@/components/FAQSection";
 import { useState } from "react";
+import { checkBetaMode } from "@/lib/featureFlags";
 
 // Importer la police DM Sans
 import { DM_Sans } from 'next/font/google';
@@ -16,9 +17,18 @@ const dmSans = DM_Sans({
 
 export default function Home() {
   const [testToast, setTestToast] = useState<null>(null);
+  const isBeta = checkBetaMode();
 
   return (
     <div className={`flex flex-col min-h-screen ${dmSans.className}`} style={{ backgroundColor: 'white' }}>
+      {isBeta && (
+        <div
+          className="w-full text-center text-white px-4 py-2 text-sm"
+          style={{ backgroundColor: "#F86F4D" }}
+        >
+          Ekicare est actuellement en bêta — accès 100% gratuit pour les pros
+        </div>
+      )}
       <Navbar />
 
       {/* Hero Section */}
@@ -112,36 +122,32 @@ export default function Home() {
 
       {/* FAQ Section - between CTA and Footer */}
       <FAQSection
-        items={[
-          {
-            question: 'Combien coûte l’utilisation d’Ekicare pour les propriétaires ?',
-            answer: 'L’utilisation d’Ekicare est gratuite pour les propriétaires. Vous pouvez rechercher des professionnels et prendre rendez-vous sans frais.'
-          },
-          {
-            question: 'Quel est le tarif pour les professionnels ?',
-            answer: 'L’abonnement est à 45,95€/mois pour les professionnels, résiliable à tout moment.'
-          },
-          {
-            question: 'Y a-t-il une période d’essai gratuite pour les pros ?',
-            answer: 'Oui, tous les professionnels bénéficient automatiquement d’une période d’essai gratuite de 7 jours.'
-          },
-          {
-            question: 'Puis-je résilier mon abonnement à tout moment ?',
-            answer: 'Oui, vous pouvez résilier directement depuis votre espace professionnel, sans frais cachés. L’accès reste actif jusqu’à la fin de la période en cours.'
-          },
-          {
-            question: 'Les paiements sont-ils sécurisés ?',
-            answer: 'Oui. Ekicare est partenaire officiel de Stripe, l’un des prestataires de paiement les plus fiables et sécurisés au monde.'
-          },
-          {
-            question: 'Est-ce que je peux gérer mes tournées directement depuis Ekicare ?',
-            answer: 'Oui, les professionnels peuvent planifier leurs tournées, visualiser leurs créneaux et optimiser leurs déplacements depuis l’interface Ekicare.'
-          },
-          {
-            question: 'Dois-je installer une application ?',
-            answer: 'Non, Ekicare fonctionne directement dans votre navigateur, sur ordinateur, tablette et mobile. Aucune installation n’est requise.'
-          }
-        ]}
+      items={[
+        {
+          question: 'À l’issue de la bêta, Ekicare sera-t-il payant ?',
+          answer: 'Oui, une tarification sera mise en place une fois la bêta terminée. Les professionnels inscrits durant la bêta bénéficieront d’avantages exclusifs au lancement.'
+        },
+        {
+          question: 'Qu’est-ce que la bêta ?',
+          answer: 'La bêta est une phase de test grandeur nature qui permet aux professionnels d’utiliser Ekicare gratuitement tout en nous aidant à améliorer la plateforme grâce à leurs retours.'
+        },
+        {
+          question: 'Qui peut s’inscrire à la bêta ?',
+          answer: 'La bêta est ouverte à tous les professionnels de la filière équine : vétérinaires, dentistes, ostéopathes, maréchaux, etc.'
+        },
+        {
+          question: 'Est-ce que je peux inviter mes clients à utiliser Ekicare ?',
+          answer: 'Oui. Les propriétaires peuvent créer un compte gratuitement pour gérer leurs chevaux et demandes de rendez-vous directement depuis la plateforme.'
+        },
+        {
+          question: 'Puis-je gérer mes tournées et rendez-vous depuis Ekicare ?',
+          answer: 'Oui. Ekicare vous permet de centraliser vos demandes de rendez-vous et de planifier vos tournées en quelques clics.'
+        },
+        {
+          question: 'Est-ce que je peux donner mon avis ou signaler une amélioration ?',
+          answer: 'Bien sûr. Vos retours sont essentiels pour faire évoluer Ekicare. Un formulaire dédié est accessible depuis votre espace professionnel.'
+        }
+      ]}
       />
 
       <Footer />
