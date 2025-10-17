@@ -7,6 +7,7 @@ import Input from '../components/Input';
 import Modal from '../components/Modal';
 import { useDeleteAccount, DeleteConfirmModal } from '@/components/DeleteAccount';
 import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import FeedbackModal from '@/components/FeedbackModal';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function ProfilPage() {
@@ -38,6 +39,7 @@ export default function ProfilPage() {
     message: string;
   }>({ type: null, message: '' });
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   // Charger les données du profil depuis Supabase
   useEffect(() => {
@@ -358,6 +360,17 @@ export default function ProfilPage() {
         </div>
       </div>
 
+      {/* Bouton feedback sous le header */}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setShowFeedback(true)}
+          className="text-[#f86f4d] hover:text-[#fa8265] hover:underline font-medium transition-colors"
+        >
+          Donner mon avis
+        </button>
+      </div>
+
       <div className="space-y-3">
           <Card variant="elevated">
             <h3 className="text-xl font-semibold text-[#111827] mb-6">Informations personnelles</h3>
@@ -515,6 +528,9 @@ export default function ProfilPage() {
 
       {/* Delete Confirmation Modal (shared) */}
       <DeleteConfirmModal isOpen={isOpen} onCancel={close} onConfirm={confirm} />
+
+      {/* Modal feedback */}
+      <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import Button from '@/app/dashboard/pro/components/Button';
 import Input from '@/app/dashboard/pro/components/Input';
 import { User, Save, AlertTriangle, Upload, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import FeedbackModal from '@/components/FeedbackModal';
 import { useDeleteAccount, DeleteConfirmModal } from '@/components/DeleteAccount';
 import SubscriptionCard from './SubscriptionCard';
  
@@ -50,6 +51,7 @@ const daysOfWeek = [
 ];
 
 export default function ProfilPage() {
+  const [showFeedback, setShowFeedback] = useState(false);
   const [formData, setFormData] = useState({
     prenom: '',
     nom: '',
@@ -619,6 +621,17 @@ export default function ProfilPage() {
         </div>
       </div>
 
+      {/* Bouton feedback sous le header */}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setShowFeedback(true)}
+          className="text-[#f86f4d] hover:text-[#fa8265] hover:underline font-medium transition-colors"
+        >
+          Donner mon avis
+        </button>
+      </div>
+
       {/* Photo de profil */}
       <Card variant="elevated">
         <h2 className="text-xl font-semibold text-[#111827] mb-6">Photo de profil</h2>
@@ -1062,6 +1075,9 @@ export default function ProfilPage() {
           </div>
         </div>
       )}
+
+      {/* Modal feedback */}
+      <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
     </div>
   );
 }
