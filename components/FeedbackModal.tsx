@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useToast } from '@/components/Toast'
 import { supabase } from '@/lib/supabaseClient'
 
@@ -17,6 +18,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { show } = useToast()
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     if (!isOpen) {
@@ -29,7 +31,11 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     }
   }, [isOpen])
 
-  if (!isOpen) return null
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!isOpen || !mounted) return null
 
   const submitFeedback = async () => {
     try {
@@ -92,7 +98,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     )
   }
 
-  return (
+  const modal = (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div 
@@ -149,6 +155,9 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
       </div>
     </div>
   )
+
+  // Render in a portal to avoid clipping/stacking issues inside layout
+  return createPortal(modal, document.body)
 }
 
 
