@@ -26,6 +26,10 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=votre_clé_google_maps
 # Mettre à true pour activer l'accès direct au dashboard pro et marquer les profils comme actifs/vérifiés (bêta)
 BETA_MODE=true
 NEXT_PUBLIC_BETA_MODE=true
+
+# Features toggles
+# Active/désactive le module de feedback en UI (laisser à false pour le déploiement actuel)
+NEXT_PUBLIC_ENABLE_FEEDBACK=false
 ```
 
 ## 🚨 Problème Actuel

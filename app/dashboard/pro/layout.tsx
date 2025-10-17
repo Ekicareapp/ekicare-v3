@@ -21,6 +21,7 @@ const navigation = [
 export default function ProDashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
+  const ENABLE_FEEDBACK = process.env.NEXT_PUBLIC_ENABLE_FEEDBACK === 'true'
   const [isVerified, setIsVerified] = useState<boolean | null>(null)
   const pathname = usePathname()
   const router = useRouter()
@@ -163,6 +164,7 @@ export default function ProDashboardLayout({ children }: { children: React.React
                   </Link>
                 );
               })}
+              {ENABLE_FEEDBACK && (
               <button
                 onClick={() => { setShowFeedback(true); setSidebarOpen(false) }}
                 className="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-150 min-h-[44px] text-[#6b7280] hover:text-[#111827] hover:bg-[#f9fafb]"
@@ -170,6 +172,7 @@ export default function ProDashboardLayout({ children }: { children: React.React
                 <MessageCircle className="w-5 h-5 mr-3 flex-shrink-0" />
                 <span className="break-words">Donner mon avis</span>
               </button>
+              )}
               
               {/* Logout button */}
               <LogoutButton />
@@ -211,6 +214,7 @@ export default function ProDashboardLayout({ children }: { children: React.React
               </Link>
             );
           })}
+          {ENABLE_FEEDBACK && (
           <button
             onClick={() => setShowFeedback(true)}
             className="w-full text-left sidebar-link flex items-center px-3 py-2.5 text-sm font-medium focus:outline-none text-[#6b7280] hover:text-[#111827]"
@@ -218,6 +222,7 @@ export default function ProDashboardLayout({ children }: { children: React.React
             <MessageCircle className="w-5 h-5 mr-3 flex-shrink-0" />
             Donner mon avis
           </button>
+          )}
         </nav>
 
         {/* Logout button */}
@@ -235,7 +240,7 @@ export default function ProDashboardLayout({ children }: { children: React.React
           </Suspense>
         </div>
       </main>
-      {showFeedback && (
+      {ENABLE_FEEDBACK && showFeedback && (
         <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
       )}
       </div>
